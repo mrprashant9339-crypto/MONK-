@@ -35,8 +35,14 @@ MONK_STAGING_SUPABASE_ANON_KEY=<staging-publishable-key> \
 npm run staging:smoke
 ```
 
-### Current staging limitation
-The staging project is active and its Auth service/roles/extensions are present, but its public schema currently has zero MONK tables and zero applied MONK migrations. Task 3 therefore establishes environment isolation and a repeatable health/build check; it does **not** claim the application database is ready. Foundation migrations must be recovered and reviewed before database deployment. No production data is copied into staging.
+### Staging database status
+
+The staging project has an isolated MONK schema reconstructed from production catalog definitions. The baseline is explicitly marked as reconstructed because the original foundation migration source files were not present in the repository. It creates schema objects only: tables, constraints, indexes, functions, RLS policies, triggers and grants. No production table rows or secrets were copied.
+
+The staging baseline and Phase 2/security migrations have been applied to the staging project. Verify the exact migration history and RLS/table counts in Supabase before treating a fresh deployment as complete. The baseline is a schema snapshot; do not replay it against a database that already has the MONK tables. It is not a replacement for the original chronological migration history.
+
+The GitHub staging workflow checks that the configured URL points to the dedicated staging project, checks Auth health, and builds the frontend. It does not deploy to production or copy production data.
+
 
 ## Database model
 The application expects organization-scoped data and checked RPCs. Database functionality must not be treated as ready until the reviewed migrations are applied to staging and RLS tests pass.
