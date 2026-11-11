@@ -8,7 +8,7 @@ function fail(message) {
 }
 
 async function request(path, label) {
-  const response = await fetch(`${urlValue.replace(/\\/$/, "")}${path}`, {
+  const response = await fetch(`${urlValue.replace(/\/$/, "")}${path}`, {
     headers: {
       apikey: key,
       Authorization: `Bearer ${key}`,
