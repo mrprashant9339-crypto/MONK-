@@ -7,7 +7,7 @@ function fail(message) {
   process.exitCode = 1;
 }
 
-async function request(path, label) {
+async function request(path, label, expected = "ok") {
   const response = await fetch(`${urlValue.replace(/\/$/, "")}${path}`, {
     headers: {
       apikey: key,
@@ -16,6 +16,15 @@ async function request(path, label) {
     },
     signal: AbortSignal.timeout(15000)
   });
+  if (expected === "denied") {
+    const body = await response.text();
+    if ([401, 403].includes(response.status) && body.includes("42501")) {
+      console.log(`STAGING SMOKE PASS: ${label} is denied to the anonymous role as intended.`);
+    } else {
+      fail(`${label} expected an RLS/privilege denial, received HTTP ${response.status}: ${body.slice(0, 300)}`);
+    }
+    return;
+  }
   if (!response.ok) {
     const detail = (await response.text()).slice(0, 300);
     fail(`${label} returned HTTP ${response.status}: ${detail}`);
@@ -42,7 +51,7 @@ if (!urlValue || !key) {
         await request("/auth/v1/health", "Supabase Auth health endpoint");
         if (process.exitCode !== 1) {
           await request("/rest/v1/organizations?select=id&limit=0", "MONK organizations REST schema");
-          await request("/rest/v1/tasks?select=id&limit=0", "MONK tasks REST schema");
+          await request("/rest/v1/tasks?select=id&limit=0", "MONK tasks REST access control", "denied");
           await request("/rest/v1/profiles?select=id&limit=0", "MONK profiles REST schema");
         }
       } catch (error) {
