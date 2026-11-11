@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useState } from "react";
-import { ArrowLeft, ArrowUpRight, Building2, GraduationCap, LoaderCircle, ShieldCheck, X } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, LoaderCircle, ShieldCheck, X } from "lucide-react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 import OrganizationHub from "./OrganizationHub";
@@ -11,7 +11,6 @@ export default function AuthExperience({ onClose }: Props) {
   const [session,setSession]=useState<Session|null>(null);
   const [first,setFirst]=useState(""); const [last,setLast]=useState("");
   const [email,setEmail]=useState(""); const [password,setPassword]=useState(""); const [newPassword,setNewPassword]=useState("");
-  const [orgName,setOrgName]=useState(""); const [vertical,setVertical]=useState<"education"|"business">("education");
   const [busy,setBusy]=useState(false); const [message,setMessage]=useState("");
   useEffect(()=>{ if(!supabase)return; supabase.auth.getSession().then(({data})=>{setSession(data.session);if(data.session)setMode("organization")}); const {data}=supabase.auth.onAuthStateChange((event,s)=>{setSession(s);if(event==="PASSWORD_RECOVERY")setMode("reset");else if(s)setMode("organization")});return()=>data.subscription.unsubscribe();},[]);
   async function submit(e:FormEvent){e.preventDefault();if(!supabase){setMessage("Authentication is not configured. Set the Supabase URL and publishable key.");return;}setBusy(true);setMessage("");try{
@@ -20,7 +19,6 @@ export default function AuthExperience({ onClose }: Props) {
     else if(mode==="forgot"){const {error}=await supabase.auth.resetPasswordForEmail(email.trim(),{redirectTo:window.location.origin});if(error)throw error;setMessage("If an account exists for this email, a password reset link has been sent.");} else if(mode==="reset"){if(newPassword.length<10||!/[A-Z]/.test(newPassword)||!/[a-z]/.test(newPassword)||!/[0-9]/.test(newPassword))throw new Error("Use at least 10 characters with uppercase, lowercase and a number.");const {error}=await supabase.auth.updateUser({password:newPassword});if(error)throw error;setMessage("Password updated. You can continue to your workspace.");setMode("organization");}
   }catch(err){setMessage(err instanceof Error?err.message:"Authentication request failed.");}finally{setBusy(false)}}
   async function google(){if(!supabase)return;setBusy(true);const {error}=await supabase.auth.signInWithOAuth({provider:"google",options:{redirectTo:window.location.origin}});if(error){setMessage(error.message);setBusy(false)}}
-  async function createOrg(e:FormEvent){e.preventDefault();if(!supabase||!session)return;setBusy(true);setMessage("");try{const slug=orgName.toLowerCase().trim().normalize("NFKD").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,48);if(!slug)throw new Error("Enter a valid organization name.");const {error}=await supabase.rpc("create_organization",{org_name:orgName.trim(),org_slug:slug,org_country:"IN",org_timezone:"Asia/Kolkata",org_currency:"INR",org_locale:"en-IN",org_industry:vertical==="education"?"Education":"Professional services"});if(error)throw error;setMessage("Workspace created. Your account and organization are connected. The organization dashboard is the next implementation step.");}catch(err){setMessage(err instanceof Error?err.message:"Could not create organization.");}finally{setBusy(false)}}
   async function logout(){await supabase?.auth.signOut();setSession(null);setMode("login");setMessage("")}
   return <div className="auth-overlay" role="dialog" aria-modal="true" aria-label="MONK account access"><div className="auth-panel"><button className="auth-close" onClick={onClose} aria-label="Close"><X size={19}/></button><a className="wordmark auth-wordmark" href="#">monk<span>.</span></a>
     {mode==="organization"?<OrganizationHub onSignOut={logout} />
