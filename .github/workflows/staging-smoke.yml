@@ -1,0 +1,38 @@
+name: MONK Staging Smoke
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - task-3-staging-environment
+    paths:
+      - "src/**"
+      - "supabase/migrations/**"
+      - "scripts/staging-smoke.mjs"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/staging-smoke.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  staging-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      MONK_STAGING_SUPABASE_URL: ${{ secrets.MONK_STAGING_SUPABASE_URL }}
+      MONK_STAGING_SUPABASE_ANON_KEY: ${{ secrets.MONK_STAGING_SUPABASE_ANON_KEY }}
+      VITE_SUPABASE_URL: ${{ secrets.MONK_STAGING_SUPABASE_URL }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.MONK_STAGING_SUPABASE_ANON_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Verify staging target and Auth health
+        run: npm run staging:smoke
+      - name: Type-check and build against staging configuration
+        run: npm run build

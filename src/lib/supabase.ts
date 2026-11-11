@@ -1,16 +1,21 @@
 import { createClient } from "@supabase/supabase-js";
 
-// Supabase publishable keys are designed for browser use. Row Level Security is the
-// security boundary; never put a service_role/secret key in this file.
-const url = (import.meta.env.VITE_SUPABASE_URL as string | undefined) ?? "https://yucwackrbekwaxiyuobt.supabase.co";
-const publishableKey = (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) ?? "sb_publishable_T5QKS6ZJkiUMGfKq8a4OHQ_c1ri_Al9";
+// Browser code may use a Supabase publishable/anon key only.
+// Never add a service_role or secret key to VITE_* variables.
+const url = (import.meta.env.VITE_SUPABASE_URL as string | undefined)?.trim();
+const publishableKey = (
+  (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined) ??
+  (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined)
+)?.trim();
 
 export const isSupabaseConfigured = Boolean(url && publishableKey);
-export const supabase = createClient(url, publishableKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
-    flowType: "pkce"
-  }
-});
+export const supabase = isSupabaseConfigured
+  ? createClient(url!, publishableKey!, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+        flowType: "pkce"
+      }
+    })
+  : null;

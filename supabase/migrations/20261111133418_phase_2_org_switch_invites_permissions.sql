@@ -45,7 +45,6 @@ begin
   return new_org;
 end;
 $function$;
-revoke all on function public.create_organization(text,text,text,text,text,text,text) from public, anon, authenticated;
 grant execute on function public.create_organization(text,text,text,text,text,text,text,text) to authenticated;
 
 create or replace function public.has_org_permission(target_org uuid, permission_key text)
