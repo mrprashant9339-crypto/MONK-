@@ -1,28 +1,41 @@
-# MONK — Startup Workspace Platform
+# MONK — Workspace Platform
 
-MONK is a web platform foundation built with React, Vite, TypeScript, Tailwind CSS and Supabase.
+MONK is an early React + Vite + TypeScript workspace application foundation.
 
-## Project source
+## Stack
+- React 18, React Router, TypeScript and Vite
+- Custom responsive dark UI with Tailwind/PostCSS tooling available
+- Supabase JS client for authentication
+- Cloudflare deployment planned
 
-The application source package is being prepared separately. This repository is the canonical Git remote for the MONK project.
+## Requirements
+- Node.js 20.19+ or 22.12+
+- npm
 
-## Planned stack
+## Local development
+```bash
+npm install
+cp .env.example .env
+npm run dev
+```
 
-- Frontend: React + Vite + TypeScript
-- Styling: Tailwind CSS
-- Authentication and database: Supabase
-- Hosting: Cloudflare
-- Source control: GitHub
-
-## Environment variables
-
-Create a local `.env` file from `.env.example` and configure:
-
+Set these values in `.env` to enable Supabase authentication:
 - `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_ANON_KEY`
+- `VITE_SUPABASE_ANON_KEY` (Supabase publishable/anon key only)
 
-Never put a Supabase service-role key in browser code.
+Without these values, the application opens in local preview mode. Never expose a Supabase service-role key in browser code.
 
-## Deployment status
+## Build
+```bash
+npm run build
+npm run preview
+```
 
-Production build, Supabase schema/RLS, Cloudflare deployment and custom-domain routing must be verified before this project is considered production-ready.
+## Current scope
+- Responsive workspace dashboard
+- Task creation and completion (currently local component state)
+- Focus-session presentation (timer interaction is not implemented yet)
+- Supabase email/password sign-in and sign-up when configured
+
+## Important
+This is an initial application foundation, not a production release. Tasks are not persisted yet; production database tables, tenant isolation, Row Level Security policies, email flows, automated tests, build verification and Cloudflare custom-domain deployment remain to be completed.
