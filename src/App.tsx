@@ -1,7 +1,6 @@
 import { ArrowUpRight, Check, GraduationCap, Building2, ShieldCheck, Users, CalendarDays, BookOpen, BarChart3, Wallet, FolderKanban, Sparkles, Menu, X, Play } from "lucide-react";
 import { useEffect, useState } from "react";
 import AuthExperience from "./components/AuthExperience";
-import OrganizationHub from "./components/OrganizationHub";
 
 const educationItems = ["Student & faculty management", "Daily attendance and timetables", "Notes, PDFs and video learning", "Fees, examinations and reports"];
 const businessItems = ["Customers, teams and operations", "Projects, tasks and approvals", "Invoices, income and expenses", "Inventory and performance reports"];
