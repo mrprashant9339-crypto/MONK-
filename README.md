@@ -1,6 +1,6 @@
 # MONK — Workspace Platform
 
-React + Vite + TypeScript application foundation connected to the MONK Supabase project.
+React + Vite + TypeScript application foundation for the MONK workspace platform.
 
 ## Stack
 - React 18, React Router, TypeScript and Vite
@@ -10,47 +10,49 @@ React + Vite + TypeScript application foundation connected to the MONK Supabase 
 ## Local development
 ```bash
 npm install
+cp .env.example .env.local
 npm run dev
 ```
 
-The frontend has the MONK Supabase project URL and publishable key as safe public defaults. You can override them with `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. The publishable key is intentionally public; never put a service-role/secret key in frontend code.
+Set `VITE_SUPABASE_URL` and either `VITE_SUPABASE_PUBLISHABLE_KEY` or the legacy `VITE_SUPABASE_ANON_KEY`. The browser app intentionally has **no hard-coded project URL or key**. If variables are absent, the client remains unconfigured rather than silently connecting to production. Only publishable/anon keys belong in frontend environment variables; never expose a service-role/secret key.
+
+## Staging environment (Task 3)
+The dedicated Supabase staging project is `monk-staging`:
+- Project ref: `ysspnuldfiijagagwiqk`
+- Region: `ap-south-1` (Mumbai)
+- API URL: `https://ysspnuldfiijagagwiqk.supabase.co`
+
+Configure the following GitHub Actions repository secrets before running the manual staging workflow:
+- `MONK_STAGING_SUPABASE_URL` — must be the staging URL above.
+- `MONK_STAGING_SUPABASE_ANON_KEY` — staging publishable/anon key only.
+
+Run **Actions → MONK Staging Smoke → Run workflow**. The job rejects any URL other than the staging project and checks the Supabase Auth health endpoint. It then builds the frontend. This smoke workflow does not apply migrations, create users, copy production data, or mutate production.
+
+For local staging verification:
+```bash
+MONK_STAGING_SUPABASE_URL=https://ysspnuldfiijagagwiqk.supabase.co \
+MONK_STAGING_SUPABASE_ANON_KEY=<staging-publishable-key> \
+npm run staging:smoke
+```
+
+### Current staging limitation
+The staging project is active and its Auth service/roles/extensions are present, but its public schema currently has zero MONK tables and zero applied MONK migrations. Task 3 therefore establishes environment isolation and a repeatable health/build check; it does **not** claim the application database is ready. Foundation migrations must be recovered and reviewed before database deployment. No production data is copied into staging.
 
 ## Database model
-MONK reuses the existing `organizations`, `organization_members`, `projects` and `tasks` tables. Tasks are organization/project scoped. The app reads through RLS and creates/updates tasks through checked RPCs:
-- `create_task(task_project_id, task_title, task_due_date, task_priority)`
-- `update_task(task_id, next_status, next_blocker_reason)`
-
-First-time users create a workspace and then a project. The organization creation RPC assigns the creator the owner role.
+The application expects organization-scoped data and checked RPCs. Database functionality must not be treated as ready until the reviewed migrations are applied to staging and RLS tests pass.
 
 ## Security
-- RLS remains enabled on task/project tables.
-- Authenticated users can SELECT only rows allowed by tenant/project/task policies.
-- Direct client INSERT/UPDATE/DELETE on tasks/projects is revoked.
-- Anonymous execution of SECURITY DEFINER functions is revoked; approved application RPCs/helpers are explicitly granted to authenticated users.
+- RLS is the database security boundary.
+- Direct client access must remain tenant-scoped.
 - No service-role key is shipped to the browser.
-
-## Current scope and limitations
-Task create/list/complete is persisted to Supabase. The focus timer, task editing/deletion, invitations, project management UI and realtime subscriptions are not implemented yet. Run the build and RLS integration tests before production deployment.
-
+- Production is not a target for staging workflows.
 
 ## Authentication release verification
-
 ### Email delivery
-Configure a custom SMTP provider in Supabase Dashboard → Authentication → SMTP Settings. Keep email confirmations enabled and autoconfirm disabled. Set SPF, DKIM and DMARC for the sender domain, then use Authentication → URL Configuration to set:
-- Site URL: `https://monk.monster`
-- Redirect allow list: `https://monk.monster/**` and `http://localhost:5173/**` for development only.
-
-Test signup confirmation and password recovery using two dedicated test mailboxes. Supabase's built-in SMTP is restricted to project-team addresses and is not suitable for production delivery.
+Configure a custom SMTP provider in Supabase Dashboard → Authentication → SMTP Settings. Keep email confirmations enabled and autoconfirm disabled. Configure SPF, DKIM and DMARC for the sender domain, then set the correct Site URL and redirect allow list. Provider credentials must remain in Supabase settings, not source control.
 
 ### Google OAuth
-In Google Cloud Console create a Web application OAuth client. Set Authorized JavaScript origins to `https://monk.monster` (and local origin only during development). Set its Authorized redirect URI to the exact Supabase callback URL shown on Authentication → Providers → Google, normally `https://<project-ref>.supabase.co/auth/v1/callback`. Enable Google provider in Supabase and store Client ID/Secret only in the provider settings. Add `https://monk.monster/**` and local development callback to Supabase URL Configuration. Never commit provider secrets.
+Configure a Web application OAuth client in Google Cloud Console. Set the authorized origin to the deployed app origin and the callback URI to the exact Supabase callback URL shown in Authentication → Providers → Google. Store the Client ID/Secret only in Supabase provider settings.
 
 ### Real two-user E2E
-A manual GitHub Actions workflow is available at `.github/workflows/auth-e2e.yml`. Configure these GitHub Actions repository secrets using a **staging Supabase project**, two separate verified test accounts and two separate organizations:
-- `MONK_E2E_SUPABASE_URL`
-- `MONK_E2E_SUPABASE_ANON_KEY`
-- `MONK_E2E_OWNER_EMAIL`, `MONK_E2E_OWNER_PASSWORD`
-- `MONK_E2E_INVITEE_EMAIL`, `MONK_E2E_INVITEE_PASSWORD`
-- `MONK_E2E_OWNER_ORG_ID`, `MONK_E2E_INVITEE_ORG_ID`
-
-Then run GitHub Actions → MONK Auth Multi-user E2E → Run workflow. The test checks two independent logins, invitation authorization, token creation, acceptance, role assignment, single-use enforcement, organization switching and cross-tenant denial. It refuses to mutate the production MONK project by default. Do not place credentials in source code, issue comments or chat.
+The manual workflow `.github/workflows/auth-e2e.yml` requires two verified staging test users, two separate organizations and its eight `MONK_E2E_*` GitHub secrets. Never place credentials in source code, issue comments or chat.
