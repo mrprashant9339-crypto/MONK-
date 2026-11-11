@@ -41,7 +41,7 @@ begin
   insert into public.organization_members (organization_id,user_id,role,status)
   values (new_org.id,auth.uid(),'owner','active');
   update public.user_settings set active_organization_id=new_org.id,updated_at=now() where user_id=auth.uid();
-  perform public.record_audit(new_org.id,'organization.created','organization',new_org.id::text,null,to_jsonb(new_org));
+  perform public.record_audit(new_org.id,'organization.created','organization',new_org.id::text,null,to_jsonb(new_org),null,false);
   return new_org;
 end;
 $function$;
@@ -97,7 +97,7 @@ begin
  returning id into invitation_id;
  invitation_token := raw_token; expires_at := expiry;
  perform public.record_audit(target_org,'organization.invitation.created','invitation',invitation_id::text,null,
-   jsonb_build_object('email',normalized_email,'role',invite_role,'expires_at',expiry));
+   jsonb_build_object('email',normalized_email,'role',invite_role,'expires_at',expiry),null,false);
  return next;
 end;
 $function$;
@@ -123,7 +123,7 @@ begin
  update public.invitations set accepted_at=now() where id=inv.id;
  update public.user_settings set active_organization_id=inv.organization_id,updated_at=now() where user_id=auth.uid();
  perform public.record_audit(inv.organization_id,'organization.invitation.accepted','invitation',inv.id::text,null,
-   jsonb_build_object('user_id',auth.uid(),'role',inv.role));
+   jsonb_build_object('user_id',auth.uid(),'role',inv.role),null,false);
  return inv.organization_id;
 end;
 $function$;
@@ -141,7 +141,7 @@ begin
  update public.invitations set revoked_at=now()
  where id=invitation_id and accepted_at is null and revoked_at is null;
  if found then
-   perform public.record_audit(org_id,'organization.invitation.revoked','invitation',invitation_id::text,null,null);
+   perform public.record_audit(org_id,'organization.invitation.revoked','invitation',invitation_id::text,null,null,null,false);
    return true;
  end if;
  return false;
