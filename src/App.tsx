@@ -95,12 +95,23 @@ export default function App() {
     if (!supabase) return;
     if (!email.trim() || password.length < 8) { setAuthMessage("Enter a valid email and a password with at least 8 characters."); return; }
     setAuthBusy(true); setAuthMessage("");
-    const result = mode === "login"
-      ? await supabase.auth.signInWithPassword({ email: email.trim(), password })
-      : await supabase.auth.signUp({ email: email.trim(), password });
-    setAuthBusy(false);
-    setAuthMessage(result.error?.message ?? (mode === "signup" && !result.data.session ? "Account created. Confirm your email, then sign in." : "Authentication successful."));
-    if (result.data.session) setSession(result.data.session);
+    try {
+      const result = mode === "login"
+        ? await supabase.auth.signInWithPassword({ email: email.trim(), password })
+        : await supabase.auth.signUp({ email: email.trim(), password });
+      if (result.error) {
+        setAuthMessage(result.error.message);
+        return;
+      }
+      setAuthMessage(mode === "signup" && !result.data.session
+        ? "Account created. Check your inbox, confirm your email, then sign in."
+        : "Authentication successful.");
+      if (result.data.session) setSession(result.data.session);
+    } catch (error) {
+      setAuthMessage(error instanceof Error ? error.message : "Authentication request failed. Check your connection and try again.");
+    } finally {
+      setAuthBusy(false);
+    }
   }
 
   async function createOrganization(e: FormEvent) {
@@ -181,6 +192,17 @@ export default function App() {
       <button className="text-button full" disabled={authBusy} onClick={() => signIn("signup")}>Create an account</button>
       {authMessage && <p className="notice">{authMessage}</p>}<p className="tiny">Protected by Supabase Authentication</p>
     </div></main>
+  );
+
+  if (isSupabaseConfigured && session && !workspaceReady) return (
+    <main className="auth-page"><section className="auth-card">
+      <a className="brand" href="#"><span className="brand-mark">M</span> MONK<span className="brand-dot">.</span></a>
+      <p className="eyebrow">SECURE WORKSPACE</p><h1>{loading ? "Loading your" : "Workspace"}<br /><em>{loading ? "workspace…" : "could not load."}</em></h1>
+      <p className="muted">{loading ? "Checking your organization membership and workspace access." : "Your session is active, but MONK could not retrieve your workspace."}</p>
+      {workspaceError && <p className="notice" role="alert">{workspaceError}</p>}
+      <button className="primary full" disabled={loading} onClick={() => void loadWorkspace()}>{loading ? "Please wait…" : "Retry workspace loading"} <ArrowUpRight size={17} /></button>
+      <button className="text-button full" onClick={async () => { await supabase?.auth.signOut(); setSession(null); setWorkspaceReady(false); setOrganizationId(null); }}>Sign out</button>
+    </section></main>
   );
 
   if (isSupabaseConfigured && session && workspaceReady && !organizationId) return (
