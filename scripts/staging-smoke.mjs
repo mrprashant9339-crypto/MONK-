@@ -7,6 +7,23 @@ function fail(message) {
   process.exitCode = 1;
 }
 
+async function request(path, label) {
+  const response = await fetch(`${urlValue.replace(/\\/$/, "")}${path}`, {
+    headers: {
+      apikey: key,
+      Authorization: `Bearer ${key}`,
+      Accept: "application/json"
+    },
+    signal: AbortSignal.timeout(15000)
+  });
+  if (!response.ok) {
+    const detail = (await response.text()).slice(0, 300);
+    fail(`${label} returned HTTP ${response.status}: ${detail}`);
+    return;
+  }
+  console.log(`STAGING SMOKE PASS: ${label} responded HTTP ${response.status}.`);
+}
+
 if (!urlValue || !key) {
   fail("Set MONK_STAGING_SUPABASE_URL and MONK_STAGING_SUPABASE_ANON_KEY.");
 } else {
@@ -22,17 +39,14 @@ if (!urlValue || !key) {
       fail(`Refusing non-staging target. Expected https://${expectedRef}.supabase.co`);
     } else {
       try {
-        const response = await fetch(`${url.origin}/auth/v1/health`, {
-          headers: { apikey: key, Authorization: `Bearer ${key}` },
-          signal: AbortSignal.timeout(15000)
-        });
-        if (!response.ok) {
-          fail(`Supabase Auth health endpoint returned HTTP ${response.status}.`);
-        } else {
-          console.log(`STAGING SMOKE PASS: ${url.origin} Auth health endpoint responded HTTP ${response.status}.`);
+        await request("/auth/v1/health", "Supabase Auth health endpoint");
+        if (process.exitCode !== 1) {
+          await request("/rest/v1/organizations?select=id&limit=0", "MONK organizations REST schema");
+          await request("/rest/v1/tasks?select=id&limit=0", "MONK tasks REST schema");
+          await request("/rest/v1/profiles?select=id&limit=0", "MONK profiles REST schema");
         }
       } catch (error) {
-        fail(error instanceof Error ? error.message : "Could not reach Supabase Auth health endpoint.");
+        fail(error instanceof Error ? error.message : "Could not reach staging Supabase endpoints.");
       }
     }
   }
