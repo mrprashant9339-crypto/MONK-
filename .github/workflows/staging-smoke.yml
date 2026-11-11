@@ -7,6 +7,7 @@ on:
       - task-3-staging-environment
     paths:
       - "src/**"
+      - "supabase/migrations/**"
       - "scripts/staging-smoke.mjs"
       - "package.json"
       - "package-lock.json"
