@@ -32,7 +32,7 @@ grant execute on function public.can_read_project(uuid, uuid) to authenticated;
 grant execute on function public.can_read_task(uuid, uuid) to authenticated;
 grant execute on function public.can_read_file(uuid, uuid) to authenticated;
 
-grant execute on function public.create_organization(text, text, text, text, text, text, text) to authenticated;
+grant execute on function public.create_organization(text, text, text, text, text, text, text, text) to authenticated;
 grant execute on function public.create_project(text, text, text, uuid, date, text) to authenticated;
 grant execute on function public.create_task(uuid, text, date, text) to authenticated;
 grant execute on function public.update_task(uuid, text, text) to authenticated;
