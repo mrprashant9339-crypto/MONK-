@@ -14,9 +14,17 @@ export async function sendOrganizationInvitation(
     body: { organizationId, email: email.trim().toLowerCase(), role, token },
   });
   if (error || data?.sent !== true) {
+    let providerMessage = data?.error as string | undefined;
+    const response = (error as { context?: Response } | null)?.context;
+    if (!providerMessage && response && typeof response.clone === "function") {
+      try {
+        const payload = await response.clone().json() as { error?: string };
+        providerMessage = payload.error;
+      } catch { /* Keep the safe manual-link fallback message. */ }
+    }
     return {
       sent: false,
-      message: data?.error || error?.message || "Email delivery is not configured; copy and share the secure invitation link.",
+      message: providerMessage || error?.message || "Email delivery is not configured; copy and share the secure invitation link.",
     };
   }
   return { sent: true, message: "Invitation email sent successfully." };
