@@ -37,14 +37,14 @@ export default function EducationPortal({organizationId,role}:Props) {
       .eq("organization_id",organizationId).eq("email",auth.data.user.email??"").is("user_id",null);
     if(claimError)throw claimError;
     const {data:s,error:e}=await supabase.from("education_students").select("id,full_name,admission_number,batch_id,status,email").eq("organization_id",organizationId).eq("user_id",auth.data.user.id).maybeSingle();if(e)throw e;setStudent(s as Student|null);
-    const [t,a,r,apps,p]=await Promise.all([
+    const [t,a,r,apps,p,sub,docs]=await Promise.all([
      supabase.from("education_timetable_entries").select("id,batch_id,subject_id,faculty_id,weekday,starts_at,ends_at,room").eq("organization_id",organizationId),
      supabase.from("education_attendance_records").select("id,session_id,student_id,attendance_status").eq("organization_id",organizationId).eq("student_id",s?.id??"00000000-0000-0000-0000-000000000000"),
      supabase.from("education_results").select("id,student_id,marks_obtained,grade,status,exam_subject_id").eq("organization_id",organizationId).eq("student_id",s?.id??"00000000-0000-0000-0000-000000000000").eq("status","published"),
      supabase.from("education_admission_applications").select("id,application_number,full_name,status,submitted_at").eq("organization_id",organizationId).eq("applicant_user_id",auth.data.user.id),
      supabase.from("education_programs").select("id,name").eq("organization_id",organizationId),
      supabase.from("education_subjects").select("id,name,code").eq("organization_id",organizationId),
-     supabase.from("education_documents").select("id,file_name,category,status,storage_path").eq("organization_id",organizationId).eq("student_id",s?.id??"00000000-0000-0000-0000-000000000000")
+     supabase.from("education_documents").select("id,file_name,category,status,storage_path,student_id").eq("organization_id",organizationId).eq("student_id",s?.id??"00000000-0000-0000-0000-000000000000")
     ]);for(const x of [t,a,r,apps,p,sub,docs])if(x.error)throw x.error;setTimetable((t.data??[]) as Timetable[]);setAttendance((a.data??[]) as Attendance[]);setResults((r.data??[]) as Result[]);setApplications((apps.data??[]) as Application[]);setPrograms(p.data??[]);setSubjects(sub.data??[]);setDocuments((docs.data??[]) as PortalDocument[]);
    }else if(role==="teacher"){
     const {error:claimError}=await supabase.rpc("education_claim_faculty_profile");if(claimError && claimError.code!=="P0002")throw claimError;
@@ -66,12 +66,12 @@ export default function EducationPortal({organizationId,role}:Props) {
     if(ids.length){const {data:child,error:ce}=await supabase.from("education_students").select("id,full_name,admission_number,batch_id,status,email").eq("organization_id",organizationId).in("id",ids);if(ce)throw ce;setChildren((child??[]) as Student[]);}
     else setChildren([]);
     if(ids.length){
-     const [pr,pa]=await Promise.all([
+     const [pr,pa,pd]=await Promise.all([
       supabase.from("education_results").select("id,student_id,marks_obtained,grade,status").eq("organization_id",organizationId).in("student_id",ids).eq("status","published"),
       supabase.from("education_attendance_records").select("id,session_id,student_id,attendance_status").eq("organization_id",organizationId).in("student_id",ids),
       supabase.from("education_documents").select("id,file_name,category,status,storage_path,student_id").eq("organization_id",organizationId).in("student_id",ids)
      ]);if(pr.error)throw pr.error;if(pa.error)throw pa.error;if(pd.error)throw pd.error;setParentResults((pr.data??[]) as ParentResult[]);setParentAttendance((pa.data??[]) as Attendance[]);setDocuments((pd.data??[]) as PortalDocument[]);
-    }else{setParentResults([]);setParentAttendance([]);}
+    }else{setParentResults([]);setParentAttendance([]);setDocuments([]);}
    }
   }catch(e){setError(e instanceof Error?e.message:"Portal data could not be loaded.");}finally{setBusy(false);}
  },[organizationId,role]);
