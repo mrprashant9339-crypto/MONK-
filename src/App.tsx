@@ -1,5 +1,5 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { ArrowUpRight, Bell, Check, ChevronRight, Command, LayoutGrid, Plus, Search, ShieldCheck, Sparkles, Target, Workflow, Zap, LoaderCircle, LogOut, Pencil, Trash2, Play, Pause, RotateCcw, Users, Activity, GraduationCap, Briefcase, FolderKanban, CheckSquare, FileText, BarChart3, Wallet, Store, Bot, Settings, Building2 } from "lucide-react";
+import { ArrowUpRight, Bell, Check, ChevronRight, Command, LayoutGrid, Plus, Search, ShieldCheck, Sparkles, Target, Zap, LoaderCircle, LogOut, Pencil, Trash2, Play, Pause, RotateCcw, Users, Activity, GraduationCap, Briefcase, FolderKanban, CheckSquare, FileText, BarChart3, Wallet, Store, Bot, Settings, Building2 } from "lucide-react";
 import type { Session } from "@supabase/supabase-js";
 import { isSupabaseConfigured, supabase } from "./lib/supabase";
 import WorkspaceManagement from "./components/WorkspaceManagement";
