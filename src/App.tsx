@@ -104,6 +104,10 @@ export default function App() {
   }, [session, loadWorkspace]);
 
   useEffect(() => {
+    if (organizationVertical !== "education" && active === "Education") setActive("Overview");
+  }, [organizationVertical, active]);
+
+  useEffect(() => {
     if (!focusRunning) return;
     const timer = window.setInterval(() => {
       setFocusSeconds(current => Math.max(0, current - 1));
