@@ -112,6 +112,8 @@ export default function EducationPortal({organizationId,role}:Props) {
   if(!supabase||!teacherResultSubject)return;setBusy(true);setError("");
   try{
    const item=teacherExamSubjects.find(x=>x.id===teacherResultSubject);if(!item||!teacherResultRoster.length)throw new Error("Select an assigned exam subject and batch roster.");
+   const invalidMark=teacherResultRoster.find(s=>teacherResultMarks[s.id]!==undefined&&teacherResultMarks[s.id]!==""&&(!Number.isFinite(Number(teacherResultMarks[s.id]))||Number(teacherResultMarks[s.id])<0||Number(teacherResultMarks[s.id])>item.max_marks));
+   if(invalidMark)throw new Error("Marks for "+invalidMark.full_name+" must be between 0 and "+item.max_marks+".");
    const user=await supabase.auth.getUser();const rows=teacherResultRoster.filter(s=>teacherResultMarks[s.id]!==undefined&&teacherResultMarks[s.id]!=="").map(s=>({organization_id:organizationId,exam_subject_id:item.id,student_id:s.id,marks_obtained:Number(teacherResultMarks[s.id]),status:"draft",entered_by:user.data.user?.id??null}));
    if(!rows.length)throw new Error("Enter marks for at least one student.");
    const {error:e}=await supabase.from("education_results").upsert(rows,{onConflict:"organization_id,exam_subject_id,student_id"});if(e)throw e;setNotice("Draft marks saved. Institution leadership must publish the exam results.");
