@@ -7,7 +7,7 @@ type Row = Record<string, unknown> & { id?: string };
 type Props = { organizationId: string; organizationName: string; onBack: () => void };\nconst db = supabase as any;
 const modules: { key: ModuleKey; label: string; icon: typeof LayoutDashboard; table?: string }[] = [
   { key: "overview", label: "Overview", icon: LayoutDashboard },
-  { key: "crm", label: "CRM", icon: BriefcaseBusiness, table: "companies" },
+  { key: "crm", label: "CRM leads", icon: BriefcaseBusiness, table: "leads" },
   { key: "projects", label: "Projects", icon: FolderKanban, table: "projects" },
   { key: "tasks", label: "Tasks", icon: CheckSquare, table: "tasks" },
   { key: "teams", label: "Teams", icon: Users, table: "teams" },
