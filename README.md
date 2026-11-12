@@ -1,142 +1,110 @@
-# MONK — Workspace Platform
+# MONK — Multi-tenant Workspace and Education Platform
 
-React + Vite + TypeScript application foundation connected to the MONK Supabase project.
+MONK is a React + Vite + TypeScript web application backed by Supabase Auth, PostgreSQL and Row Level Security. Cloudflare Workers serves the static Vite build.
 
-## Stack
-- React 18, React Router, TypeScript and Vite
-- Supabase Auth, Postgres, RPC and Row Level Security
-- Multi-tenant organization and project model
-- Cloudflare Workers static asset hosting
+## Stack and local development
 
-## Local development
+- React 18, React Router, TypeScript, Vite and Tailwind CSS
+- Supabase Auth, Postgres, RPC, Storage and RLS
+- Cloudflare Workers static assets
+- Resend through a Supabase Edge Function for optional invitation email
+
 ```bash
 npm install
 npm run dev
+npm run build
 ```
 
-The frontend has the MONK Supabase project URL and publishable key as safe public defaults. You can override them with `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. The publishable key is intentionally public; never put a service-role/secret key in frontend code.
+The browser uses only the Supabase publishable/anon key. Never place a service-role or secret key in frontend code.
 
-## Database model
-MONK uses organization-scoped `organizations`, `organization_members`, `projects` and `tasks` tables. The application reads through RLS and performs mutations through authorization-checked RPCs.
+## Business workspace
 
-Current task RPCs:
-- `create_task(task_project_id, task_title, task_due_date, task_priority)`
-- `update_task(task_id, next_status, next_blocker_reason)`
-- `update_task_details(target_task_id, next_title, next_priority, next_due_date)`
-- `archive_task(target_task_id)`
+- Email/password registration and sign-in
+- Create and switch between multiple Business or Education organizations
+- Project create, edit and soft archive
+- Persistent tasks: create, status update, title/priority/due-date edit and soft archive
+- Organization team listing, role changes and member removal
+- One-time organization invitations, revocation and email-bound acceptance
+- Audit activity timeline
+- Local 25-minute focus timer with pause/reset
 
-The task edit and archive functions enforce active-organization scope, task visibility, manager/admin/owner privileges or assignment-based contributor/vendor privileges, and write audit events. Archiving is a soft delete.
+Task assignment UI, comments, bulk operations, persistent focus sessions, notifications and realtime updates remain outside the current delivered scope.
 
-First-time users create a workspace and then a project. The organization creation RPC assigns the creator the owner role.
+## Education workspace
 
-## Application features
-- Email/password sign-in and account registration
-- First-time organization and project setup
-- Organization-scoped project and task loading
-- Persistent task creation and completion
-- Task title/priority/due-date editing RPC
-- Soft task archival
-- Education institution profile, campus and department setup
-- Academic years, programmes, subjects and batch management
-- Student and faculty records with transactional enrollment synchronization
-- Timetable scheduling with faculty/batch conflict validation
-- Attendance sessions and batch roster marking
-- Local 25-minute focus timer with pause and reset
+Education is a separate organization vertical. Creating an Education workspace does not convert existing Business organizations.
 
-## Security
-- RLS is enabled on all 39 public application tables, including the 13 Phase 3 education tables.
-- Authenticated users can SELECT only rows allowed by tenant/project/task policies.
-- Direct client INSERT/UPDATE/DELETE on task/project tables is revoked; mutations use checked RPCs.
-- Anonymous execution of SECURITY DEFINER application functions is revoked.
-- New task edit/archive RPCs explicitly revoke PUBLIC and anon execution and grant authenticated execution only.
-- No service-role key is shipped to the browser.
+### Roles
 
-SECURITY DEFINER functions that remain executable by authenticated users are reviewed API functions and policy helpers. Each must retain explicit authentication, tenant and role checks. Do not blanket-revoke policy helper execution: policies call these helpers as part of row authorization.
+- **Principal:** institution-wide education administration and academic oversight.
+- **HOD:** department-scoped academic oversight and timetable/attendance management.
+- **Teacher:** assigned classes, attendance marking and draft marks entry for assigned exam subjects.
+- **Student:** own profile, timetable, attendance, admission application, documents and published results.
+- **Parent:** explicitly linked children, attendance, authorized documents and published results.
+
+Business roles remain separate. Education roles cannot be assigned in Business organizations. Student, parent and faculty records can only be claimed by authenticated accounts matching the pre-created verified email.
+
+### Academic modules
+
+- Institution profile, campuses, departments and HOD assignment
+- Academic years, programmes, subjects and batches
+- Student and faculty records
+- Admission applications, review and transactional admission/enrollment
+- Guardian-to-student linking and parent invitations
+- Timetable scheduling and overlap validation
+- Attendance sessions and present/absent/late/excused marking
+- Private student/application documents and verification workflow
+- Examination setup, subject mapping, teacher draft marks, result validation and leadership publication
+- Attendance and published-result summary views
+
+Programme-wide exams are supported; teacher visibility and marks entry are limited to the teacher's assigned subject/batches.
+
+## Database and security
+
+- All 20 education tables have RLS enabled; live catalog check found zero anonymous SELECT grants on those tables.
+- Education foreign keys have covering indexes.
+- Education Storage uses the private `education-private` bucket with scoped upload/download policies.
+- Mutations use organization/role/assignment-checked database functions and triggers.
+- Student and guardian self-claim grants are restricted to identity-link columns.
+- The `citext` extension is in the `extensions` schema.
+- Browser code contains no Supabase service-role key.
+
+The SQL regression file is `supabase/tests/phase_2_security.sql` and `supabase/tests/phase_3_education_security.sql`. Both were executed against the connected Supabase project; the Phase 3 assertion block returned without exception.
+
+The Supabase advisor still reports 27 authenticated-callable SECURITY DEFINER functions. These must be reviewed individually; several are application RPCs or policy helpers. Do not blanket-revoke them without tracing their callers and authorization checks. The advisor also reports 37 multiple-permissive-policy warnings, 35 unindexed foreign keys outside the education schema, and unused indexes. Auth leaked-password protection is still disabled and must be enabled in Supabase Auth password/security settings.
+
+## Invitations and email
+
+The Supabase Edge Function `send-education-invitation` is deployed and ACTIVE with JWT verification enabled. It validates the caller's permission and invitation token details before attempting Resend delivery.
+
+To enable outbound email, configure these Edge Function secrets in Supabase:
+- `RESEND_API_KEY`
+- `MONK_EMAIL_FROM` — a sender/domain verified in Resend
+- Optional `MONK_APP_URL` — defaults to `https://monk.monster`
+
+Until the required secrets are configured, invitations still generate a secure one-time URL that can be copied and shared manually. No successful email delivery is claimed.
 
 ## CI and deployment
-GitHub Actions runs `npm install --no-audit --no-fund` followed by `npm run build` on pushes and pull requests targeting `main`. Phase 2 CI run #105 passed on PR #5: dependency installation and `npm run build` (`tsc -b && vite build`) both succeeded. Continue requiring green CI for subsequent changes.
 
-Cloudflare Worker configuration is in `wrangler.jsonc`. Production Worker domain binding is managed in Cloudflare.
+GitHub Actions workflow `.github/workflows/ci.yml` runs `npm install` and `npm run build` (`tsc -b && vite build`) on pushes and pull requests targeting `main`.
 
-## Current scope and limitations
-- Task CRUD is not fully complete: task create, status update, title/priority/due-date edit and soft archive are implemented; task assignment UI, comments and bulk operations remain pending.
-- Project management supports create, edit and soft archive. Due date, visibility and status are preserved when editing through the current compact edit dialog.
-- Focus timer runs locally in the browser; focus sessions are not yet persisted or included in analytics.
-- Password recovery, OAuth providers, invitation email delivery, file uploads, notifications and realtime subscriptions remain pending.
-- Run the build and tenant-isolation integration tests before production deployment.
+- Phase 2 PR #5: CI run #105 passed.
+- Education foundation PR #6: CI run #133 passed.
+- Timetable/attendance PR #7: CI run #151 passed.
+- Workspace creation PR #8: CI run #161 passed.
+- Role/academic workflow PR #9: CI run #198 passed.
+- Teacher marks validation PR #13: CI run #232 passed.
 
-## Phase 2 workspace management
-- Project create, edit and soft archive.
-- Organization team listing, permission-checked role changes and member removal.
-- Invitation creation, one-time link copying, invitation status listing and revocation.
-- Email-bound invitation acceptance through the existing Supabase RPC.
-- Organization switching through membership-checked RPC.
-- Audit activity timeline under the existing audit-log RLS policy.
+The latest confirmed run #232 completed successfully, including dependency installation and TypeScript/Vite production build.
 
-Phase 2 database RPCs are defined in `supabase/migrations/20261112065511_phase_2_workspace_management.sql` and `supabase/migrations/20261112065836_phase_2_member_email_cast.sql`. Security regression assertions are in `supabase/tests/phase_2_security.sql`. The assertions were executed against the connected Supabase project and passed. Authenticated browser workflows and the GitHub Actions build still require end-to-end verification before release.
+Cloudflare Worker `monk` and the `monk.monster` custom domain already exist. A new production deployment from the latest source has **not** been performed or verified; the existing Worker version cannot be tied conclusively to the latest Git commit.
 
+## Release gates still requiring configuration or live-account testing
 
-## Phase 3 — Education Management System
+1. Enable Supabase Auth leaked-password protection.
+2. Configure the Resend Edge Function secrets and verify a real invitation email.
+3. Provision two isolated test organizations and separate owner/admin/HOD/teacher/student/parent accounts; run authenticated browser tests for tenant isolation, role boundaries, invitation acceptance, admission, document access, attendance and published results.
+4. Review the remaining SECURITY DEFINER and permissive-policy advisor findings individually.
+5. Deploy the latest verified build to Cloudflare and run a production browser smoke test on `https://monk.monster`.
 
-The education vertical reuses the existing organization tenant boundary. During first-time setup or from the workspace management header, users can create a new Business or Education organization. The existing organization is preserved and the new organization becomes active. Existing business organizations are not converted.
-
-### Education schema
-- Institution profile and verification state; campuses and departments.
-- Academic years, programmes, subjects and batches.
-- Student records, faculty records and enrolments.
-- Timetable entries and attendance sessions/records.
-
-All 13 education tables are organization-scoped, have RLS enabled, and use organization-aware foreign keys for linked records. Policies require the active organization to have the `education` vertical and the corresponding `education.*` permission. PUBLIC and anonymous table privileges are revoked. Education mutations update timestamps and append organization audit events.
-
-### Current education UI
-- Institution profile create/update.
-- Campus and department creation/listing.
-- Academic year, programme and batch creation/listing.
-- Student and faculty record creation/listing.
-- Subject creation, timetable scheduling with overlap checks, and attendance sessions with batch roster marking.
-- Student admission creates the academic enrollment in the same database transaction; batch changes keep enrollment history synchronized.
-- Administration UI is currently restricted to owner, admin and manager organization roles. Teacher/student self-service portals, timetable and attendance screens, admissions workflow, document verification and email notifications are not yet delivered.
-
-### Phase 3 verification
-- `supabase/tests/phase_3_education_security.sql` executed against the connected Supabase database and passed.
-- GitHub Actions CI runs #133, #151, #161 and #198 passed for the education foundation, timetable/attendance, workspace creation and role-portal/academic workflow builds. PRs #6, #7, #8 and #9 were merged into `main`. The later Resend invitation helper commits do not yet have a confirmed Actions result.
-- Tests assert 13 tables, RLS, tenant-vertical guards, revoked anonymous privileges, authenticated read access and audit triggers.
-- No institution, campus, student, faculty or attendance sample data was inserted. Existing business organizations were not converted.
-- Create an Education organization to use the education workspace; existing project organizations are currently Business vertical.
-
-
-## Phase 3 completion — Education roles and academic operations
-
-### Education roles
-Education-specific organization roles are separate from Business workspace roles:
-- **Principal** — institution-wide education administration, member invitations and academic operations.
-- **HOD** — department-scoped academic visibility and management of that department's timetable and attendance.
-- **Teacher** — own faculty record, assigned timetable/classes, attendance marking and draft marks entry for assigned exam subjects.
-- **Student** — own student profile, timetable, attendance, submitted admission applications, uploaded documents and published results.
-- **Parent** — explicitly linked children only; published results, attendance and authorized student documents.
-
-Student, teacher and parent records are linked to an authenticated account only through the invited email match. Student and guardian account claims have column-level UPDATE grants; teacher linking is limited to the faculty membership reference. Business organizations cannot receive Education roles through the invitation or role-change RPCs.
-
-### Academic operations
-- Student and teacher record creation can issue an email-bound, seven-day organization invitation link. The link is shown for secure manual sharing; transactional email delivery is not yet configured.
-- HOD assignment is linked to the active HOD organization membership on a department.
-- Admission application review, approval/rejection, and transactional conversion into a student plus active batch enrollment.
-- Private education document storage with organization/student/application path checks, 10 MB limit, MIME restrictions, and verification status workflow.
-- Parent/guardian records can be linked to students and invited to claim a parent account.
-- Examination creation, subject mapping, draft marks entry by assigned teachers, result validation and leadership-controlled publication.
-- Student and parent portals expose only their own/linked records; teacher access is limited to assigned timetable batches and exam subjects.
-- Attendance and results reporting views execute with invoker permissions and inherit underlying RLS.
-
-### Phase 3 security and verification
-- 20 education tables have RLS enabled; anonymous SELECT access is absent on all 20 tables. All education foreign keys have covering indexes.
-- Private Storage bucket `education-private` is used for student and application documents.
-- New admission conversion, exam publication and faculty-claim RPCs use SECURITY INVOKER and are executable by authenticated users only.
-- Student and guardian self-claim permissions are restricted to their identity-link columns; faculty self-link is restricted to `member_id`.
-- `supabase/tests/phase_3_education_security.sql` executed successfully after extending assertions for education roles, portal RPCs, private storage, RLS, grants and triggers.
-- Authenticated browser/E2E tests still require real Education tenant accounts and have not been claimed as complete. No fake institution, student, parent or teacher accounts were created.
-
-### Invitation email delivery
-- Deployed Supabase Edge Function: `send-education-invitation` (JWT verification enabled).
-- Student, teacher, parent and general organization invitations now attempt delivery through Resend after creating the one-time invitation token.
-- If email delivery is not configured or the provider rejects a message, the UI retains the secure fragment-based invitation URL for manual sharing.
-- To activate outbound email, configure Supabase Edge Function secrets `RESEND_API_KEY` and `MONK_EMAIL_FROM` (a verified Resend sender/domain). Optional `MONK_APP_URL` defaults to `https://monk.monster`.
+No fake customer, student, parent, faculty, institution or attendance records were inserted to make these tests appear successful.
