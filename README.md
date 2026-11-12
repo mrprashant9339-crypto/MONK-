@@ -61,7 +61,7 @@ Programme-wide exams are supported; teacher visibility and marks entry are limit
 
 ## Database and security
 
-- All 20 education tables have RLS enabled; live catalog check found zero anonymous SELECT grants on those tables.
+- All 46 public application tables have RLS enabled (46/46 verified live). All 20 education tables and both education report views have no anonymous/public SELECT grant.
 - Education foreign keys have covering indexes.
 - Education Storage uses the private `education-private` bucket with scoped upload/download policies.
 - Mutations use organization/role/assignment-checked database functions and triggers.
@@ -69,7 +69,7 @@ Programme-wide exams are supported; teacher visibility and marks entry are limit
 - The `citext` extension is in the `extensions` schema.
 - Browser code contains no Supabase service-role key.
 
-The SQL regression file is `supabase/tests/phase_2_security.sql` and `supabase/tests/phase_3_education_security.sql`. Both were executed against the connected Supabase project; the Phase 3 assertion block returned without exception.
+The SQL regression files are `supabase/tests/phase_2_security.sql` and `supabase/tests/phase_3_education_security.sql`. Both were executed against the connected Supabase project. The Phase 3 test additionally asserts marks-validation triggers, assigned-teacher exam/result policies, invoker-security report views, authenticated-only report grants and `citext` extension placement.
 
 The Supabase advisor still reports 27 authenticated-callable SECURITY DEFINER functions. These must be reviewed individually; several are application RPCs or policy helpers. Do not blanket-revoke them without tracing their callers and authorization checks. The advisor also reports 37 multiple-permissive-policy warnings, 35 unindexed foreign keys outside the education schema, and unused indexes. Auth leaked-password protection is still disabled and must be enabled in Supabase Auth password/security settings.
 
