@@ -59,3 +59,13 @@ Cloudflare Worker configuration is in `wrangler.jsonc`. Production Worker domain
 - Focus timer runs locally in the browser; focus sessions are not yet persisted or included in analytics.
 - Password recovery, OAuth providers, invitation management UI, team administration, file uploads, notifications and realtime subscriptions remain pending.
 - Run the build and tenant-isolation integration tests before production deployment.
+
+## Phase 2 workspace management
+- Project create, edit and soft archive.
+- Organization team listing, permission-checked role changes and member removal.
+- Invitation creation, one-time link copying, invitation status listing and revocation.
+- Email-bound invitation acceptance through the existing Supabase RPC.
+- Organization switching through membership-checked RPC.
+- Audit activity timeline under the existing audit-log RLS policy.
+
+Phase 2 database RPCs are defined in `supabase/migrations/20261112065511_phase_2_workspace_management.sql` and `supabase/migrations/20261112065836_phase_2_member_email_cast.sql`. Security regression assertions are in `supabase/tests/phase_2_security.sql`. The assertions were executed against the connected Supabase project and passed. Authenticated browser workflows and the GitHub Actions build still require end-to-end verification before release.
