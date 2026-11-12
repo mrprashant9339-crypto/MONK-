@@ -134,3 +134,9 @@ Student, teacher and parent records are linked to an authenticated account only 
 - Student and guardian self-claim permissions are restricted to their identity-link columns; faculty self-link is restricted to `member_id`.
 - `supabase/tests/phase_3_education_security.sql` executed successfully after extending assertions for education roles, portal RPCs, private storage, RLS, grants and triggers.
 - Authenticated browser/E2E tests still require real Education tenant accounts and have not been claimed as complete. No fake institution, student, parent or teacher accounts were created.
+
+### Invitation email delivery
+- Deployed Supabase Edge Function: `send-education-invitation` (JWT verification enabled).
+- Student, teacher, parent and general organization invitations now attempt delivery through Resend after creating the one-time invitation token.
+- If email delivery is not configured or the provider rejects a message, the UI retains the secure fragment-based invitation URL for manual sharing.
+- To activate outbound email, configure Supabase Edge Function secrets `RESEND_API_KEY` and `MONK_EMAIL_FROM` (a verified Resend sender/domain). Optional `MONK_APP_URL` defaults to `https://monk.monster`.
