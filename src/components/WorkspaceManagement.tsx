@@ -248,7 +248,7 @@ export default function WorkspaceManagement({ view, organizationId, projects, pr
       {view === "Activity" && <>
         <div className="management-subheading"><div><Activity size={16}/><b>Audit events</b></div><span>Last 60 events</span></div>
         <div className="timeline">{activity.map(entry => <article className="timeline-item" key={entry.id}>
-          <span className="timeline-dot"><Check size={11}/></span><div className="timeline-content"><b>{entry.action.replaceAll("."," · ")}</b><p>{entry.resource_type}{entry.resource_id ? ` · ${entry.resource_id}` : ""}</p><small>{entry.actor_user_id ? `User ${entry.actor_user_id.slice(0,8)}` : "System"} · {new Date(entry.created_at).toLocaleString()}</small></div>
+          <span className="timeline-dot"><Check size={11}/></span><div className="timeline-content"><b>{entry.action.split(".").join(" · ")}</b><p>{entry.resource_type}{entry.resource_id ? ` · ${entry.resource_id}` : ""}</p><small>{entry.actor_user_id ? `User ${entry.actor_user_id.slice(0,8)}` : "System"} · {new Date(entry.created_at).toLocaleString()}</small></div>
         </article>)}{activity.length === 0 && <p className="management-empty">No audit events are visible to this account. Audit access is restricted by organization permissions.</p>}</div>
       </>}
       <div className="management-footer"><span>{currentOrganization?.name ?? "Current organization"}</span><button onClick={() => void refresh()} disabled={busy}><RefreshCw size={13}/> Refresh</button></div>
