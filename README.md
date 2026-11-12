@@ -55,7 +55,7 @@ Cloudflare Worker configuration is in `wrangler.jsonc`. Production Worker domain
 
 ## Current scope and limitations
 - Task CRUD is not fully complete: task create, status update, title/priority/due-date edit and soft archive are implemented; task assignment UI, comments and bulk operations remain pending.
-- Project management currently supports initial project creation and selection; full project edit/archive UI remains pending.
+- Project management supports create, edit and soft archive. Due date, visibility and status are preserved when editing through the current compact edit dialog.
 - Focus timer runs locally in the browser; focus sessions are not yet persisted or included in analytics.
 - Password recovery, OAuth providers, invitation management UI, team administration, file uploads, notifications and realtime subscriptions remain pending.
 - Run the build and tenant-isolation integration tests before production deployment.
