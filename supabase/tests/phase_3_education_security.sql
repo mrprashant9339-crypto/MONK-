@@ -107,5 +107,31 @@ begin
   if (select count(*) from pg_trigger where tgname like 'education\_%\_audit' escape '\' and not tgisinternal ) <> 20 then
     raise exception 'Expected 20 education audit triggers';
   end if;
+
+  -- Final completion checks: marks integrity, programme-wide teacher access, reports and extension placement.
+  if not exists(select 1 from pg_trigger where tgrelid='public.education_results'::regclass and tgname='education_result_validate' and not tgisinternal) then
+    raise exception 'Examination result marks validation trigger is missing';
+  end if;
+  if not exists(select 1 from pg_policies where schemaname='public' and tablename='education_exams' and policyname='education_exams_teacher_read') then
+    raise exception 'Teacher exam visibility policy is missing';
+  end if;
+  if not exists(select 1 from pg_policies where schemaname='public' and tablename='education_results' and policyname='education_results_teacher_manage') then
+    raise exception 'Teacher assigned-subject marks policy is missing';
+  end if;
+  if not exists(select 1 from pg_class where oid='public.education_attendance_summary'::regclass and reloptions @> array['security_invoker=true']) or
+     not exists(select 1 from pg_class where oid='public.education_results_summary'::regclass and reloptions @> array['security_invoker=true']) then
+    raise exception 'Education report views must use invoker security';
+  end if;
+  if has_table_privilege('anon','public.education_attendance_summary','SELECT') or
+     has_table_privilege('anon','public.education_results_summary','SELECT') then
+    raise exception 'Anonymous access to education report views must be revoked';
+  end if;
+  if not has_table_privilege('authenticated','public.education_attendance_summary','SELECT') or
+     not has_table_privilege('authenticated','public.education_results_summary','SELECT') then
+    raise exception 'Authenticated access to education report views is missing';
+  end if;
+  if not exists(select 1 from pg_extension e join pg_namespace n on n.oid=e.extnamespace where e.extname='citext' and n.nspname='extensions') then
+    raise exception 'citext extension must not be installed in public schema';
+  end if;
 end;
 $test$;
