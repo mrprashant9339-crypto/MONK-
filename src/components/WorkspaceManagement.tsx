@@ -144,7 +144,7 @@ export default function WorkspaceManagement({ view, organizationId, projects, pr
       const row = Array.isArray(data) ? data[0] : data;
       if (!row?.invitation_token) setError("Invitation was created, but no one-time token was returned. Check the invitation list before retrying.");
       else {
-        const url = `${window.location.origin}/?invite=${encodeURIComponent(row.invitation_token)}`;
+        const url = `${window.location.origin}/#invite=${encodeURIComponent(row.invitation_token)}`;
         setInviteUrl(url); setInviteEmail(""); setNotice("Invitation created. Copy the one-time link and send it to the invited email address.");
         await loadInvitations();
       }
