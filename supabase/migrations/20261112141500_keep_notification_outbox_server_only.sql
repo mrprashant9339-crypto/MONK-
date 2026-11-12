@@ -1,0 +1,1 @@
+revoke all on public.notification_outbox from public, anon, authenticated;
