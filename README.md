@@ -103,3 +103,34 @@ All 13 education tables are organization-scoped, have RLS enabled, and use organ
 - Tests assert 13 tables, RLS, tenant-vertical guards, revoked anonymous privileges, authenticated read access and audit triggers.
 - No institution, campus, student, faculty or attendance sample data was inserted. Existing business organizations were not converted.
 - Create an Education organization to use the education workspace; existing project organizations are currently Business vertical.
+
+
+## Phase 3 completion — Education roles and academic operations
+
+### Education roles
+Education-specific organization roles are separate from Business workspace roles:
+- **Principal** — institution-wide education administration, member invitations and academic operations.
+- **HOD** — department-scoped academic visibility and management of that department's timetable and attendance.
+- **Teacher** — own faculty record, assigned timetable/classes, attendance marking and draft marks entry for assigned exam subjects.
+- **Student** — own student profile, timetable, attendance, submitted admission applications, uploaded documents and published results.
+- **Parent** — explicitly linked children only; published results, attendance and authorized student documents.
+
+Student, teacher and parent records are linked to an authenticated account only through the invited email match. Student and guardian account claims have column-level UPDATE grants; teacher linking is limited to the faculty membership reference. Business organizations cannot receive Education roles through the invitation or role-change RPCs.
+
+### Academic operations
+- Student and teacher record creation can issue an email-bound, seven-day organization invitation link. The link is shown for secure manual sharing; transactional email delivery is not yet configured.
+- HOD assignment is linked to the active HOD organization membership on a department.
+- Admission application review, approval/rejection, and transactional conversion into a student plus active batch enrollment.
+- Private education document storage with organization/student/application path checks, 10 MB limit, MIME restrictions, and verification status workflow.
+- Parent/guardian records can be linked to students and invited to claim a parent account.
+- Examination creation, subject mapping, draft marks entry by assigned teachers, result validation and leadership-controlled publication.
+- Student and parent portals expose only their own/linked records; teacher access is limited to assigned timetable batches and exam subjects.
+- Attendance and results reporting views execute with invoker permissions and inherit underlying RLS.
+
+### Phase 3 security and verification
+- 20 education tables have RLS enabled; anonymous SELECT access is absent on all 20 tables.
+- Private Storage bucket `education-private` is used for student and application documents.
+- New admission conversion, exam publication and faculty-claim RPCs use SECURITY INVOKER and are executable by authenticated users only.
+- Student and guardian self-claim permissions are restricted to their identity-link columns; faculty self-link is restricted to `member_id`.
+- `supabase/tests/phase_3_education_security.sql` executed successfully after extending assertions for education roles, portal RPCs, private storage, RLS, grants and triggers.
+- Authenticated browser/E2E tests still require real Education tenant accounts and have not been claimed as complete. No fake institution, student, parent or teacher accounts were created.
