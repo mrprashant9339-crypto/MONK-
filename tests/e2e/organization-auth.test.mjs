@@ -60,9 +60,28 @@ test("MONK real multi-user authentication and organization invitation E2E", asyn
       `${label} legal consent record must exist`);
   }
 
-  const ownerOrg = process.env.MONK_E2E_OWNER_ORG_ID;
-  const inviteeOrg = process.env.MONK_E2E_INVITEE_ORG_ID;
-  assert.notEqual(ownerOrg, inviteeOrg, "Use two separate organizations for tenant-isolation verification");
+  // Create isolated tenant fixtures through the same authenticated RPC used by the app.
+  // These are staging-only test records and intentionally use unique slugs per run.
+  const suffix = Date.now().toString(36);
+  const createOrg = async (client, name, slug) => {
+    const result = await client.rpc("create_organization", {
+      org_name: name,
+      org_slug: slug,
+      org_country: "IN",
+      org_timezone: "Asia/Kolkata",
+      org_currency: "INR",
+      org_locale: "en-IN",
+      org_industry: "E2E test",
+      org_vertical: "business",
+    });
+    assert.ifError(result.error);
+    const row = Array.isArray(result.data) ? result.data[0] : result.data;
+    assert.ok(row?.id, "Organization creation RPC must return an organization id");
+    return row.id;
+  };
+  const ownerOrg = await createOrg(owner, "MONK E2E Owner " + suffix, "e2e-owner-" + suffix);
+  const inviteeOrg = await createOrg(invitee, "MONK E2E Invitee " + suffix, "e2e-invitee-" + suffix);
+  assert.notEqual(ownerOrg, inviteeOrg, "Tenant isolation requires separate organizations");
 
   const ownerPermission = await owner.rpc("has_org_permission", {
     target_org: ownerOrg,
