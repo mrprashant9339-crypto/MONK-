@@ -88,6 +88,8 @@ All 13 education tables are organization-scoped, have RLS enabled, and use organ
 - Campus and department creation/listing.
 - Academic year, programme and batch creation/listing.
 - Student and faculty record creation/listing.
+- Subject creation, timetable scheduling with overlap checks, and attendance sessions with batch roster marking.
+- Student admission creates the academic enrollment in the same database transaction; batch changes keep enrollment history synchronized.
 - Administration UI is currently restricted to owner, admin and manager organization roles. Teacher/student self-service portals, timetable and attendance screens, admissions workflow, document verification and email notifications are not yet delivered.
 
 ### Phase 3 verification
