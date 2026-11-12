@@ -30,7 +30,9 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [workspaceError, setWorkspaceError] = useState("");
-  const [workspaceReady, setWorkspaceReady] = useState(false);\n  const [focusSeconds, setFocusSeconds] = useState(25 * 60);\n  const [focusRunning, setFocusRunning] = useState(false);
+  const [workspaceReady, setWorkspaceReady] = useState(false);
+  const [focusSeconds, setFocusSeconds] = useState(25 * 60);
+  const [focusRunning, setFocusRunning] = useState(false);
 
   const loadWorkspace = useCallback(async () => {
     if (!supabase || !session) return;
@@ -177,7 +179,40 @@ export default function App() {
     await loadWorkspace();
   }
 
-\n  async function editTask(task: Task) {\n    const title = window.prompt("Update task title", task.title);\n    if (title === null) return;\n    const nextTitle = title.trim();\n    if (!nextTitle || nextTitle.length > 240) { setWorkspaceError("Task title must contain 1–240 characters."); return; }\n    if (!supabase || !session || task.id.startsWith("demo-")) {\n      setTasks(current => current.map(item => item.id === task.id ? { ...item, title: nextTitle } : item));\n      return;\n    }\n    setSaving(true); setWorkspaceError("");\n    const { error } = await supabase.rpc("update_task_details", {\n      target_task_id: task.id, next_title: nextTitle, next_priority: task.priority, next_due_date: task.due_date\n    });\n    setSaving(false);\n    if (error) { setWorkspaceError(error.message); return; }\n    await loadWorkspace();\n  }\n\n  async function archiveTask(task: Task) {\n    if (!window.confirm(`Archive “${task.title}”? This hides it from the active task list.`)) return;\n    if (!supabase || !session || task.id.startsWith("demo-")) {\n      setTasks(current => current.filter(item => item.id !== task.id));\n      return;\n    }\n    setSaving(true); setWorkspaceError("");\n    const { error } = await supabase.rpc("archive_task", { target_task_id: task.id });\n    setSaving(false);\n    if (error) { setWorkspaceError(error.message); return; }\n    await loadWorkspace();\n  }\n\n  const completed = tasks.filter(task => task.status === "done").length;\n  const focusTime = `${String(Math.floor(focusSeconds / 60)).padStart(2, "0")}:${String(focusSeconds % 60).padStart(2, "0")}`;
+
+  async function editTask(task: Task) {
+    const title = window.prompt("Update task title", task.title);
+    if (title === null) return;
+    const nextTitle = title.trim();
+    if (!nextTitle || nextTitle.length > 240) { setWorkspaceError("Task title must contain 1–240 characters."); return; }
+    if (!supabase || !session || task.id.startsWith("demo-")) {
+      setTasks(current => current.map(item => item.id === task.id ? { ...item, title: nextTitle } : item));
+      return;
+    }
+    setSaving(true); setWorkspaceError("");
+    const { error } = await supabase.rpc("update_task_details", {
+      target_task_id: task.id, next_title: nextTitle, next_priority: task.priority, next_due_date: task.due_date
+    });
+    setSaving(false);
+    if (error) { setWorkspaceError(error.message); return; }
+    await loadWorkspace();
+  }
+
+  async function archiveTask(task: Task) {
+    if (!window.confirm(`Archive “${task.title}”? This hides it from the active task list.`)) return;
+    if (!supabase || !session || task.id.startsWith("demo-")) {
+      setTasks(current => current.filter(item => item.id !== task.id));
+      return;
+    }
+    setSaving(true); setWorkspaceError("");
+    const { error } = await supabase.rpc("archive_task", { target_task_id: task.id });
+    setSaving(false);
+    if (error) { setWorkspaceError(error.message); return; }
+    await loadWorkspace();
+  }
+
+  const completed = tasks.filter(task => task.status === "done").length;
+  const focusTime = `${String(Math.floor(focusSeconds / 60)).padStart(2, "0")}:${String(focusSeconds % 60).padStart(2, "0")}`;
   const openTasks = tasks.length - completed;
   const nav = [{ name: "Overview", icon: LayoutGrid }, { name: "Projects", icon: Workflow }, { name: "Focus", icon: Target }];
 
