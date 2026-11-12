@@ -486,8 +486,9 @@ A module is workflow-complete when:
 - Existing MONK repository contains React/Vite frontend, Supabase schema snapshot and Phase 2 authentication/organization work.
 - Staging project is separate from production. Existing staging smoke run is not full functional E2E.
 - Authentication and organization UI/RPCs exist in partial form; this blueprint does not claim all edge cases are implemented.
-- RBAC currently has only a small initial invitation permission seed; the full permission catalogue, custom roles and teams remain to be implemented.
-- CRM, complete project management, document/file management, notifications and complete activity UX remain planned workstreams.
+- RBAC permission catalogue, built-in role bundles, custom-role tables and guarded role/team/CRM RPCs have been added to staging; complete administration UI remains.
+- CRM pipelines/stages/opportunities are in the staging schema; complete CRM UX and conversion/history remain.
+- Project/task and document/notification schema foundations exist; complete workflows, storage delivery, and module UX remain.
 - Existing README scope statements must be reconciled as modules are implemented.
 - PRs remain open; do not merge or deploy without explicit approval.
 - Production remains untouched and must not be used for test data.
@@ -501,8 +502,10 @@ A module is workflow-complete when:
 - Applied additive staging migrations for the module permission catalogue, built-in role permission bundles, organization custom roles, teams/team members, CRM pipelines/stages/opportunities, task dependencies, document shares, notification preferences and notification outbox.
 - Added guarded RPCs for custom-role creation/permission assignment/member role assignment, team creation/member assignment, CRM pipeline creation and opportunity stage transitions.
 - Updated tenant membership helper so custom-role members remain recognized as organization members.
-- Added an authenticated workspace shell connected to the organization hub, with responsive navigation, overview metrics, and initial CRM lead/team list/create flows.
-- Added the schema reconciliation matrix and migration files to the implementation branch; staging migration history includes the four new migrations.
+- Added an authenticated workspace shell connected to the organization hub, with responsive navigation, overview metrics, and initial list/create flows for CRM leads, teams, projects and tasks.
+- Added current-version legal consent completion for OAuth-first accounts using a guarded authenticated RPC.
+- Fixed nullable Supabase-client and workspace connection compile errors; GitHub Actions TypeScript + Vite production build passed on staging commit `1d67391709dbbb1ce2201c920ae1d45f95396ec7` (run 43136928748).
+- Added a five-task implementation report at `docs/IMPLEMENTATION_BATCH_2026-11-12.md` and staging migration history includes the consent RPC migration.
 
 ### Remaining implementation before QA
 - Finish all member/team administration workflows and custom-role UI.
