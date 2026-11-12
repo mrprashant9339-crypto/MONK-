@@ -311,11 +311,11 @@ export default function EducationManagement({ organizationId }: Props) {
 
   async function createStudent(event: FormEvent) {
     await submit(event, async () => {
-      const { error: e } = await supabase!.from("education_students").insert({
-        organization_id: organizationId, admission_number: studentNumber.trim().toUpperCase(),
-        full_name: studentName.trim(), email: studentEmail.trim() || null, phone: studentPhone.trim() || null,
+      const { error: e } = await supabase!.rpc("admit_education_student", {
+        admission_number: studentNumber.trim().toUpperCase(), full_name: studentName.trim(),
+        student_email: studentEmail.trim() || null, student_phone: studentPhone.trim() || null,
         guardian_name: studentGuardian.trim() || null, guardian_phone: studentGuardianPhone.trim() || null,
-        batch_id: studentBatch || null
+        target_batch_id: studentBatch || null
       });
       if (e) throw e;
       setStudentNumber(""); setStudentName(""); setStudentEmail(""); setStudentPhone("");
