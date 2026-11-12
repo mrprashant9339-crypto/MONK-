@@ -1,7 +1,8 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { ArrowUpRight, Bell, Check, ChevronRight, Command, LayoutGrid, Plus, Search, ShieldCheck, Sparkles, Target, Workflow, Zap, LoaderCircle, LogOut, Pencil, Trash2, Play, Pause, RotateCcw } from "lucide-react";
+import { ArrowUpRight, Bell, Check, ChevronRight, Command, LayoutGrid, Plus, Search, ShieldCheck, Sparkles, Target, Workflow, Zap, LoaderCircle, LogOut, Pencil, Trash2, Play, Pause, RotateCcw, Users, Activity } from "lucide-react";
 import type { Session } from "@supabase/supabase-js";
 import { isSupabaseConfigured, supabase } from "./lib/supabase";
+import WorkspaceManagement from "./components/WorkspaceManagement";
 
 type Project = { id: string; name: string; code: string };
 type Task = { id: string; title: string; status: "todo" | "in_progress" | "blocked" | "review" | "done"; priority: "low" | "medium" | "high" | "urgent"; due_date: string | null; project_id: string };
@@ -104,6 +105,23 @@ export default function App() {
   useEffect(() => {
     if (focusSeconds === 0) setFocusRunning(false);
   }, [focusSeconds]);
+
+  useEffect(() => {
+    if (!session || !supabase) return;
+    const token = new URLSearchParams(window.location.search).get("invite");
+    if (!token) return;
+    let active = true;
+    void (async () => {
+      const { error } = await supabase.rpc("accept_organization_invitation", { invite_token: token });
+      if (!active) return;
+      if (error) { setWorkspaceError(error.message); return; }
+      window.history.replaceState({}, "", window.location.pathname);
+      setWorkspaceError("");
+      setActive("Team");
+      await loadWorkspace();
+    })();
+    return () => { active = false; };
+  }, [session, loadWorkspace]);
 
   async function signIn(mode: "login" | "signup") {
     if (!supabase) return;
@@ -226,7 +244,7 @@ export default function App() {
   const completed = tasks.filter(task => task.status === "done").length;
   const focusTime = `${String(Math.floor(focusSeconds / 60)).padStart(2, "0")}:${String(focusSeconds % 60).padStart(2, "0")}`;
   const openTasks = tasks.length - completed;
-  const nav = [{ name: "Overview", icon: LayoutGrid }, { name: "Projects", icon: Workflow }, { name: "Focus", icon: Target }];
+  const nav = [{ name: "Overview", icon: LayoutGrid }, { name: "Projects", icon: Workflow }, { name: "Team", icon: Users }, { name: "Activity", icon: Activity }, { name: "Focus", icon: Target }];
 
   if (isSupabaseConfigured && !session) return (
     <main className="auth-page"><div className="auth-card">
@@ -296,6 +314,7 @@ export default function App() {
           {!isSupabaseConfigured && <div className="config-banner"><Zap size={17} /><span><b>Preview mode</b> — add Supabase environment variables to enable persistent tasks and authentication.</span></div>}
           {workspaceError && <div className="error-banner" role="alert">{workspaceError}<button onClick={() => void loadWorkspace()}>Retry</button></div>}
           {loading && <div className="loading-line"><LoaderCircle size={15} /> Syncing workspace…</div>}
+          {(active === "Overview" || active === "Focus") && <>
           <section className="stats-grid">
             <article className="stat-card"><div className="stat-top"><span>Open tasks</span><span className="stat-icon"><Command size={17} /></span></div><strong>{openTasks}</strong><small>Across selected project</small></article>
             <article className="stat-card"><div className="stat-top"><span>Completed</span><span className="stat-icon green"><Check size={17} /></span></div><strong>{completed}</strong><small>Saved to your workspace</small></article>
@@ -309,6 +328,15 @@ export default function App() {
             <article className="panel focus-panel"><div className="panel-heading"><div><p className="eyebrow">STAY INTENTIONAL</p><h2>Focus session</h2></div><span className="live-dot">READY</span></div><div className="focus-orb"><div className="orb-inner"><Target size={27} /><strong>{focusTime}</strong><small>DEEP WORK</small></div></div><p className="focus-copy">One thing at a time.<br />Give your best work the space it needs.</p><div className="focus-controls"><button className="primary full" onClick={() => { if (focusSeconds === 0) setFocusSeconds(25 * 60); setFocusRunning(value => !value); }}>{focusRunning ? <Pause size={15} /> : <Play size={15} />}{focusRunning ? "Pause session" : focusSeconds === 0 ? "Start again" : "Start session"}</button><button className="icon-btn reset-focus" aria-label="Reset focus timer" onClick={() => { setFocusRunning(false); setFocusSeconds(25 * 60); }}><RotateCcw size={15} /></button></div></article>
           </section>
           <section className="bottom-note"><div className="note-icon"><Sparkles size={18} /></div><div><b>Small steps. Serious momentum.</b><p>MONK brings your priorities, projects and focus into one calm workspace.</p></div><span className="note-tag">BUILT FOR BUILDERS</span></section>
+          </>}
+          {isSupabaseConfigured && session && organizationId && (active === "Projects" || active === "Team" || active === "Activity") && <WorkspaceManagement
+            view={active}
+            organizationId={organizationId}
+            projects={projects}
+            projectId={projectId}
+            setProjectId={setProjectId}
+            onReload={loadWorkspace}
+          />}
           <footer>MONK © 2026 <span>{isSupabaseConfigured && session ? "Synced with Supabase." : "Local preview mode."}</span></footer>
         </div>
       </main>
