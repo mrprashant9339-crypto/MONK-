@@ -13,7 +13,7 @@ npm install
 npm run dev
 ```
 
-The frontend has the MONK Supabase project URL and publishable key as safe public defaults. You can override them with `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. The publishable key is intentionally public; never put a service-role/secret key in frontend code.
+The frontend requires explicit `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` configuration for every environment. There is no production URL/key fallback. For local development, use a local Supabase stack or deliberately supply staging credentials. The publishable key is intentionally public; never put a service-role/secret key in frontend code.
 
 ## Database model
 MONK reuses the existing `organizations`, `organization_members`, `projects` and `tasks` tables. Tasks are organization/project scoped. The app reads through RLS and creates/updates tasks through checked RPCs:
@@ -53,4 +53,4 @@ A manual GitHub Actions workflow is available at `.github/workflows/auth-e2e.yml
 - `MONK_E2E_INVITEE_EMAIL`, `MONK_E2E_INVITEE_PASSWORD`
 - `MONK_E2E_OWNER_ORG_ID`, `MONK_E2E_INVITEE_ORG_ID`
 
-Then run GitHub Actions → MONK Auth Multi-user E2E → Run workflow. The test checks two independent logins, invitation authorization, token creation, acceptance, role assignment, single-use enforcement, organization switching and cross-tenant denial. It refuses to mutate the production MONK project by default. Do not place credentials in source code, issue comments or chat.
+Then run GitHub Actions → MONK Auth Multi-user E2E → Run workflow. The workflow fails immediately if any required secret is missing (it never reports a skipped E2E job as a successful test). The test checks two independent logins, profile and legal-consent records, invitation authorization, token creation, acceptance, role assignment, single-use enforcement, organization switching and cross-tenant denial. It refuses to mutate the production MONK project by default. Do not place credentials in source code, issue comments or chat.
