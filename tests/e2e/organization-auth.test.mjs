@@ -9,8 +9,6 @@ const required = [
   "MONK_E2E_OWNER_PASSWORD",
   "MONK_E2E_INVITEE_EMAIL",
   "MONK_E2E_INVITEE_PASSWORD",
-  "MONK_E2E_OWNER_ORG_ID",
-  "MONK_E2E_INVITEE_ORG_ID",
 ];
 const missing = required.filter((key) => !process.env[key]);
 const url = process.env.MONK_E2E_SUPABASE_URL ?? "http://127.0.0.1:54321";
