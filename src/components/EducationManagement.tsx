@@ -6,7 +6,8 @@ import { supabase } from "../lib/supabase";
 
 type Institution = { id: string; institution_type: string; legal_name: string; short_name: string | null; affiliation: string | null; recognition_number: string | null; website: string | null; contact_email: string | null; contact_phone: string | null; established_year: number | null; verification_status: string };
 type Campus = { id: string; name: string; code: string; city: string | null; state: string | null; is_primary: boolean; is_active: boolean };
-type Department = { id: string; name: string; code: string; campus_id: string | null; is_active: boolean };
+type Department = { id: string; name: string; code: string; campus_id: string | null; hod_member_id: string | null; is_active: boolean };
+type HodMember = { id: string; user_id: string };
 type AcademicYear = { id: string; name: string; starts_on: string; ends_on: string; is_current: boolean; status: string };
 type Program = { id: string; name: string; code: string; level: string; department_id: string | null; duration_semesters: number | null; total_seats: number | null; is_active: boolean };
 type Batch = { id: string; name: string; code: string; program_id: string; academic_year_id: string; semester: number | null; section: string | null; status: string };
@@ -32,6 +33,7 @@ export default function EducationManagement({ organizationId }: Props) {
   const [institution, setInstitution] = useState<Institution | null>(null);
   const [campuses, setCampuses] = useState<Campus[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [hodMembers, setHodMembers] = useState<HodMember[]>([]);
   const [years, setYears] = useState<AcademicYear[]>([]);
   const [programs, setPrograms] = useState<Program[]>([]);
   const [batches, setBatches] = useState<Batch[]>([]);
@@ -60,6 +62,7 @@ export default function EducationManagement({ organizationId }: Props) {
   const [departmentName, setDepartmentName] = useState("");
   const [departmentCode, setDepartmentCode] = useState("");
   const [departmentCampus, setDepartmentCampus] = useState("");
+  const [departmentHod, setDepartmentHod] = useState("");
   const [yearName, setYearName] = useState("");
   const [yearStart, setYearStart] = useState("");
   const [yearEnd, setYearEnd] = useState("");
@@ -128,7 +131,7 @@ export default function EducationManagement({ organizationId }: Props) {
       const results = await Promise.all([
         supabase.from("education_institutions").select("*").eq("organization_id", organizationId).maybeSingle(),
         supabase.from("education_campuses").select("id,name,code,city,state,is_primary,is_active").eq("organization_id", organizationId).order("name"),
-        supabase.from("education_departments").select("id,name,code,campus_id,is_active").eq("organization_id", organizationId).order("name"),
+        supabase.from("education_departments").select("id,name,code,campus_id,hod_member_id,is_active").eq("organization_id", organizationId).order("name"),
         supabase.from("education_academic_years").select("id,name,starts_on,ends_on,is_current,status").eq("organization_id", organizationId).order("starts_on", { ascending: false }),
         supabase.from("education_programs").select("id,name,code,level,department_id,duration_semesters,total_seats,is_active").eq("organization_id", organizationId).order("name"),
         supabase.from("education_batches").select("id,name,code,program_id,academic_year_id,semester,section,status").eq("organization_id", organizationId).order("name"),
@@ -151,6 +154,9 @@ export default function EducationManagement({ organizationId }: Props) {
       }
       setCampuses((results[1].data ?? []) as Campus[]);
       setDepartments((results[2].data ?? []) as Department[]);
+      const { data: hodRows, error: hodError } = await supabase.from("organization_members").select("id,user_id").eq("organization_id", organizationId).eq("role", "hod").eq("status", "active");
+      if (hodError) throw hodError;
+      setHodMembers((hodRows ?? []) as HodMember[]);
       setYears((results[3].data ?? []) as AcademicYear[]);
       setPrograms((results[4].data ?? []) as Program[]);
       setBatches((results[5].data ?? []) as Batch[]);
@@ -205,11 +211,19 @@ export default function EducationManagement({ organizationId }: Props) {
     await submit(event, async () => {
       const { error: e } = await supabase!.from("education_departments").insert({
         organization_id: organizationId, name: departmentName.trim(), code: departmentCode.trim().toUpperCase(),
-        campus_id: departmentCampus || null
+        campus_id: departmentCampus || null, hod_member_id: departmentHod || null
       });
       if (e) throw e;
-      setDepartmentName(""); setDepartmentCode(""); setDepartmentCampus("");
+      setDepartmentName(""); setDepartmentCode(""); setDepartmentCampus(""); setDepartmentHod("");
     });
+  }
+
+  async function updateDepartmentHod(departmentId: string, memberId: string) {
+    if (!supabase) return;
+    setBusy(true); setError(""); setNotice("");
+    const { error: e } = await supabase.from("education_departments").update({ hod_member_id: memberId || null }).eq("organization_id", organizationId).eq("id", departmentId);
+    if (e) setError(e.message); else { setNotice("HOD assignment updated."); await load(); }
+    setBusy(false);
   }
 
   async function createYear(event: FormEvent) {
@@ -405,9 +419,10 @@ export default function EducationManagement({ organizationId }: Props) {
           <label>Department name<input required minLength={2} maxLength={120} value={departmentName} onChange={e => setDepartmentName(e.target.value)}/></label>
           <label>Department code<input required minLength={2} maxLength={20} value={departmentCode} onChange={e => setDepartmentCode(e.target.value.toUpperCase())}/></label>
           <label>Campus<select value={departmentCampus} onChange={e => setDepartmentCampus(e.target.value)}><option value="">Organization-wide</option>{campuses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
+          <label>Head of department<select value={departmentHod} onChange={e => setDepartmentHod(e.target.value)}><option value="">Not assigned</option>{hodMembers.map(m => <option key={m.id} value={m.id}>HOD account {m.user_id.slice(0,8)}</option>)}</select></label>
           <button className="primary" disabled={busy}><Plus size={15}/> Create department</button>
         </form>
-        <div className="education-card"><h3>Departments <span>{departments.length}</span></h3>{departments.map(d => <div className="education-record" key={d.id}><Layers3 size={16}/><div><b>{d.name}</b><small>{d.code} · {campuses.find(c => c.id === d.campus_id)?.name ?? "All campuses"}</small></div></div>)}{!departments.length && <p className="education-empty">No departments created yet.</p>}</div>
+        <div className="education-card"><h3>Departments <span>{departments.length}</span></h3>{departments.map(d => <div className="education-record" key={d.id}><Layers3 size={16}/><div><b>{d.name}</b><small>{d.code} · {campuses.find(c => c.id === d.campus_id)?.name ?? "All campuses"}</small><select aria-label={"HOD for "+d.name} value={d.hod_member_id ?? ""} onChange={e=>void updateDepartmentHod(d.id,e.target.value)}><option value="">Assign HOD</option>{hodMembers.map(m=><option key={m.id} value={m.id}>Account {m.user_id.slice(0,8)}</option>)}</select></div></div>)}{!departments.length && <p className="education-empty">No departments created yet.</p>}</div>
       </div>}
 
       {tab === "Academics" && <div className="education-academics">
