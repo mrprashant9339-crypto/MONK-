@@ -20,3 +20,40 @@
 @media(max-width:640px){.management-heading-actions{width:100%;justify-content:flex-start}.new-workspace-form label{min-width:100%}}
 
 .education-operation-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:13px 0;border-bottom:1px solid #2b2924}.education-operation-row:last-child{border-bottom:0}.education-operation-row>div:first-child{flex:1;min-width:170px}.education-operation-row b{display:block;color:#e0d8c9;font-size:10px}.education-operation-row small{display:block;margin-top:4px;color:#817b70;font-size:9px;overflow-wrap:anywhere}.education-operation-actions{display:flex;gap:6px;flex-wrap:wrap}.education-operation-actions button{display:flex;align-items:center;gap:5px;border:1px solid #48402f;border-radius:5px;background:#242119;color:#d5bd8e;padding:6px 9px;font-size:9px}.education-operation-actions button.danger{border-color:#62413b;color:#dfa79d}.education-status{border:1px solid #48402f;border-radius:20px;padding:4px 8px;color:#c7ad7b;font-size:8px;text-transform:capitalize}.education-status.verified,.education-status.approved,.education-status.published{border-color:#3f6249;color:#9ac6a4}.education-status.rejected,.education-status.withdrawn{border-color:#69423c;color:#e1aaa0}.education-status.pending,.education-status.submitted,.education-status.under_review{border-color:#68583a;color:#d8bb85}.education-operation-row select,.education-record select{max-width:180px;margin-top:7px;padding:6px 8px;border:1px solid #39362f;border-radius:5px;background:#10100f;color:#dcd3c3;font-size:9px}.education-record select{display:block}.education-card .education-metrics{margin-top:12px}
+
+
+/* CRM workspace — responsive, reduced-motion aware */
+.crm-shell{display:flex;flex-direction:column;gap:18px;animation:crm-enter .32s ease both}
+.crm-heading{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.crm-heading h2{font-size:25px;margin:3px 0 5px;letter-spacing:-.7px}
+.crm-heading .muted{margin:0}
+.crm-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.crm-metrics article{padding:17px 18px;border:1px solid #302e29;border-radius:14px;background:linear-gradient(145deg,#1b1a17,#151513);transition:transform .2s ease,border-color .2s ease}
+.crm-metrics article:hover{transform:translateY(-2px);border-color:#8d744b}
+.crm-metrics article span{display:flex;align-items:center;gap:8px;color:#b8b3a8;font-size:12px}
+.crm-metrics article span svg{color:#d6b77e}
+.crm-metrics article strong{display:block;font-size:29px;margin:9px 0 3px;font-weight:600}
+.crm-metrics article small{color:#77756e;font-size:11px}
+.crm-toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:10px;border:1px solid #302e29;border-radius:12px;background:#151513}
+.crm-tabs{display:flex;gap:5px;flex-wrap:wrap}
+.crm-tabs button{border:0;border-radius:8px;padding:9px 13px;background:transparent;color:#a7a39a;font-size:12px}
+.crm-tabs button.active{background:#2b261d;color:#e4c78e;box-shadow:inset 0 0 0 1px #59472d}
+.crm-search{display:flex;align-items:center;gap:8px;min-width:190px;padding:0 10px;color:#8f8b82}
+.crm-search input{width:100%;min-width:0;background:transparent;border:0;outline:0;color:#eee;padding:8px 0;font-size:12px}
+.crm-layout{display:grid;grid-template-columns:minmax(240px,.82fr) minmax(0,1.5fr);gap:14px;align-items:start}
+.crm-list{min-width:0}
+.crm-list h3{display:flex;align-items:center;justify-content:space-between;margin:0 0 12px;font-size:15px}
+.crm-list h3 span{font-size:11px;color:#d6b77e;background:#2b261d;padding:4px 8px;border-radius:20px}
+.crm-list .education-record{min-width:0}
+.crm-list .education-record>div{min-width:0;flex:1}
+.crm-list .education-record small{overflow-wrap:anywhere}
+.crm-list time{white-space:nowrap;color:#77756e;font-size:10px}
+.crm-list a{display:grid;place-items:center;color:#d6b77e;padding:7px}
+.crm-company-list{width:100%}
+.crm-notice{padding:11px 13px;border:1px solid #355c49;border-radius:9px;background:#18251e;color:#a9d8b9;font-size:12px}
+.crm-footnote{margin:0;color:#77756e;font-size:11px}
+.crm-shell .education-form textarea{width:100%;resize:vertical;border:1px solid #35332d;border-radius:8px;background:#11110f;color:#eee;padding:10px;font:inherit}
+.crm-shell .education-form textarea:focus,.crm-search:focus-within{outline:1px solid #a98b58;border-color:#a98b58}
+@keyframes crm-enter{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:760px){.crm-layout{grid-template-columns:1fr}.crm-metrics{gap:8px}.crm-metrics article{padding:13px 11px}.crm-metrics article strong{font-size:24px}.crm-metrics article small{font-size:10px}.crm-toolbar{align-items:stretch;flex-direction:column}.crm-search{min-width:0;border-top:1px solid #302e29;padding-top:7px}.crm-tabs{width:100%}.crm-tabs button{flex:1}.crm-heading h2{font-size:22px}}
+@media(prefers-reduced-motion:reduce){.crm-shell,.crm-metrics article{animation:none;transition:none}}
