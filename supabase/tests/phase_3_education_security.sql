@@ -30,6 +30,28 @@ begin
     end if;
   end loop;
 
+  if not has_function_privilege('authenticated','public.admit_education_student(text,text,text,text,text,text,uuid)','EXECUTE') then
+    raise exception 'Authenticated admission RPC execution is missing';
+  end if;
+  if has_function_privilege('anon','public.admit_education_student(text,text,text,text,text,text,uuid)','EXECUTE') then
+    raise exception 'Anonymous admission RPC execution must be revoked';
+  end if;
+  if (select prosecdef from pg_proc where oid='public.admit_education_student(text,text,text,text,text,text,uuid)'::regprocedure) then
+    raise exception 'Admission RPC must remain SECURITY INVOKER';
+  end if;
+  if not exists(select 1 from pg_trigger where tgrelid='public.education_students'::regclass and tgname='education_student_enrollment_sync' and not tgisinternal) then
+    raise exception 'Student enrollment synchronization trigger is missing';
+  end if;
+  if not exists(select 1 from pg_trigger where tgrelid='public.education_timetable_entries'::regclass and tgname='education_timetable_validate' and not tgisinternal) then
+    raise exception 'Timetable integrity trigger is missing';
+  end if;
+  if not exists(select 1 from pg_trigger where tgrelid='public.education_attendance_sessions'::regclass and tgname='education_attendance_session_validate' and not tgisinternal) then
+    raise exception 'Attendance session integrity trigger is missing';
+  end if;
+  if not exists(select 1 from pg_trigger where tgrelid='public.education_attendance_records'::regclass and tgname='education_attendance_record_validate' and not tgisinternal) then
+    raise exception 'Attendance roster integrity trigger is missing';
+  end if;
+
   if (select count(*) from public.permissions where id like 'education.%') <> 16 then
     raise exception 'Expected 16 education permission keys';
   end if;
