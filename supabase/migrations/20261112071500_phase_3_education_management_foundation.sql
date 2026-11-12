@@ -302,120 +302,119 @@ end;
 $rls$;
 
 create policy education_institution_read on public.education_institutions for select to authenticated
-using (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.institution.read'));
+using (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.institution.read'));
 create policy education_institution_insert on public.education_institutions for insert to authenticated
-with check (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.institution.update'));
+with check (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.institution.update'));
 create policy education_institution_update on public.education_institutions for update to authenticated
-using (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.institution.update'))
-with check (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.institution.update'));
+using (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.institution.update'))
+with check (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.institution.update'));
 
 create policy education_campuses_read on public.education_campuses for select to authenticated
-using (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.campus.read'));
+using (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.campus.read'));
 create policy education_campuses_insert on public.education_campuses for insert to authenticated
-with check (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.campus.manage'));
+with check (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.campus.manage'));
 create policy education_campuses_update on public.education_campuses for update to authenticated
-using (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.campus.manage'))
-with check (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.campus.manage'));
+using (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.campus.manage'))
+with check (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.campus.manage'));
 create policy education_campuses_delete on public.education_campuses for delete to authenticated
-using (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.campus.manage'));
+using (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.campus.manage'));
 
 create policy education_departments_read on public.education_departments for select to authenticated
-using (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.department.read'));
+using (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.department.read'));
 create policy education_departments_insert on public.education_departments for insert to authenticated
-with check (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.department.manage'));
+with check (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.department.manage'));
 create policy education_departments_update on public.education_departments for update to authenticated
-using (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.department.manage'))
-with check (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.department.manage'));
+using (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.department.manage'))
+with check (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.department.manage'));
 create policy education_departments_delete on public.education_departments for delete to authenticated
-using (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.department.manage'));
+using (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.department.manage'));
 
 create policy education_academic_years_read on public.education_academic_years for select to authenticated
-using (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.academic.read'));
+using (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.academic.read'));
 create policy education_academic_years_insert on public.education_academic_years for insert to authenticated
-with check (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.academic.manage'));
+with check (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.academic.manage'));
 create policy education_academic_years_update on public.education_academic_years for update to authenticated
-using (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.academic.manage'))
-with check (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.academic.manage'));
+using (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.academic.manage'))
+with check (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.academic.manage'));
 create policy education_academic_years_delete on public.education_academic_years for delete to authenticated
-using (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.academic.manage'));
+using (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.academic.manage'));
 
 create policy education_programs_read on public.education_programs for select to authenticated
-using (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.academic.read'));
+using (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.academic.read'));
 create policy education_programs_insert on public.education_programs for insert to authenticated
-with check (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.academic.manage'));
+with check (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.academic.manage'));
 create policy education_programs_update on public.education_programs for update to authenticated
-using (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.academic.manage'))
-with check (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.academic.manage'));
+using (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.academic.manage'))
+with check (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.academic.manage'));
 create policy education_programs_delete on public.education_programs for delete to authenticated
-using (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.academic.manage'));
+using (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.academic.manage'));
 
 create policy education_batches_read on public.education_batches for select to authenticated
-using (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.academic.read'));
+using (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.academic.read'));
 create policy education_batches_insert on public.education_batches for insert to authenticated
-with check (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.academic.manage'));
+with check (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.academic.manage'));
 create policy education_batches_update on public.education_batches for update to authenticated
-using (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.academic.manage'))
-with check (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.academic.manage'));
+using (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.academic.manage'))
+with check (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.academic.manage'));
 create policy education_batches_delete on public.education_batches for delete to authenticated
-using (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.academic.manage'));
+using (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.academic.manage'));
 
 create policy education_students_read on public.education_students for select to authenticated
-using (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.student.read'));
+using (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.student.read'));
 create policy education_students_insert on public.education_students for insert to authenticated
-with check (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.student.manage'));
+with check (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.student.manage'));
 create policy education_students_update on public.education_students for update to authenticated
-using (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.student.manage'))
-with check (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.student.manage'));
+using (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.student.manage'))
+with check (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.student.manage'));
 
 create policy education_faculty_read on public.education_faculty for select to authenticated
-using (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.faculty.read'));
+using (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.faculty.read'));
 create policy education_faculty_insert on public.education_faculty for insert to authenticated
-with check (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.faculty.manage'));
+with check (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.faculty.manage'));
 create policy education_faculty_update on public.education_faculty for update to authenticated
-using (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.faculty.manage'))
-with check (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.faculty.manage'));
+using (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.faculty.manage'))
+with check (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.faculty.manage'));
 
 create policy education_subjects_read on public.education_subjects for select to authenticated
-using (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.academic.read'));
+using (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.academic.read'));
 create policy education_subjects_insert on public.education_subjects for insert to authenticated
-with check (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.academic.manage'));
+with check (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.academic.manage'));
 create policy education_subjects_update on public.education_subjects for update to authenticated
-using (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.academic.manage'))
-with check (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.academic.manage'));
+using (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.academic.manage'))
+with check (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.academic.manage'));
 
 create policy education_enrollments_read on public.education_enrollments for select to authenticated
-using (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.student.read'));
+using (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.student.read'));
 create policy education_enrollments_insert on public.education_enrollments for insert to authenticated
-with check (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.student.manage'));
+with check (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.student.manage'));
 create policy education_enrollments_update on public.education_enrollments for update to authenticated
-using (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.student.manage'))
-with check (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.student.manage'));
+using (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.student.manage'))
+with check (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.student.manage'));
 
 create policy education_timetable_read on public.education_timetable_entries for select to authenticated
-using (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.timetable.read'));
+using (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.timetable.read'));
 create policy education_timetable_insert on public.education_timetable_entries for insert to authenticated
-with check (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.timetable.manage'));
+with check (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.timetable.manage'));
 create policy education_timetable_update on public.education_timetable_entries for update to authenticated
-using (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.timetable.manage'))
-with check (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.timetable.manage'));
+using (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.timetable.manage'))
+with check (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.timetable.manage'));
 
 create policy education_attendance_sessions_read on public.education_attendance_sessions for select to authenticated
-using (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.attendance.read'));
+using (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.attendance.read'));
 create policy education_attendance_sessions_insert on public.education_attendance_sessions for insert to authenticated
-with check (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.attendance.manage'));
+with check (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.attendance.manage'));
 create policy education_attendance_sessions_update on public.education_attendance_sessions for update to authenticated
-using (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.attendance.manage'))
-with check (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.attendance.manage'));
+using (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.attendance.manage'))
+with check (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.attendance.manage'));
 
 create policy education_attendance_records_read on public.education_attendance_records for select to authenticated
-using (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.attendance.read'));
+using (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.attendance.read'));
 create policy education_attendance_records_insert on public.education_attendance_records for insert to authenticated
-with check (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.attendance.manage'));
+with check (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.attendance.manage'));
 create policy education_attendance_records_update on public.education_attendance_records for update to authenticated
-using (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.attendance.manage'))
-with check (organization_id=public.current_organization_id() and public.has_org_permission(organization_id,'education.attendance.manage'));
+using (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.attendance.manage'))
+with check (organization_id=public.current_organization_id() and exists (select 1 from public.organizations o where o.id=public.current_organization_id() and o.vertical='education') and public.has_org_permission(organization_id,'education.attendance.manage'));
 
 grant select,insert,update on public.education_institutions to authenticated;
 grant select,insert,update,delete on public.education_campuses,public.education_departments,public.education_academic_years,public.education_programs,public.education_batches to authenticated;
 grant select,insert,update on public.education_students,public.education_faculty,public.education_subjects,public.education_enrollments,public.education_timetable_entries,public.education_attendance_sessions,public.education_attendance_records to authenticated;
-revoke all on all tables in schema public from anon;
