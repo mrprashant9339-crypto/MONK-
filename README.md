@@ -36,10 +36,15 @@ First-time users create a workspace and then a project. The organization creatio
 - Persistent task creation and completion
 - Task title/priority/due-date editing RPC
 - Soft task archival
+- Education institution profile, campus and department setup
+- Academic years, programmes, subjects and batch management
+- Student and faculty records with transactional enrollment synchronization
+- Timetable scheduling with faculty/batch conflict validation
+- Attendance sessions and batch roster marking
 - Local 25-minute focus timer with pause and reset
 
 ## Security
-- RLS is enabled on all 26 public application tables.
+- RLS is enabled on all 39 public application tables, including the 13 Phase 3 education tables.
 - Authenticated users can SELECT only rows allowed by tenant/project/task policies.
 - Direct client INSERT/UPDATE/DELETE on task/project tables is revoked; mutations use checked RPCs.
 - Anonymous execution of SECURITY DEFINER application functions is revoked.
