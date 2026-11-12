@@ -75,7 +75,7 @@ export default function WorkspaceManagement({ view, organizationId, projects, pr
     } finally {
       setBusy(false);
     }
-  }, [view, loadOrganizations, loadMembers, loadInvitations, loadActivity]);
+  }, [view, organizationId, loadOrganizations, loadMembers, loadInvitations, loadActivity]);
 
   useEffect(() => { void refresh(); }, [refresh]);
 
