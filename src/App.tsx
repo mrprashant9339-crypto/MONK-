@@ -1,8 +1,9 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { ArrowUpRight, Bell, Check, ChevronRight, Command, LayoutGrid, Plus, Search, ShieldCheck, Sparkles, Target, Workflow, Zap, LoaderCircle, LogOut, Pencil, Trash2, Play, Pause, RotateCcw, Users, Activity } from "lucide-react";
+import { ArrowUpRight, Bell, Check, ChevronRight, Command, LayoutGrid, Plus, Search, ShieldCheck, Sparkles, Target, Workflow, Zap, LoaderCircle, LogOut, Pencil, Trash2, Play, Pause, RotateCcw, Users, Activity, GraduationCap } from "lucide-react";
 import type { Session } from "@supabase/supabase-js";
 import { isSupabaseConfigured, supabase } from "./lib/supabase";
 import WorkspaceManagement from "./components/WorkspaceManagement";
+import EducationManagement from "./components/EducationManagement";
 
 type Project = { id: string; name: string; code: string; description?: string | null; due_date?: string | null; visibility?: "internal" | "client_visible"; status?: "draft" | "active" | "at_risk" | "in_review" | "completed" };
 type Task = { id: string; title: string; status: "todo" | "in_progress" | "blocked" | "review" | "done"; priority: "low" | "medium" | "high" | "urgent"; due_date: string | null; project_id: string };
@@ -24,6 +25,7 @@ export default function App() {
   const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [newTask, setNewTask] = useState("");
   const [organizationName, setOrganizationName] = useState("MONK Studio");
+  const [organizationVertical, setOrganizationVertical] = useState<"business" | "education">("business");
   const [organizationSlug, setOrganizationSlug] = useState("monk-studio");
   const [projectName, setProjectName] = useState("MONK Workspace");
   const [projectCode, setProjectCode] = useState("MONK-001");
@@ -46,6 +48,7 @@ export default function App() {
       setOrganizationId(orgId);
       if (!orgId) {
         setOrganizationName("MONK Studio");
+        setOrganizationVertical("business");
         setProjects([]);
         setTasks([]);
         setProjectId("");
@@ -53,9 +56,10 @@ export default function App() {
         return;
       }
       const organizationResult = await supabase.from("organizations")
-        .select("name").eq("id", orgId).single();
+        .select("name,vertical").eq("id", orgId).single();
       if (organizationResult.error) throw organizationResult.error;
       setOrganizationName(organizationResult.data.name);
+      setOrganizationVertical(organizationResult.data.vertical === "education" ? "education" : "business");
       const projectResult = await supabase.from("projects")
         .select("id,name,code,description,due_date,visibility,status")
         .eq("organization_id", orgId)
@@ -157,7 +161,7 @@ export default function App() {
     setSaving(true); setWorkspaceError("");
     const { error } = await supabase.rpc("create_organization", {
       org_name: organizationName.trim(), org_slug: organizationSlug.toLowerCase().trim(),
-      org_country: "IN", org_timezone: "Asia/Kolkata", org_currency: "INR", org_locale: "en-IN", org_industry: "Technology"
+      org_country: "IN", org_timezone: "Asia/Kolkata", org_currency: "INR", org_locale: "en-IN", org_industry: organizationVertical === "education" ? "Education" : "Technology", org_vertical: organizationVertical
     });
     setSaving(false);
     if (error) { setWorkspaceError(error.message); return; }
@@ -249,7 +253,7 @@ export default function App() {
   const completed = tasks.filter(task => task.status === "done").length;
   const focusTime = `${String(Math.floor(focusSeconds / 60)).padStart(2, "0")}:${String(focusSeconds % 60).padStart(2, "0")}`;
   const openTasks = tasks.length - completed;
-  const nav = [{ name: "Overview", icon: LayoutGrid }, { name: "Projects", icon: Workflow }, { name: "Team", icon: Users }, { name: "Activity", icon: Activity }, { name: "Focus", icon: Target }];
+  const nav = [{ name: "Overview", icon: LayoutGrid }, { name: "Projects", icon: Workflow }, { name: "Team", icon: Users }, { name: "Activity", icon: Activity }, ...(organizationVertical === "education" ? [{ name: "Education", icon: GraduationCap }] : []), { name: "Focus", icon: Target }];
 
   if (isSupabaseConfigured && !session) return (
     <main className="auth-page"><div className="auth-card">
@@ -281,6 +285,7 @@ export default function App() {
       <p className="eyebrow">FIRST-TIME SETUP</p><h1>Create your<br /><em>workspace.</em></h1>
       <p className="muted">Your organization is the secure boundary for its projects and tasks.</p>
       <label>Workspace name<input required maxLength={100} value={organizationName} onChange={e => setOrganizationName(e.target.value)} /></label>
+      <label>Workspace type<select value={organizationVertical} onChange={e => setOrganizationVertical(e.target.value as "business" | "education")}><option value="business">Business workspace</option><option value="education">Education institution</option></select></label>
       <label>Workspace URL slug<input required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" maxLength={50} value={organizationSlug} onChange={e => setOrganizationSlug(e.target.value)} /></label>
       {workspaceError && <p className="notice">{workspaceError}</p>}
       <button className="primary full" disabled={saving}>{saving ? "Creating…" : "Create workspace"} <ArrowUpRight size={17} /></button>
@@ -288,7 +293,7 @@ export default function App() {
     </form></main>
   );
 
-  if (isSupabaseConfigured && session && workspaceReady && organizationId && projects.length === 0 && active === "Overview") return (
+  if (isSupabaseConfigured && session && workspaceReady && organizationId && organizationVertical === "business" && projects.length === 0 && active === "Overview") return (
     <main className="auth-page"><form className="auth-card" onSubmit={createProject}>
       <a className="brand" href="#"><span className="brand-mark">M</span> MONK<span className="brand-dot">.</span></a>
       <p className="eyebrow">WORKSPACE SETUP</p><h1>Create your first<br /><em>project.</em></h1>
@@ -334,6 +339,7 @@ export default function App() {
           </section>
           <section className="bottom-note"><div className="note-icon"><Sparkles size={18} /></div><div><b>Small steps. Serious momentum.</b><p>MONK brings your priorities, projects and focus into one calm workspace.</p></div><span className="note-tag">BUILT FOR BUILDERS</span></section>
           </>}
+          {isSupabaseConfigured && session && organizationId && organizationVertical === "education" && active === "Education" && <EducationManagement organizationId={organizationId} />}
           {isSupabaseConfigured && session && organizationId && (active === "Projects" || active === "Team" || active === "Activity") && <WorkspaceManagement
             view={active}
             organizationId={organizationId}
