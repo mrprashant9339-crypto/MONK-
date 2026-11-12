@@ -4,7 +4,7 @@ import type { Session } from "@supabase/supabase-js";
 import { isSupabaseConfigured, supabase } from "./lib/supabase";
 import WorkspaceManagement from "./components/WorkspaceManagement";
 
-type Project = { id: string; name: string; code: string };
+type Project = { id: string; name: string; code: string; description?: string | null; due_date?: string | null; visibility?: "internal" | "client_visible"; status?: "draft" | "active" | "at_risk" | "in_review" | "completed" };
 type Task = { id: string; title: string; status: "todo" | "in_progress" | "blocked" | "review" | "done"; priority: "low" | "medium" | "high" | "urgent"; due_date: string | null; project_id: string };
 const demoTasks: Task[] = [
   { id: "demo-1", title: "Define the next milestone", status: "todo", priority: "high", due_date: null, project_id: "demo" },
@@ -52,7 +52,7 @@ export default function App() {
         return;
       }
       const projectResult = await supabase.from("projects")
-        .select("id,name,code")
+        .select("id,name,code,description,due_date,visibility,status")
         .eq("organization_id", orgId)
         .is("deleted_at", null)
         .order("created_at", { ascending: true });
