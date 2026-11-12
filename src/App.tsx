@@ -93,6 +93,18 @@ export default function App() {
     if (session && supabase) void loadWorkspace();
   }, [session, loadWorkspace]);
 
+  useEffect(() => {
+    if (!focusRunning) return;
+    const timer = window.setInterval(() => {
+      setFocusSeconds(current => Math.max(0, current - 1));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [focusRunning]);
+
+  useEffect(() => {
+    if (focusSeconds === 0) setFocusRunning(false);
+  }, [focusSeconds]);
+
   async function signIn(mode: "login" | "signup") {
     if (!supabase) return;
     if (!email.trim() || password.length < 8) { setAuthMessage("Enter a valid email and a password with at least 8 characters."); return; }
