@@ -4,7 +4,8 @@ import { supabase } from "../lib/supabase";
 
 type ModuleKey = "overview" | "crm" | "projects" | "tasks" | "teams" | "files" | "activity" | "notifications" | "settings";
 type Row = Record<string, unknown> & { id?: string };
-type Props = { organizationId: string; organizationName: string; onBack: () => void };\nconst db = supabase as any;
+type Props = { organizationId: string; organizationName: string; onBack: () => void };
+const db = supabase as any;
 const modules: { key: ModuleKey; label: string; icon: typeof LayoutDashboard; table?: string }[] = [
   { key: "overview", label: "Overview", icon: LayoutDashboard },
   { key: "crm", label: "CRM leads", icon: BriefcaseBusiness, table: "leads" },
