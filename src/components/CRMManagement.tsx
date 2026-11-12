@@ -1,5 +1,5 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { Building2, Users, Target, Plus, Search, RefreshCw, Mail, Phone, ArrowUpRight } from "lucide-react";
+import { Building2, Users, Target, Plus, Search, RefreshCw, Mail, ArrowUpRight } from "lucide-react";
 import { supabase } from "../lib/supabase";
 
 type Lead = { id: string; name: string; email: string | null; phone: string | null; source: string; status: string; score: number; created_at: string };
