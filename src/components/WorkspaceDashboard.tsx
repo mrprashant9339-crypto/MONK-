@@ -34,10 +34,11 @@ export default function WorkspaceDashboard({ organizationId, organizationName, o
   const [userId,setUserId] = useState("");
   const selected = modules.find(m=>m.key===active) ?? modules[0];
 
-  useEffect(()=>{ void supabase.auth.getUser().then(({data})=>setUserId(data.user?.id??"")); },[]);
+  useEffect(()=>{ if(!supabase)return; void supabase.auth.getUser().then(({data})=>setUserId(data.user?.id??"")); },[]);
   const load = useCallback(async () => {
     setBusy(true); setError("");
     try {
+      if (!supabase) throw new Error("Supabase is not configured for this deployment.");
       if (selected.table) {
         let request = db.from(selected.table).select("*").eq("organization_id",organizationId).limit(50).order("created_at",{ascending:false});
         if (selected.table === "notifications" && userId) request = request.eq("user_id",userId);
@@ -54,6 +55,7 @@ export default function WorkspaceDashboard({ organizationId, organizationName, o
   useEffect(()=>{
     let cancelled=false;
     async function refreshSummary() {
+      if(!supabase)return;
       const tables=["companies","contacts","leads","projects","tasks","teams","files","opportunities"];
       const results=await Promise.all(tables.map(async table=>{
         const {count,error:countError}=await db.from(table).select("id",{count:"exact",head:true}).eq("organization_id",organizationId);
