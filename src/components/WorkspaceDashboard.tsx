@@ -4,7 +4,7 @@ import { supabase } from "../lib/supabase";
 
 type ModuleKey = "overview" | "crm" | "projects" | "tasks" | "teams" | "files" | "activity" | "notifications" | "settings";
 type Row = Record<string, unknown> & { id?: string };
-type Props = { organizationId: string; organizationName: string; onBack: () => void };
+type Props = { organizationId: string; organizationName: string; onBack: () => void };\nconst db = supabase as any;
 const modules: { key: ModuleKey; label: string; icon: typeof LayoutDashboard; table?: string }[] = [
   { key: "overview", label: "Overview", icon: LayoutDashboard },
   { key: "crm", label: "CRM", icon: BriefcaseBusiness, table: "companies" },
@@ -36,7 +36,7 @@ export default function WorkspaceDashboard({ organizationId, organizationName, o
     try {
       const table = selected.table;
       if (!table) { setRows([]); setBusy(false); return; }
-      let request = supabase.from(table).select("*").eq("organization_id",organizationId).limit(40);
+      let request = db.from(table).select("*").eq("organization_id",organizationId).limit(40);
       if (table === "notifications" && userId) request = request.eq("user_id",userId);
       if (table === "activities") request = request.order("created_at",{ascending:false});
       else request = request.order("created_at",{ascending:false});
@@ -64,7 +64,7 @@ export default function WorkspaceDashboard({ organizationId, organizationName, o
     e.preventDefault(); setBusy(true); setError(""); setNotice("");
     try {
       if(active==="teams") {
-        const {error:rpcError}=await supabase.rpc("create_team",{target_org:organizationId,team_name:newName,team_description:"",team_type:"functional",parent_team:null});
+        const {error:rpcError}=await db.rpc("create_team",{target_org:organizationId,team_name:newName,team_description:"",team_type:"functional",parent_team:null});
         if(rpcError)throw rpcError;
       } else if(active==="crm") {
         const {error:rpcError}=await supabase.rpc("create_lead",{lead_name:newName,lead_email:null,lead_phone:null,lead_source:"manual",lead_notes:"Created from MONK workspace"});
