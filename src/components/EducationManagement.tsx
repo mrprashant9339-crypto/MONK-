@@ -1,5 +1,5 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { BookOpen, Building2, CalendarDays, GraduationCap, Layers3, Plus, RefreshCw, School, Users } from "lucide-react";
+import { BookOpen, Building2, CalendarDays, CalendarCheck, Clock, GraduationCap, Layers3, Plus, RefreshCw, School, Users } from "lucide-react";
 import { supabase } from "../lib/supabase";
 
 type Institution = { id: string; institution_type: string; legal_name: string; short_name: string | null; affiliation: string | null; recognition_number: string | null; website: string | null; contact_email: string | null; contact_phone: string | null; established_year: number | null; verification_status: string };
@@ -10,14 +10,18 @@ type Program = { id: string; name: string; code: string; level: string; departme
 type Batch = { id: string; name: string; code: string; program_id: string; academic_year_id: string; semester: number | null; section: string | null; status: string };
 type Student = { id: string; admission_number: string; full_name: string; email: string | null; status: string; batch_id: string | null };
 type Faculty = { id: string; employee_number: string; full_name: string; email: string | null; designation: string | null; employment_status: string };
+type Subject = { id: string; name: string; code: string; program_id: string; semester: number | null; credits: number | null };
+type TimetableEntry = { id: string; batch_id: string; subject_id: string; faculty_id: string; weekday: number; starts_at: string; ends_at: string; room: string | null };
+type AttendanceSession = { id: string; batch_id: string; subject_id: string; faculty_id: string; session_date: string; starts_at: string | null; ends_at: string | null; status: string };
+type AttendanceRecord = { id: string; session_id: string; student_id: string; attendance_status: string };
 
 type Props = { organizationId: string };
-type Tab = "Institution" | "Campuses" | "Departments" | "Academics" | "Students" | "Faculty";
+type Tab = "Institution" | "Campuses" | "Departments" | "Academics" | "Students" | "Faculty" | "Timetable" | "Attendance";
 
 const tabs: { name: Tab; icon: typeof School }[] = [
   { name: "Institution", icon: School }, { name: "Campuses", icon: Building2 },
   { name: "Departments", icon: Layers3 }, { name: "Academics", icon: BookOpen },
-  { name: "Students", icon: GraduationCap }, { name: "Faculty", icon: Users }
+  { name: "Students", icon: GraduationCap }, { name: "Faculty", icon: Users }, { name: "Timetable", icon: Clock }, { name: "Attendance", icon: CalendarCheck }
 ];
 
 export default function EducationManagement({ organizationId }: Props) {
@@ -30,6 +34,12 @@ export default function EducationManagement({ organizationId }: Props) {
   const [batches, setBatches] = useState<Batch[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
   const [faculty, setFaculty] = useState<Faculty[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [timetableEntries, setTimetableEntries] = useState<TimetableEntry[]>([]);
+  const [attendanceSessions, setAttendanceSessions] = useState<AttendanceSession[]>([]);
+  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
+  const [selectedAttendanceSession, setSelectedAttendanceSession] = useState("");
+  const [attendanceMarks, setAttendanceMarks] = useState<Record<string,string>>({});
   const [institutionType, setInstitutionType] = useState("college");
   const [legalName, setLegalName] = useState("");
   const [shortName, setShortName] = useState("");
@@ -56,6 +66,11 @@ export default function EducationManagement({ organizationId }: Props) {
   const [programDepartment, setProgramDepartment] = useState("");
   const [programDuration, setProgramDuration] = useState("6");
   const [programSeats, setProgramSeats] = useState("");
+  const [subjectName, setSubjectName] = useState("");
+  const [subjectCode, setSubjectCode] = useState("");
+  const [subjectProgram, setSubjectProgram] = useState("");
+  const [subjectSemester, setSubjectSemester] = useState("1");
+  const [subjectCredits, setSubjectCredits] = useState("3");
   const [batchName, setBatchName] = useState("");
   const [batchCode, setBatchCode] = useState("");
   const [batchProgram, setBatchProgram] = useState("");
@@ -74,6 +89,19 @@ export default function EducationManagement({ organizationId }: Props) {
   const [facultyEmail, setFacultyEmail] = useState("");
   const [facultyDesignation, setFacultyDesignation] = useState("");
   const [facultyDepartment, setFacultyDepartment] = useState("");
+  const [timetableBatch, setTimetableBatch] = useState("");
+  const [timetableSubject, setTimetableSubject] = useState("");
+  const [timetableFaculty, setTimetableFaculty] = useState("");
+  const [timetableWeekday, setTimetableWeekday] = useState("1");
+  const [timetableStart, setTimetableStart] = useState("09:00");
+  const [timetableEnd, setTimetableEnd] = useState("10:00");
+  const [timetableRoom, setTimetableRoom] = useState("");
+  const [attendanceBatch, setAttendanceBatch] = useState("");
+  const [attendanceSubject, setAttendanceSubject] = useState("");
+  const [attendanceFaculty, setAttendanceFaculty] = useState("");
+  const [attendanceDate, setAttendanceDate] = useState(new Date().toISOString().slice(0,10));
+  const [attendanceStart, setAttendanceStart] = useState("09:00");
+  const [attendanceEnd, setAttendanceEnd] = useState("10:00");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -99,7 +127,11 @@ export default function EducationManagement({ organizationId }: Props) {
         supabase.from("education_programs").select("id,name,code,level,department_id,duration_semesters,total_seats,is_active").eq("organization_id", organizationId).order("name"),
         supabase.from("education_batches").select("id,name,code,program_id,academic_year_id,semester,section,status").eq("organization_id", organizationId).order("name"),
         supabase.from("education_students").select("id,admission_number,full_name,email,status,batch_id").eq("organization_id", organizationId).order("created_at", { ascending: false }).limit(100),
-        supabase.from("education_faculty").select("id,employee_number,full_name,email,designation,employment_status").eq("organization_id", organizationId).order("full_name").limit(100)
+        supabase.from("education_faculty").select("id,employee_number,full_name,email,designation,employment_status").eq("organization_id", organizationId).order("full_name").limit(100),
+        supabase.from("education_subjects").select("id,name,code,program_id,semester,credits").eq("organization_id", organizationId).order("name"),
+        supabase.from("education_timetable_entries").select("id,batch_id,subject_id,faculty_id,weekday,starts_at,ends_at,room").eq("organization_id", organizationId).order("weekday"),
+        supabase.from("education_attendance_sessions").select("id,batch_id,subject_id,faculty_id,session_date,starts_at,ends_at,status").eq("organization_id", organizationId).order("session_date", { ascending: false }).limit(100),
+        supabase.from("education_attendance_records").select("id,session_id,student_id,attendance_status").eq("organization_id", organizationId).limit(1000)
       ]);
       for (const result of results) if (result.error) throw result.error;
       const inst = results[0].data as Institution | null;
@@ -118,6 +150,10 @@ export default function EducationManagement({ organizationId }: Props) {
       setBatches((results[5].data ?? []) as Batch[]);
       setStudents((results[6].data ?? []) as Student[]);
       setFaculty((results[7].data ?? []) as Faculty[]);
+      setSubjects((results[8].data ?? []) as Subject[]);
+      setTimetableEntries((results[9].data ?? []) as TimetableEntry[]);
+      setAttendanceSessions((results[10].data ?? []) as AttendanceSession[]);
+      setAttendanceRecords((results[11].data ?? []) as AttendanceRecord[]);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Education records could not be loaded.");
     } finally { setBusy(false); }
@@ -192,6 +228,72 @@ export default function EducationManagement({ organizationId }: Props) {
       if (e) throw e;
       setProgramName(""); setProgramCode(""); setProgramSeats("");
     });
+  }
+
+  async function createSubject(event: FormEvent) {
+    await submit(event, async () => {
+      if (!subjectProgram) throw new Error("Select a programme for this subject.");
+      const { error: e } = await supabase!.from("education_subjects").insert({
+        organization_id: organizationId, name: subjectName.trim(), code: subjectCode.trim().toUpperCase(),
+        program_id: subjectProgram, semester: subjectSemester ? Number(subjectSemester) : null,
+        credits: subjectCredits ? Number(subjectCredits) : null
+      });
+      if (e) throw e;
+      setSubjectName(""); setSubjectCode("");
+    });
+  }
+
+  async function createTimetableEntry(event: FormEvent) {
+    await submit(event, async () => {
+      if (!timetableBatch || !timetableSubject || !timetableFaculty) throw new Error("Select batch, subject and faculty.");
+      const { error: e } = await supabase!.from("education_timetable_entries").insert({
+        organization_id: organizationId, batch_id: timetableBatch, subject_id: timetableSubject,
+        faculty_id: timetableFaculty, weekday: Number(timetableWeekday),
+        starts_at: timetableStart, ends_at: timetableEnd, room: timetableRoom.trim() || null
+      });
+      if (e) throw e;
+      setTimetableRoom("");
+    });
+  }
+
+  async function createAttendanceSession(event: FormEvent) {
+    await submit(event, async () => {
+      if (!attendanceBatch || !attendanceSubject || !attendanceFaculty) throw new Error("Select batch, subject and faculty.");
+      const { data, error: e } = await supabase!.from("education_attendance_sessions").insert({
+        organization_id: organizationId, batch_id: attendanceBatch, subject_id: attendanceSubject,
+        faculty_id: attendanceFaculty, session_date: attendanceDate,
+        starts_at: attendanceStart, ends_at: attendanceEnd, status: "open"
+      }).select("id").single();
+      if (e) throw e;
+      if (data?.id) setSelectedAttendanceSession(data.id);
+    });
+  }
+
+  async function saveAttendance() {
+    if (!supabase || !selectedAttendanceSession) return;
+    const session = attendanceSessions.find(s => s.id === selectedAttendanceSession);
+    if (!session) { setError("Select an attendance session."); return; }
+    const roster = students.filter(student => student.batch_id === session.batch_id);
+    if (!roster.length) { setError("No students are assigned to this batch yet."); return; }
+    setBusy(true); setError(""); setNotice("");
+    try {
+      const { data: authData, error: authError } = await supabase.auth.getUser();
+      if (authError) throw authError;
+      const rows = roster.map(student => ({
+        organization_id: organizationId, session_id: session.id, student_id: student.id,
+        attendance_status: attendanceMarks[student.id] || "present", marked_by: authData.user?.id ?? null
+      }));
+      const { error: saveError } = await supabase.from("education_attendance_records")
+        .upsert(rows, { onConflict: "organization_id,session_id,student_id" });
+      if (saveError) throw saveError;
+      const { error: updateError } = await supabase.from("education_attendance_sessions")
+        .update({ status: "submitted" }).eq("organization_id", organizationId).eq("id", session.id);
+      if (updateError) throw updateError;
+      setNotice("Attendance saved for the selected batch.");
+      await load();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Attendance could not be saved.");
+    } finally { setBusy(false); }
   }
 
   async function createBatch(event: FormEvent) {
