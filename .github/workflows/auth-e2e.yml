@@ -17,8 +17,6 @@ jobs:
       MONK_E2E_OWNER_PASSWORD: ${{ secrets.MONK_E2E_OWNER_PASSWORD }}
       MONK_E2E_INVITEE_EMAIL: ${{ secrets.MONK_E2E_INVITEE_EMAIL }}
       MONK_E2E_INVITEE_PASSWORD: ${{ secrets.MONK_E2E_INVITEE_PASSWORD }}
-      MONK_E2E_OWNER_ORG_ID: ${{ secrets.MONK_E2E_OWNER_ORG_ID }}
-      MONK_E2E_INVITEE_ORG_ID: ${{ secrets.MONK_E2E_INVITEE_ORG_ID }}
       MONK_E2E_ALLOW_PRODUCTION: "false"
     steps:
       - uses: actions/checkout@v4
@@ -30,7 +28,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          required=(MONK_E2E_SUPABASE_URL MONK_E2E_SUPABASE_ANON_KEY MONK_E2E_OWNER_EMAIL MONK_E2E_OWNER_PASSWORD MONK_E2E_INVITEE_EMAIL MONK_E2E_INVITEE_PASSWORD MONK_E2E_OWNER_ORG_ID MONK_E2E_INVITEE_ORG_ID)
+          required=(MONK_E2E_SUPABASE_URL MONK_E2E_SUPABASE_ANON_KEY MONK_E2E_OWNER_EMAIL MONK_E2E_OWNER_PASSWORD MONK_E2E_INVITEE_EMAIL MONK_E2E_INVITEE_PASSWORD)
           missing=()
           for name in "${required[@]}"; do
             if [[ -z "${!name:-}" ]]; then missing+=("$name"); fi
