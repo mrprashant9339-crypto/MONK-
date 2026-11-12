@@ -35,7 +35,7 @@ export default function AuthExperience({ onClose }: Props) {
 
   async function submit(e:FormEvent) {
     e.preventDefault();
-    if(!isSupabaseConfigured){setMessage("Authentication is not configured for this deployment. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.");return;}
+    if(!supabase || !isSupabaseConfigured){setMessage("Authentication is not configured for this deployment. Set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY.");return;}
     setBusy(true);setMessage("");
     try {
       if(mode==="signup") {
@@ -69,7 +69,7 @@ export default function AuthExperience({ onClose }: Props) {
   }
 
   async function google() {
-    if(!isSupabaseConfigured)return;
+    if(!supabase || !isSupabaseConfigured)return;
     if(!acceptedLegal){setMessage("Accept the Terms of Service and Privacy Policy before continuing with Google.");return;}
     setBusy(true);setMessage("");
     const {error}=await supabase.auth.signInWithOAuth({provider:"google",options:{redirectTo:window.location.origin}});
