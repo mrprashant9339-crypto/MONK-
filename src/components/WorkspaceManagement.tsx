@@ -1,6 +1,7 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { Activity, Archive, Building2, Check, ChevronDown, Copy, MailPlus, Pencil, Plus, RefreshCw, Shield, Trash2, Users } from "lucide-react";
 import { supabase } from "../lib/supabase";
+import { sendOrganizationInvitation } from "../lib/invitationEmail";
 
 type Project = { id: string; name: string; code: string; description?: string | null; due_date?: string | null; visibility?: "internal" | "client_visible"; status?: "draft" | "active" | "at_risk" | "in_review" | "completed" };
 type Member = { member_id: string; user_id: string; email: string; full_name: string; role: string; status: string; created_at: string };
@@ -33,6 +34,7 @@ export default function WorkspaceManagement({ view, organizationId, organization
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("contributor");
   const [inviteUrl, setInviteUrl] = useState("");
+  const [inviteDelivery, setInviteDelivery] = useState("");
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -188,7 +190,10 @@ export default function WorkspaceManagement({ view, organizationId, organization
       if (!row?.invitation_token) setError("Invitation was created, but no one-time token was returned. Check the invitation list before retrying.");
       else {
         const url = `${window.location.origin}/#invite=${encodeURIComponent(row.invitation_token)}`;
-        setInviteUrl(url); setInviteEmail(""); setNotice("Invitation created. Copy the one-time link and send it to the invited email address.");
+        setInviteUrl(url); setInviteEmail("");
+        const delivery = await sendOrganizationInvitation(organizationId, inviteEmail.trim(), inviteRole, row.invitation_token);
+        setInviteDelivery(delivery.message);
+        setNotice(delivery.sent ? "Invitation created and emailed." : "Invitation created. Copy the link to share it manually.");
         await loadInvitations();
       }
     }
@@ -270,7 +275,7 @@ export default function WorkspaceManagement({ view, organizationId, organization
           <label>Organization role<select value={inviteRole} onChange={e => setInviteRole(e.target.value)}>{assignableRoles.filter(role => role !== "admin" || currentRole === "owner").map(role => <option key={role} value={role}>{role}</option>)}</select></label>
           <button className="primary" disabled={busy}><MailPlus size={15}/> Create invitation</button>
         </form>
-        {inviteUrl && <div className="invite-link"><input readOnly aria-label="Invitation link" value={inviteUrl}/><button onClick={() => void copyInvitation()}><Copy size={14}/> Copy link</button></div>}
+        {inviteUrl && <div className="invite-link"><input readOnly aria-label="Invitation link" value={inviteUrl}/><button onClick={() => void copyInvitation()}><Copy size={14}/> Copy link</button><small>{inviteDelivery}</small></div>}
         <div className="management-subheading invite-heading"><div><MailPlus size={16}/><b>Invitations</b></div><span>{invitations.length} records</span></div>
         <div className="management-list">{invitations.map(invitation => <article className="management-row" key={invitation.invitation_id}>
           <span className="member-info"><b>{invitation.email}</b><small>{invitation.role} · expires {new Date(invitation.expires_at).toLocaleDateString()}</small></span>
