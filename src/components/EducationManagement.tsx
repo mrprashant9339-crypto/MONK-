@@ -174,6 +174,7 @@ export default function EducationManagement({ organizationId }: Props) {
   }, [organizationId]);
 
   useEffect(() => { void load(); }, [load]);
+  useEffect(() => { if (memberRole === "hod" && ["Institution","Campuses","Guardians"].includes(tab)) setTab("Departments"); }, [memberRole, tab]);
 
   async function submit(event: FormEvent, action: () => Promise<void>) {
     event.preventDefault(); if (!supabase) return;
@@ -396,7 +397,7 @@ export default function EducationManagement({ organizationId }: Props) {
         <article><Layers3 size={17}/><strong>{departments.length}</strong><span>Departments</span></article>
         <article><GraduationCap size={17}/><strong>{students.length}</strong><span>Students</span></article>
       </div>
-      <nav className="education-tabs" aria-label="Education modules">{tabs.map(item => <button key={item.name} className={tab === item.name ? "active" : ""} onClick={() => setTab(item.name)}><item.icon size={15}/>{item.name}</button>)}</nav>
+      <nav className="education-tabs" aria-label="Education modules">{visibleTabs.map(item => <button key={item.name} className={tab === item.name ? "active" : ""} onClick={() => setTab(item.name)}><item.icon size={15}/>{item.name}</button>)}</nav>
 
       {tab === "Institution" && <div className="education-grid">
         <form className="education-card education-form" onSubmit={saveInstitution}>
@@ -535,7 +536,7 @@ export default function EducationManagement({ organizationId }: Props) {
         {selectedAttendanceSession && (() => { const session = attendanceSessions.find(s => s.id === selectedAttendanceSession); const roster = students.filter(student => student.batch_id === session?.batch_id); return <div className="education-card education-wide-list"><h3>Class register <span>{roster.length} students</span></h3>{roster.map(student => <label className="attendance-row" key={student.id}><span><b>{student.full_name}</b><small>{student.admission_number}</small></span><select value={attendanceMarks[student.id] ?? "present"} onChange={e => setAttendanceMarks(current => ({...current,[student.id]:e.target.value}))}><option value="present">Present</option><option value="absent">Absent</option><option value="late">Late</option><option value="excused">Excused</option></select></label>)}{!roster.length && <p className="education-empty">No students are assigned to this batch.</p>}<button className="primary" disabled={busy || !roster.length} onClick={() => void saveAttendance()}><CalendarCheck size={15}/> Save attendance</button></div>; })()}
       </div>}
 
-      {(["Admissions","Guardians","Documents","Examinations","Reports"] as Tab[]).includes(tab) && <EducationOperations organizationId={organizationId} tab={tab as "Admissions" | "Guardians" | "Documents" | "Examinations" | "Reports"} />}
+      {(["Admissions","Guardians","Documents","Examinations","Reports"] as Tab[]).includes(tab) && <EducationOperations organizationId={organizationId} tab={tab as "Admissions" | "Guardians" | "Documents" | "Examinations" | "Reports"} readOnly={memberRole === "hod"} />}
       <footer className="education-footer"><span>{institution?.legal_name ?? "Institution profile not configured"}</span><span>Records loaded from the active organization only</span></footer>
     </section>
   );
