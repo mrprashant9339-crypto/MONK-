@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useState } from "react";
 import { ArrowLeft, ArrowUpRight, LoaderCircle, ShieldCheck, X } from "lucide-react";
-import { supabase } from "../lib/supabase";
+import { isSupabaseConfigured, supabase } from "../lib/supabase";
 import OrganizationHub from "./OrganizationHub";
 
 type Props = { onClose: () => void };
@@ -11,12 +11,12 @@ export default function AuthExperience({ onClose }: Props) {
   const [email,setEmail]=useState(""); const [password,setPassword]=useState(""); const [newPassword,setNewPassword]=useState("");
   const [busy,setBusy]=useState(false); const [message,setMessage]=useState(""); const [acceptedLegal,setAcceptedLegal]=useState(false);
   useEffect(()=>{ if(!supabase)return; supabase.auth.getSession().then(({data})=>{if(data.session)setMode("organization")}); const {data}=supabase.auth.onAuthStateChange((event,s)=>{if(event==="PASSWORD_RECOVERY")setMode("reset");else if(s)setMode("organization")});return()=>data.subscription.unsubscribe();},[]);
-  async function submit(e:FormEvent){e.preventDefault();if(!supabase){setMessage("Authentication is not configured. Set the Supabase URL and publishable key.");return;}setBusy(true);setMessage("");try{
+  async function submit(e:FormEvent){e.preventDefault();if(!isSupabaseConfigured){setMessage("Authentication is not configured for this deployment. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.");return;}setBusy(true);setMessage("");try{
     if(mode==="signup"){if(!first.trim()||!last.trim()){setMessage("Enter your first and last name.");return;}if(!acceptedLegal){setMessage("Accept the Terms of Service and Privacy Policy to create an account.");return;}if(password.length<10||!/[A-Z]/.test(password)||!/[a-z]/.test(password)||!/[0-9]/.test(password)){setMessage("Use at least 10 characters with uppercase, lowercase and a number.");return;}const {data,error}=await supabase.auth.signUp({email:email.trim(),password,options:{emailRedirectTo:window.location.href, data:{full_name:(first.trim()+" "+last.trim()),accepted_legal:true,terms_version:"2026-11-11",privacy_version:"2026-11-11"}}});if(error)throw error;if(data.session){setMode("organization")}else setMessage("Account created. Check your email to verify your address, then return to sign in.");}
     else if(mode==="login"){const {error}=await supabase.auth.signInWithPassword({email:email.trim(),password});if(error)throw error;setMode("organization");}
     else if(mode==="forgot"){const {error}=await supabase.auth.resetPasswordForEmail(email.trim(),{redirectTo:window.location.href});if(error)throw error;setMessage("If an account exists for this email, a password reset link has been sent.");} else if(mode==="reset"){if(newPassword.length<10||!/[A-Z]/.test(newPassword)||!/[a-z]/.test(newPassword)||!/[0-9]/.test(newPassword))throw new Error("Use at least 10 characters with uppercase, lowercase and a number.");const {error}=await supabase.auth.updateUser({password:newPassword});if(error)throw error;setMessage("Password updated. You can continue to your workspace.");setMode("organization");}
   }catch(err){setMessage(err instanceof Error?err.message:"Authentication request failed.");}finally{setBusy(false)}}
-  async function google(){if(!supabase)return;setBusy(true);const {error}=await supabase.auth.signInWithOAuth({provider:"google",options:{redirectTo:window.location.href}});if(error){setMessage(error.message);setBusy(false)}}
+  async function google(){if(!isSupabaseConfigured)return;setBusy(true);const {error}=await supabase.auth.signInWithOAuth({provider:"google",options:{redirectTo:window.location.href}});if(error){setMessage(error.message);setBusy(false)}}
   async function logout(){await supabase?.auth.signOut();setMode("login");setMessage("")}
   return <div className="auth-overlay" role="dialog" aria-modal="true" aria-label="MONK account access"><div className="auth-panel"><button className="auth-close" onClick={onClose} aria-label="Close"><X size={19}/></button><a className="wordmark auth-wordmark" href="#">monk<span>.</span></a>
     {mode==="organization"?<OrganizationHub onSignOut={logout} />
