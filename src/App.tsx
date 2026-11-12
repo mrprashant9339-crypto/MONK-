@@ -113,14 +113,14 @@ export default function App() {
 
   useEffect(() => {
     if (!session || !supabase) return;
-    const token = new URLSearchParams(window.location.search).get("invite");
+    const token = new URLSearchParams(window.location.hash.replace(/^#/, "")).get("invite");
     if (!token) return;
     let active = true;
     void (async () => {
       const { error } = await supabase.rpc("accept_organization_invitation", { invite_token: token });
       if (!active) return;
       if (error) { setWorkspaceError(error.message); return; }
-      window.history.replaceState({}, "", window.location.pathname);
+      window.history.replaceState({}, "", window.location.pathname + window.location.search);
       setWorkspaceError("");
       setActive("Team");
       await loadWorkspace();
