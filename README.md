@@ -78,7 +78,7 @@ Phase 2 database RPCs are defined in `supabase/migrations/20261112065511_phase_2
 
 ## Phase 3 — Education Management System
 
-The education vertical reuses the existing organization tenant boundary. During first-time workspace creation, users can choose Business or Education. Existing business organizations are not converted.
+The education vertical reuses the existing organization tenant boundary. During first-time setup or from the workspace management header, users can create a new Business or Education organization. The existing organization is preserved and the new organization becomes active. Existing business organizations are not converted.
 
 ### Education schema
 - Institution profile and verification state; campuses and departments.
