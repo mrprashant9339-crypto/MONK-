@@ -136,3 +136,19 @@
 @media(max-width:900px){.sidebar{width:225px}.main{width:calc(100% - 225px);margin-left:225px}.content{padding:30px 25px}}
 @media(max-width:640px){.sidebar{position:sticky;top:0;z-index:5;width:100%;padding:12px 15px;border-bottom:1px solid #303138;background:#14151a}.sidebar .brand{padding:0;font-size:17px}.workspace-switch,.monk-navigation,.sidebar-bottom{display:none}.app-shell{display:block}.main{width:100%;margin:0}.topbar{height:54px;padding:0 16px}.content{padding:24px 16px}.welcome-row{align-items:flex-start;flex-direction:column;gap:14px}.welcome-row h1{font-size:28px}.stats-grid{gap:8px}.stat-card{padding:13px 11px;min-height:110px}.stat-card>strong{font-size:24px}.stat-card>small{font-size:9px}.work-grid{grid-template-columns:1fr}.module-hub-head{padding:21px}.module-cards{grid-template-columns:1fr}.module-card{min-height:0;padding:17px}.module-orb{width:44px;height:44px}.focus-panel{min-height:340px}}
 @media(prefers-reduced-motion:reduce){.nav-item,.primary,.module-card,.module-hub{animation:none;transition:none}}
+
+
+/* Mobile-first navigation: keep every workspace module reachable on phones */
+@media(max-width:640px){
+  .sidebar{position:relative;top:auto;padding:12px 14px 10px}
+  .sidebar .brand{padding:0;font-size:17px}
+  .monk-navigation{display:flex;flex-direction:row;gap:14px;max-height:none;overflow-x:auto;overflow-y:hidden;margin-top:11px;padding:0 0 4px;scrollbar-width:thin}
+  .nav-section{display:flex;flex:none;align-items:center;gap:5px}
+  .nav-section .side-label{display:none}
+  .nav-item{height:35px;flex:none;white-space:nowrap;padding:0 10px;font-size:10px}
+  .nav-item svg{width:14px;height:14px}
+  .nav-count{display:none}
+  .sidebar .workspace-switch,.sidebar-bottom{display:none}
+  .main{width:100%;margin:0}
+  .topbar{height:51px}
+}
