@@ -1,5 +1,7 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { BookOpen, Building2, CalendarDays, CalendarCheck, Clock, GraduationCap, Layers3, Plus, RefreshCw, School, Users } from "lucide-react";
+import { BookOpen, Building2, CalendarDays, CalendarCheck, Clock, GraduationCap, Layers3, Plus, RefreshCw, School, Users, ClipboardList, FileCheck2, UserRound, BarChart3 } from "lucide-react";
+import EducationOperations from "./EducationOperations";
+import EducationPortal from "./EducationPortal";
 import { supabase } from "../lib/supabase";
 
 type Institution = { id: string; institution_type: string; legal_name: string; short_name: string | null; affiliation: string | null; recognition_number: string | null; website: string | null; contact_email: string | null; contact_phone: string | null; established_year: number | null; verification_status: string };
@@ -16,16 +18,17 @@ type AttendanceSession = { id: string; batch_id: string; subject_id: string; fac
 type AttendanceRecord = { id: string; session_id: string; student_id: string; attendance_status: string };
 
 type Props = { organizationId: string };
-type Tab = "Institution" | "Campuses" | "Departments" | "Academics" | "Students" | "Faculty" | "Timetable" | "Attendance";
+type Tab = "Institution" | "Campuses" | "Departments" | "Academics" | "Students" | "Faculty" | "Timetable" | "Attendance" | "Admissions" | "Guardians" | "Documents" | "Examinations" | "Reports";
 
 const tabs: { name: Tab; icon: typeof School }[] = [
   { name: "Institution", icon: School }, { name: "Campuses", icon: Building2 },
   { name: "Departments", icon: Layers3 }, { name: "Academics", icon: BookOpen },
-  { name: "Students", icon: GraduationCap }, { name: "Faculty", icon: Users }, { name: "Timetable", icon: Clock }, { name: "Attendance", icon: CalendarCheck }
+  { name: "Students", icon: GraduationCap }, { name: "Faculty", icon: Users }, { name: "Timetable", icon: Clock }, { name: "Attendance", icon: CalendarCheck }, { name: "Admissions", icon: ClipboardList }, { name: "Guardians", icon: UserRound }, { name: "Documents", icon: FileCheck2 }, { name: "Examinations", icon: BookOpen }, { name: "Reports", icon: BarChart3 }
 ];
 
 export default function EducationManagement({ organizationId }: Props) {
   const [tab, setTab] = useState<Tab>("Institution");
+  const [memberRole, setMemberRole] = useState("");
   const [institution, setInstitution] = useState<Institution | null>(null);
   const [campuses, setCampuses] = useState<Campus[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -116,8 +119,11 @@ export default function EducationManagement({ organizationId }: Props) {
       const { data: member, error: memberError } = await supabase.from("organization_members")
         .select("role").eq("organization_id", organizationId).eq("user_id", authData.user.id).eq("status", "active").maybeSingle();
       if (memberError) throw memberError;
-      if (!member || !["owner","admin","manager"].includes(member.role)) {
-        throw new Error("Education administration is currently restricted to institution owners, admins and HOD-level managers. Teacher and student portals are the next Phase 3 delivery.");
+      if (!member) throw new Error("An active organization membership is required.");
+      setMemberRole(member.role);
+      if (["teacher","student","parent"].includes(member.role)) return;
+      if (!["owner","admin","manager","principal","hod"].includes(member.role)) {
+        throw new Error("Your organization role does not have access to the education workspace.");
       }
       const results = await Promise.all([
         supabase.from("education_institutions").select("*").eq("organization_id", organizationId).maybeSingle(),
@@ -339,6 +345,10 @@ export default function EducationManagement({ organizationId }: Props) {
   const programLabel = (id: string) => programs.find(p => p.id === id)?.name ?? "Programme";
   const yearLabel = (id: string) => years.find(y => y.id === id)?.name ?? "Academic year";
 
+  if (["teacher","student","parent"].includes(memberRole)) {
+    return <EducationPortal organizationId={organizationId} role={memberRole as "teacher" | "student" | "parent"} />;
+  }
+
   return (
     <section className="education-page">
       <header className="education-heading">
@@ -490,6 +500,7 @@ export default function EducationManagement({ organizationId }: Props) {
         {selectedAttendanceSession && (() => { const session = attendanceSessions.find(s => s.id === selectedAttendanceSession); const roster = students.filter(student => student.batch_id === session?.batch_id); return <div className="education-card education-wide-list"><h3>Class register <span>{roster.length} students</span></h3>{roster.map(student => <label className="attendance-row" key={student.id}><span><b>{student.full_name}</b><small>{student.admission_number}</small></span><select value={attendanceMarks[student.id] ?? "present"} onChange={e => setAttendanceMarks(current => ({...current,[student.id]:e.target.value}))}><option value="present">Present</option><option value="absent">Absent</option><option value="late">Late</option><option value="excused">Excused</option></select></label>)}{!roster.length && <p className="education-empty">No students are assigned to this batch.</p>}<button className="primary" disabled={busy || !roster.length} onClick={() => void saveAttendance()}><CalendarCheck size={15}/> Save attendance</button></div>; })()}
       </div>}
 
+      {(["Admissions","Guardians","Documents","Examinations","Reports"] as Tab[]).includes(tab) && <EducationOperations organizationId={organizationId} tab={tab as "Admissions" | "Guardians" | "Documents" | "Examinations" | "Reports"} />}
       <footer className="education-footer"><span>{institution?.legal_name ?? "Institution profile not configured"}</span><span>Records loaded from the active organization only</span></footer>
     </section>
   );
