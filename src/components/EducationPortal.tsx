@@ -1,6 +1,6 @@
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
-import { BookOpen, CalendarCheck, FileText, GraduationCap, RefreshCw, ShieldCheck, Users } from "lucide-react";
+import { BookOpen, CalendarCheck, FileText, GraduationCap, RefreshCw, Users } from "lucide-react";
 
 type Role = "teacher"|"student"|"parent";
 type Student = { id:string; full_name:string; admission_number:string; batch_id:string|null; program_id?:string|null; department_id?:string|null; status:string; email:string|null };
