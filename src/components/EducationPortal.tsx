@@ -102,8 +102,10 @@ export default function EducationPortal({organizationId,role}:Props) {
  async function selectTeacherExamSubject(id:string){
   setTeacherResultSubject(id);if(!supabase)return;
   const item=teacherExamSubjects.find(x=>x.id===id);const exam=teacherExams.find(x=>x.id===item?.exam_id);
-  if(!item||!exam?.batch_id){setTeacherResultRoster([]);return;}
-  const {data,error:e}=await supabase.from("education_students").select("id,full_name,admission_number,batch_id,status,email").eq("organization_id",organizationId).eq("batch_id",exam.batch_id);
+  if(!item||!exam){setTeacherResultRoster([]);return;}
+  const assignedBatchIds=exam.batch_id?[exam.batch_id]:Array.from(new Set(timetable.filter(t=>t.subject_id===item.subject_id).map(t=>t.batch_id)));
+  if(!assignedBatchIds.length){setTeacherResultRoster([]);setError("No assigned class batches were found for this subject.");return;}
+  const {data,error:e}=await supabase.from("education_students").select("id,full_name,admission_number,batch_id,status,email").eq("organization_id",organizationId).in("batch_id",assignedBatchIds);
   if(e){setError(e.message);return;}setTeacherResultRoster((data??[]) as Student[]);
  }
  async function saveTeacherResults(){
