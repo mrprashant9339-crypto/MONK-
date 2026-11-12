@@ -12,7 +12,7 @@ React + Vite + TypeScript application foundation connected to the MONK Supabase 
 ```bash
 npm install
 npm run dev
-``
+```
 
 The frontend has the MONK Supabase project URL and publishable key as safe public defaults. You can override them with `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. The publishable key is intentionally public; never put a service-role/secret key in frontend code.
 
@@ -57,7 +57,7 @@ Cloudflare Worker configuration is in `wrangler.jsonc`. Production Worker domain
 - Task CRUD is not fully complete: task create, status update, title/priority/due-date edit and soft archive are implemented; task assignment UI, comments and bulk operations remain pending.
 - Project management supports create, edit and soft archive. Due date, visibility and status are preserved when editing through the current compact edit dialog.
 - Focus timer runs locally in the browser; focus sessions are not yet persisted or included in analytics.
-- Password recovery, OAuth providers, invitation management UI, team administration, file uploads, notifications and realtime subscriptions remain pending.
+- Password recovery, OAuth providers, invitation email delivery, file uploads, notifications and realtime subscriptions remain pending.
 - Run the build and tenant-isolation integration tests before production deployment.
 
 ## Phase 2 workspace management
