@@ -82,6 +82,15 @@ export default function EducationManagement({ organizationId }: Props) {
     if (!supabase || !organizationId) return;
     setBusy(true); setError("");
     try {
+      const { data: authData, error: authError } = await supabase.auth.getUser();
+      if (authError) throw authError;
+      if (!authData.user) throw new Error("Sign in to access institution management.");
+      const { data: member, error: memberError } = await supabase.from("organization_members")
+        .select("role").eq("organization_id", organizationId).eq("user_id", authData.user.id).eq("status", "active").maybeSingle();
+      if (memberError) throw memberError;
+      if (!member || !["owner","admin","manager"].includes(member.role)) {
+        throw new Error("Education administration is currently restricted to institution owners, admins and HOD-level managers. Teacher and student portals are the next Phase 3 delivery.");
+      }
       const results = await Promise.all([
         supabase.from("education_institutions").select("*").eq("organization_id", organizationId).maybeSingle(),
         supabase.from("education_campuses").select("id,name,code,city,state,is_primary,is_active").eq("organization_id", organizationId).order("name"),
