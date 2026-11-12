@@ -315,7 +315,7 @@ export default function App() {
       <main className="main">
         <header className="topbar"><div className="crumb">Workspace <span>/</span> {active}</div><div className="top-actions"><button className="icon-btn" aria-label="Search"><Search size={18} /></button><button className="icon-btn" aria-label="Notifications"><Bell size={18} /></button><div className="top-avatar">P</div></div></header>
         <div className="content">
-          <div className="welcome-row"><div><p className="eyebrow"><Sparkles size={13} /> YOUR WORKSPACE</p><h1>Good to have you here<span>.</span></h1><p className="muted">A clear space for your best work. Start with what matters today.</p></div><button className="primary" onClick={() => document.getElementById("new-task")?.focus()}><Plus size={17} /> New task</button></div>
+          <div className="welcome-row"><div><p className="eyebrow"><Sparkles size={13} /> YOUR WORKSPACE</p><h1>Good to have you here<span>.</span></h1><p className="muted">A clear space for your best work. Start with what matters today.</p></div>{(active === "Overview" || active === "Focus") && <button className="primary" onClick={() => document.getElementById("new-task")?.focus()}><Plus size={17} /> New task</button>}</div>
           {!isSupabaseConfigured && <div className="config-banner"><Zap size={17} /><span><b>Preview mode</b> — add Supabase environment variables to enable persistent tasks and authentication.</span></div>}
           {workspaceError && <div className="error-banner" role="alert">{workspaceError}<button onClick={() => void loadWorkspace()}>Retry</button></div>}
           {loading && <div className="loading-line"><LoaderCircle size={15} /> Syncing workspace…</div>}
