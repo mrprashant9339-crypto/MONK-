@@ -112,6 +112,7 @@ export default function WorkspaceManagement({ view, organizationId, projects, pr
     const code = window.prompt("Project code", project.code);
     if (code === null) return;
     const description = window.prompt("Project description (leave blank to clear)", project.description ?? "");
+    if (description === null) return;
     setBusy(true); setError(""); setNotice("");
     const { error: rpcError } = await supabase.rpc("update_project_details", {
       target_project_id: project.id, next_name: name.trim(), next_code: code.trim().toUpperCase(),
