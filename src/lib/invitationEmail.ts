@@ -1,5 +1,6 @@
 import { supabase } from "./supabase";
 
+// Email delivery is best-effort; the one-time invitation link remains the fallback.
 export type InvitationDelivery = { sent: boolean; message: string };
 
 export async function sendOrganizationInvitation(
