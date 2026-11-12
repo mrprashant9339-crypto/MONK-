@@ -46,11 +46,10 @@ Test signup confirmation and password recovery using two dedicated test mailboxe
 In Google Cloud Console create a Web application OAuth client. Set Authorized JavaScript origins to `https://monk.monster` (and local origin only during development). Set its Authorized redirect URI to the exact Supabase callback URL shown on Authentication → Providers → Google, normally `https://<project-ref>.supabase.co/auth/v1/callback`. Enable Google provider in Supabase and store Client ID/Secret only in the provider settings. Add `https://monk.monster/**` and local development callback to Supabase URL Configuration. Never commit provider secrets.
 
 ### Real two-user E2E
-A manual GitHub Actions workflow is available at `.github/workflows/auth-e2e.yml`. Configure these GitHub Actions repository secrets using a **staging Supabase project**, two separate verified test accounts and two separate organizations:
+A manual GitHub Actions workflow is available at `.github/workflows/auth-e2e.yml`. Configure these GitHub Actions repository secrets using a **staging Supabase project**, two separate verified test accounts. The E2E test creates two isolated organizations through the authenticated `create_organization` RPC, so organization IDs are not stored as GitHub secrets:
 - `MONK_E2E_SUPABASE_URL`
 - `MONK_E2E_SUPABASE_ANON_KEY`
 - `MONK_E2E_OWNER_EMAIL`, `MONK_E2E_OWNER_PASSWORD`
 - `MONK_E2E_INVITEE_EMAIL`, `MONK_E2E_INVITEE_PASSWORD`
-- `MONK_E2E_OWNER_ORG_ID`, `MONK_E2E_INVITEE_ORG_ID`
 
 Then run GitHub Actions → MONK Auth Multi-user E2E → Run workflow. The workflow fails immediately if any required secret is missing (it never reports a skipped E2E job as a successful test). The test checks two independent logins, profile and legal-consent records, invitation authorization, token creation, acceptance, role assignment, single-use enforcement, organization switching and cross-tenant denial. It refuses to mutate the production MONK project by default. Do not place credentials in source code, issue comments or chat.
