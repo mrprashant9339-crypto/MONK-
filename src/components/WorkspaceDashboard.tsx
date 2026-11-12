@@ -72,7 +72,7 @@ export default function WorkspaceDashboard({ organizationId, organizationName, o
       let result;
       if(active==="crm") result=await db.rpc("create_lead",{lead_name:name.trim(),lead_email:email.trim()||null,lead_phone:null,lead_source:"manual",lead_notes:"Created from MONK workspace"});
       else if(active==="teams") result=await db.rpc("create_team",{target_org:organizationId,team_name:name.trim(),team_description:"",team_type:"functional",parent_team:null});
-      else if(active==="projects") result=await db.rpc("create_project",{project_name:name.trim(),project_code:name.trim().toUpperCase().replace(/[^A-Z0-9]+/g,"-").slice(0,20),project_description:"",project_client_company_id:null,project_due_date:null,project_visibility:"organization"});
+      else if(active==="projects") result=await db.rpc("create_project",{project_name:name.trim(),project_code:name.trim().toUpperCase().replace(/[^A-Z0-9]+/g,"-").slice(0,20),project_description:"",project_client_company_id:null,project_due_date:null,project_visibility:"internal"});
       else if(active==="tasks") {
         if(!projectId) throw new Error("Select a project before creating a task.");
         result=await db.rpc("create_task",{task_project_id:projectId,task_title:name.trim(),task_due_date:null,task_priority:"medium"});
