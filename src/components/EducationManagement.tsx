@@ -30,6 +30,7 @@ const tabs: { name: Tab; icon: typeof School }[] = [
 export default function EducationManagement({ organizationId }: Props) {
   const [tab, setTab] = useState<Tab>("Institution");
   const [memberRole, setMemberRole] = useState("");
+  const visibleTabs: typeof tabs = memberRole === "hod" ? tabs.filter(item => !["Institution","Campuses","Guardians"].includes(item.name)) : tabs;
   const [institution, setInstitution] = useState<Institution | null>(null);
   const [campuses, setCampuses] = useState<Campus[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
