@@ -92,6 +92,7 @@ All 13 education tables are organization-scoped, have RLS enabled, and use organ
 
 ### Phase 3 verification
 - `supabase/tests/phase_3_education_security.sql` executed against the connected Supabase database and passed.
+- GitHub Actions CI run #133 passed: `npm install` and `npm run build` (`tsc -b && vite build`) both succeeded. Phase 3 PR #6 was merged into `main`.
 - Tests assert 13 tables, RLS, tenant-vertical guards, revoked anonymous privileges, authenticated read access and audit triggers.
 - No institution, campus, student, faculty or attendance sample data was inserted. Existing business organizations were not converted.
 - Create an Education organization to use the education workspace; existing project organizations are currently Business vertical.
