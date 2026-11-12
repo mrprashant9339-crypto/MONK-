@@ -13,7 +13,6 @@ const required = [
   "MONK_E2E_INVITEE_ORG_ID",
 ];
 const missing = required.filter((key) => !process.env[key]);
-const enabled = missing.length === 0;
 const url = process.env.MONK_E2E_SUPABASE_URL ?? "http://127.0.0.1:54321";
 const key = process.env.MONK_E2E_SUPABASE_ANON_KEY ?? "missing";
 const makeClient = () => createClient(url, key, {
@@ -22,7 +21,8 @@ const makeClient = () => createClient(url, key, {
 const owner = makeClient();
 const invitee = makeClient();
 
-test("MONK real multi-user authentication and organization invitation E2E", { skip: enabled ? false : `Set E2E secrets: ${missing.join(", ")}` }, async () => {
+test("MONK real multi-user authentication and organization invitation E2E", async () => {
+  assert.deepEqual(missing, [], `Required E2E secrets are missing: ${missing.join(", ")}`);
   assert.notEqual(process.env.MONK_E2E_OWNER_EMAIL.toLowerCase(), process.env.MONK_E2E_INVITEE_EMAIL.toLowerCase(), "Use two distinct verified test accounts");
   if (url.includes("yucwackrbekwaxiyuobt") && process.env.MONK_E2E_ALLOW_PRODUCTION !== "true") {
     throw new Error("Refusing to mutate MONK production from E2E. Use a staging Supabase project or explicitly set MONK_E2E_ALLOW_PRODUCTION=true.");
@@ -42,6 +42,25 @@ test("MONK real multi-user authentication and organization invitation E2E", { sk
   assert.ifError(inviteeLogin.error);
   assert.ok(inviteeLogin.data.user?.id, "Invitee account must authenticate");
   assert.notEqual(ownerLogin.data.user.id, inviteeLogin.data.user.id, "Test users must be distinct");
+
+  for (const [client, userId, label] of [
+    [owner, ownerLogin.data.user.id, "owner"],
+    [invitee, inviteeLogin.data.user.id, "invitee"],
+  ]) {
+    const profile = await client.from("profiles").select("id,full_name").eq("id", userId).single();
+    assert.ifError(profile.error);
+    assert.equal(profile.data.id, userId, `${label} profile must be created by the auth.users trigger`);
+
+    const consent = await client.from("legal_consents")
+      .select("terms_version,privacy_version,accepted_at")
+      .eq("user_id", userId)
+      .order("accepted_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    assert.ifError(consent.error);
+    assert.ok(consent.data?.terms_version && consent.data?.privacy_version,
+      `${label} legal consent record must exist`);
+  }
 
   const ownerOrg = process.env.MONK_E2E_OWNER_ORG_ID;
   const inviteeOrg = process.env.MONK_E2E_INVITEE_ORG_ID;
