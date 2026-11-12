@@ -45,12 +45,17 @@ export default function App() {
       const orgId = orgResult.data as string | null;
       setOrganizationId(orgId);
       if (!orgId) {
+        setOrganizationName("MONK Studio");
         setProjects([]);
         setTasks([]);
         setProjectId("");
         setWorkspaceReady(true);
         return;
       }
+      const organizationResult = await supabase.from("organizations")
+        .select("name").eq("id", orgId).single();
+      if (organizationResult.error) throw organizationResult.error;
+      setOrganizationName(organizationResult.data.name);
       const projectResult = await supabase.from("projects")
         .select("id,name,code,description,due_date,visibility,status")
         .eq("organization_id", orgId)
@@ -283,7 +288,7 @@ export default function App() {
     </form></main>
   );
 
-  if (isSupabaseConfigured && session && workspaceReady && organizationId && projects.length === 0) return (
+  if (isSupabaseConfigured && session && workspaceReady && organizationId && projects.length === 0 && active === "Overview") return (
     <main className="auth-page"><form className="auth-card" onSubmit={createProject}>
       <a className="brand" href="#"><span className="brand-mark">M</span> MONK<span className="brand-dot">.</span></a>
       <p className="eyebrow">WORKSPACE SETUP</p><h1>Create your first<br /><em>project.</em></h1>
@@ -300,7 +305,7 @@ export default function App() {
     <div className="app-shell">
       <aside className="sidebar">
         <a className="brand" href="#"><span className="brand-mark">M</span> MONK<span className="brand-dot">.</span></a>
-        <div className="workspace-switch"><div className="workspace-avatar">M</div><div><strong>MONK Studio</strong><small>{projects.find(p => p.id === projectId)?.name ?? "Personal workspace"}</small></div><ChevronRight size={15} /></div>
+        <div className="workspace-switch"><div className="workspace-avatar">M</div><div><strong>{organizationName}</strong><small>{projects.find(p => p.id === projectId)?.name ?? "Personal workspace"}</small></div><ChevronRight size={15} /></div>
         <p className="side-label">WORKSPACE</p>
         <nav>{nav.map(item => <button key={item.name} className={active === item.name ? "nav-item selected" : "nav-item"} onClick={() => setActive(item.name)}><item.icon size={17} />{item.name}{item.name === "Projects" && <span className="nav-count">{projects.length}</span>}</button>)}</nav>
         <div className="sidebar-bottom"><div className="secure"><ShieldCheck size={16} /><span><b>Private by design</b><small>Organization-scoped access.</small></span></div>
