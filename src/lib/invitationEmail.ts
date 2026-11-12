@@ -1,5 +1,6 @@
 import { supabase } from "./supabase";
 
+// The server validates the token against the invitation row before contacting Resend.
 export type InvitationDelivery = { sent: boolean; message: string };
 
 export async function sendOrganizationInvitation(
