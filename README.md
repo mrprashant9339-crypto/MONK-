@@ -97,7 +97,7 @@ GitHub Actions workflow `.github/workflows/ci.yml` runs `npm install` and `npm r
 
 The latest confirmed run #232 completed successfully, including dependency installation and TypeScript/Vite production build.
 
-Cloudflare Worker `monk` and the `monk.monster` custom domain already exist. A new production deployment from the latest source has **not** been performed or verified; the existing Worker version cannot be tied conclusively to the latest Git commit.
+Cloudflare Worker `monk` and the `monk.monster` custom domain already exist. A new production deployment from the latest source has **not** been performed or verified; the existing Worker version cannot be tied conclusively to the latest Git commit. A manual deployment workflow is available at `.github/workflows/deploy-cloudflare.yml`; it requires GitHub Actions secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`, and deliberately does not deploy automatically on every push.
 
 ## Release gates still requiring configuration or live-account testing
 
