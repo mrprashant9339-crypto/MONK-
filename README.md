@@ -99,7 +99,7 @@ All 13 education tables are organization-scoped, have RLS enabled, and use organ
 
 ### Phase 3 verification
 - `supabase/tests/phase_3_education_security.sql` executed against the connected Supabase database and passed.
-- GitHub Actions CI runs #133 and #151 passed: dependency installation and `npm run build` (`tsc -b && vite build`) succeeded for the education foundation and the timetable/attendance additions. Phase 3 PRs #6, #7 and #8 were merged into `main`; CI run #161 also passed for additional-workspace creation.
+- GitHub Actions CI runs #133, #151, #161 and #198 passed for the education foundation, timetable/attendance, workspace creation and role-portal/academic workflow builds. PRs #6, #7, #8 and #9 were merged into `main`. The later Resend invitation helper commits do not yet have a confirmed Actions result.
 - Tests assert 13 tables, RLS, tenant-vertical guards, revoked anonymous privileges, authenticated read access and audit triggers.
 - No institution, campus, student, faculty or attendance sample data was inserted. Existing business organizations were not converted.
 - Create an Education organization to use the education workspace; existing project organizations are currently Business vertical.
@@ -128,7 +128,7 @@ Student, teacher and parent records are linked to an authenticated account only 
 - Attendance and results reporting views execute with invoker permissions and inherit underlying RLS.
 
 ### Phase 3 security and verification
-- 20 education tables have RLS enabled; anonymous SELECT access is absent on all 20 tables.
+- 20 education tables have RLS enabled; anonymous SELECT access is absent on all 20 tables. All education foreign keys have covering indexes.
 - Private Storage bucket `education-private` is used for student and application documents.
 - New admission conversion, exam publication and faculty-claim RPCs use SECURITY INVOKER and are executable by authenticated users only.
 - Student and guardian self-claim permissions are restricted to their identity-link columns; faculty self-link is restricted to `member_id`.
