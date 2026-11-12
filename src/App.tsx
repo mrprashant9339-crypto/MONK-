@@ -347,6 +347,7 @@ export default function App() {
           {isSupabaseConfigured && session && organizationId && (active === "Projects" || active === "Team" || active === "Activity") && <WorkspaceManagement
             view={active}
             organizationId={organizationId}
+            organizationVertical={organizationVertical}
             projects={projects}
             projectId={projectId}
             setProjectId={setProjectId}
