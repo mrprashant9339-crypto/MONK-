@@ -429,6 +429,16 @@ export default function EducationManagement({ organizationId }: Props) {
           </form>
         </div>
         <div className="education-card education-wide-list"><h3>Batches <span>{batches.length}</span></h3>{batches.map(b => <div className="education-record" key={b.id}><GraduationCap size={16}/><div><b>{b.name}</b><small>{b.code} · {programLabel(b.program_id)} · {yearLabel(b.academic_year_id)}{b.semester ? ` · Semester ${b.semester}` : ""}</small></div></div>)}{!batches.length && <p className="education-empty">No batches created.</p>}</div>
+        <div className="education-grid">
+          <form className="education-card education-form" onSubmit={createSubject}><div className="education-card-heading"><BookOpen size={17}/><div><b>Create subject</b><small>Map a subject to a programme and semester</small></div></div>
+            <label>Subject name<input required value={subjectName} onChange={e => setSubjectName(e.target.value)}/></label>
+            <label>Subject code<input required value={subjectCode} onChange={e => setSubjectCode(e.target.value.toUpperCase())}/></label>
+            <label>Programme<select required value={subjectProgram} onChange={e => setSubjectProgram(e.target.value)}><option value="">Select programme</option>{programs.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label>
+            <div className="education-two"><label>Semester<input type="number" min="1" max="20" value={subjectSemester} onChange={e => setSubjectSemester(e.target.value)}/></label><label>Credits<input type="number" min="0" step="0.5" value={subjectCredits} onChange={e => setSubjectCredits(e.target.value)}/></label></div>
+            <button className="primary" disabled={busy || !programs.length}><Plus size={15}/> Add subject</button>
+          </form>
+          <div className="education-card"><h3>Subjects <span>{subjects.length}</span></h3>{subjects.map(s => <div className="education-record" key={s.id}><BookOpen size={16}/><div><b>{s.name}</b><small>{s.code} · {programLabel(s.program_id)}{s.semester ? ` · Semester ${s.semester}` : ""}</small></div></div>)}{!subjects.length && <p className="education-empty">No subjects created yet.</p>}</div>
+        </div>
       </div>}
 
       {tab === "Students" && <div className="education-grid">
@@ -452,6 +462,32 @@ export default function EducationManagement({ organizationId }: Props) {
           <button className="primary" disabled={busy}><Plus size={15}/> Add faculty</button>
         </form>
         <div className="education-card"><h3>Faculty records <span>{faculty.length}{faculty.length === 100 ? "+" : ""}</span></h3>{faculty.map(f => <div className="education-record" key={f.id}><Users size={16}/><div><b>{f.full_name}</b><small>{f.employee_number} · {f.designation ?? departmentLabel(null)} · {f.employment_status}</small></div></div>)}{!faculty.length && <p className="education-empty">No faculty records yet.</p>}</div>
+      </div>}
+
+      {tab === "Timetable" && <div className="education-grid">
+        <form className="education-card education-form" onSubmit={createTimetableEntry}><div className="education-card-heading"><Clock size={17}/><div><b>Schedule a class</b><small>Assign a subject and faculty to a batch</small></div></div>
+          <label>Batch / class<select required value={timetableBatch} onChange={e => setTimetableBatch(e.target.value)}><option value="">Select batch</option>{batches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}</select></label>
+          <label>Subject<select required value={timetableSubject} onChange={e => setTimetableSubject(e.target.value)}><option value="">Select subject</option>{subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></label>
+          <label>Faculty<select required value={timetableFaculty} onChange={e => setTimetableFaculty(e.target.value)}><option value="">Select faculty</option>{faculty.map(v => <option key={v.id} value={v.id}>{v.full_name}</option>)}</select></label>
+          <label>Weekday<select value={timetableWeekday} onChange={e => setTimetableWeekday(e.target.value)}>{["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"].map((day,i) => <option key={day} value={String(i+1)}>{day}</option>)}</select></label>
+          <div className="education-two"><label>Start time<input required type="time" value={timetableStart} onChange={e => setTimetableStart(e.target.value}/></label><label>End time<input required type="time" value={timetableEnd} onChange={e => setTimetableEnd(e.target.value}/></label></div>
+          <label>Room / lab<input value={timetableRoom} onChange={e => setTimetableRoom(e.target.value)} placeholder="Room 204 / Workshop"/></label>
+          <button className="primary" disabled={busy || !batches.length || !subjects.length || !faculty.length}><Plus size={15}/> Add timetable slot</button>
+        </form>
+        <div className="education-card"><h3>Timetable entries <span>{timetableEntries.length}</span></h3>{timetableEntries.map(entry => <div className="education-record" key={entry.id}><Clock size={16}/><div><b>{batches.find(b => b.id === entry.batch_id)?.name ?? "Batch"} · {subjects.find(s => s.id === entry.subject_id)?.name ?? "Subject"}</b><small>{["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"][entry.weekday-1]} · {entry.starts_at.slice(0,5)}–{entry.ends_at.slice(0,5)} · {faculty.find(v => v.id === entry.faculty_id)?.full_name ?? "Faculty"}{entry.room ? ` · ${entry.room}` : ""}</small></div></div>)}{!timetableEntries.length && <p className="education-empty">No timetable slots configured.</p>}</div>
+      </div>}
+
+      {tab === "Attendance" && <div className="education-grid">
+        <form className="education-card education-form" onSubmit={createAttendanceSession}><div className="education-card-heading"><CalendarCheck size={17}/><div><b>Start attendance session</b><small>Create a dated class register</small></div></div>
+          <label>Batch / class<select required value={attendanceBatch} onChange={e => setAttendanceBatch(e.target.value)}><option value="">Select batch</option>{batches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}</select></label>
+          <label>Subject<select required value={attendanceSubject} onChange={e => setAttendanceSubject(e.target.value)}><option value="">Select subject</option>{subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></label>
+          <label>Faculty<select required value={attendanceFaculty} onChange={e => setAttendanceFaculty(e.target.value)}><option value="">Select faculty</option>{faculty.map(v => <option key={v.id} value={v.id}>{v.full_name}</option>)}</select></label>
+          <label>Session date<input required type="date" value={attendanceDate} onChange={e => setAttendanceDate(e.target.value)}/></label>
+          <div className="education-two"><label>Start time<input type="time" value={attendanceStart} onChange={e => setAttendanceStart(e.target.value}/></label><label>End time<input type="time" value={attendanceEnd} onChange={e => setAttendanceEnd(e.target.value}/></label></div>
+          <button className="primary" disabled={busy || !batches.length || !subjects.length || !faculty.length}><Plus size={15}/> Create attendance session</button>
+        </form>
+        <div className="education-card"><h3>Attendance sessions <span>{attendanceSessions.length}</span></h3>{attendanceSessions.map(s => <button type="button" key={s.id} className={selectedAttendanceSession === s.id ? "education-session selected" : "education-session"} onClick={() => {setSelectedAttendanceSession(s.id);setAttendanceMarks(Object.fromEntries(attendanceRecords.filter(r => r.session_id === s.id).map(r => [r.student_id,r.attendance_status])));}}><span><b>{batches.find(b => b.id === s.batch_id)?.name ?? "Batch"} · {subjects.find(v => v.id === s.subject_id)?.name ?? "Subject"}</b><small>{s.session_date} · {s.status}</small></span><em>{selectedAttendanceSession === s.id ? "Selected" : "Open register"}</em></button>)}{!attendanceSessions.length && <p className="education-empty">No attendance sessions yet.</p>}</div>
+        {selectedAttendanceSession && (() => { const session = attendanceSessions.find(s => s.id === selectedAttendanceSession); const roster = students.filter(student => student.batch_id === session?.batch_id); return <div className="education-card education-wide-list"><h3>Class register <span>{roster.length} students</span></h3>{roster.map(student => <label className="attendance-row" key={student.id}><span><b>{student.full_name}</b><small>{student.admission_number}</small></span><select value={attendanceMarks[student.id] ?? "present"} onChange={e => setAttendanceMarks(current => ({...current,[student.id]:e.target.value}))}><option value="present">Present</option><option value="absent">Absent</option><option value="late">Late</option><option value="excused">Excused</option></select></label>)}{!roster.length && <p className="education-empty">No students are assigned to this batch.</p>}<button className="primary" disabled={busy || !roster.length} onClick={() => void saveAttendance()}><CalendarCheck size={15}/> Save attendance</button></div>; })()}
       </div>}
 
       <footer className="education-footer"><span>{institution?.legal_name ?? "Institution profile not configured"}</span><span>Records loaded from the active organization only</span></footer>
