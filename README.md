@@ -49,7 +49,7 @@ First-time users create a workspace and then a project. The organization creatio
 SECURITY DEFINER functions that remain executable by authenticated users are reviewed API functions and policy helpers. Each must retain explicit authentication, tenant and role checks. Do not blanket-revoke policy helper execution: policies call these helpers as part of row authorization.
 
 ## CI and deployment
-GitHub Actions runs `npm install --no-audit --no-fund` followed by `npm run build` on pushes and pull requests targeting `main`. A green CI run must be verified in GitHub Actions before release.
+GitHub Actions runs `npm install --no-audit --no-fund` followed by `npm run build` on pushes and pull requests targeting `main`. Phase 2 CI run #105 passed on PR #5: dependency installation and `npm run build` (`tsc -b && vite build`) both succeeded. Continue requiring green CI for subsequent changes.
 
 Cloudflare Worker configuration is in `wrangler.jsonc`. Production Worker domain binding is managed in Cloudflare.
 
