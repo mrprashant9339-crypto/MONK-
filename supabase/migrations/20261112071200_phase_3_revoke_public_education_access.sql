@@ -1,5 +1,0 @@
--- Education tables are authenticated Data API resources only. RLS remains the row-level boundary.
-revoke all on table public.education_institutions, public.education_campuses, public.education_departments, public.education_academic_years, public.education_programs, public.education_batches, public.education_students, public.education_faculty, public.education_subjects, public.education_enrollments, public.education_timetable_entries, public.education_attendance_sessions, public.education_attendance_records from public, anon;
-grant select,insert,update on public.education_institutions to authenticated;
-grant select,insert,update,delete on public.education_campuses,public.education_departments,public.education_academic_years,public.education_programs,public.education_batches to authenticated;
-grant select,insert,update on public.education_students,public.education_faculty,public.education_subjects,public.education_enrollments,public.education_timetable_entries,public.education_attendance_sessions,public.education_attendance_records to authenticated;
