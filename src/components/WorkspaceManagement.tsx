@@ -2,7 +2,7 @@ import { FormEvent, useCallback, useEffect, useState } from "react";
 import { Activity, Archive, Building2, Check, ChevronDown, Copy, MailPlus, Pencil, Plus, RefreshCw, Shield, Trash2, Users } from "lucide-react";
 import { supabase } from "../lib/supabase";
 
-type Project = { id: string; name: string; code: string };
+type Project = { id: string; name: string; code: string; description?: string | null; due_date?: string | null; visibility?: "internal" | "client_visible"; status?: "draft" | "active" | "at_risk" | "in_review" | "completed" };
 type Member = { member_id: string; user_id: string; email: string; full_name: string; role: string; status: string; created_at: string };
 type Invitation = { invitation_id: string; email: string; role: string; expires_at: string; accepted_at: string | null; revoked_at: string | null; created_at: string };
 type Organization = { id: string; name: string; slug: string };
@@ -79,24 +79,6 @@ export default function WorkspaceManagement({ view, organizationId, projects, pr
 
   useEffect(() => { void refresh(); }, [refresh]);
 
-  useEffect(() => {
-    const token = new URLSearchParams(window.location.search).get("invite");
-    if (!token || !supabase) return;
-    let cancelled = false;
-    void (async () => {
-      setBusy(true); setError(""); setNotice("Accepting your organization invitation…");
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData.session) { setNotice("Sign in with the invited email address to accept this invitation."); setBusy(false); return; }
-      const { error: acceptError } = await supabase.rpc("accept_organization_invitation", { invite_token: token });
-      if (cancelled) return;
-      if (acceptError) { setError(acceptError.message); setNotice(""); setBusy(false); return; }
-      window.history.replaceState({}, "", window.location.pathname);
-      setNotice("Invitation accepted. Loading the new workspace…");
-      await onReload();
-      setBusy(false);
-    })();
-    return () => { cancelled = true; };
-  }, [onReload]);
 
   async function switchOrganization(nextId: string) {
     if (!supabase || !nextId || nextId === organizationId) return;
@@ -129,11 +111,11 @@ export default function WorkspaceManagement({ view, organizationId, projects, pr
     if (name === null) return;
     const code = window.prompt("Project code", project.code);
     if (code === null) return;
-    const description = window.prompt("Project description (leave blank to clear)", "") ?? "";
+    const description = window.prompt("Project description (leave blank to clear)", project.description ?? "");
     setBusy(true); setError(""); setNotice("");
     const { error: rpcError } = await supabase.rpc("update_project_details", {
       target_project_id: project.id, next_name: name.trim(), next_code: code.trim().toUpperCase(),
-      next_description: description, next_due_date: null, next_visibility: "internal", next_status: "active"
+      next_description: description, next_due_date: project.due_date ?? null, next_visibility: project.visibility ?? "internal", next_status: project.status ?? "active"
     });
     if (rpcError) setError(rpcError.message);
     else { setNotice("Project updated."); await onReload(); }
