@@ -109,3 +109,8 @@ Cloudflare Worker `monk` and the `monk.monster` custom domain already exist. A n
 5. Deploy the latest verified build to Cloudflare and run a production browser smoke test on `https://monk.monster`.
 
 No fake customer, student, parent, faculty, institution or attendance records were inserted to make these tests appear successful.
+
+
+## Production deployment
+
+Production releases are deployed to the `monk` Cloudflare Worker by `.github/workflows/deploy-cloudflare.yml` on every push to `main`. The workflow requires the repository Actions secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`. The token should be restricted to Workers Scripts Write and rotated on a regular schedule. Confirm the Cloudflare deployment is at 100% traffic before announcing a release.
