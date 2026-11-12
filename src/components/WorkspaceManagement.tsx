@@ -35,6 +35,10 @@ export default function WorkspaceManagement({ view, organizationId, projects, pr
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [showCreateWorkspace, setShowCreateWorkspace] = useState(false);
+  const [newWorkspaceName, setNewWorkspaceName] = useState("");
+  const [newWorkspaceSlug, setNewWorkspaceSlug] = useState("");
+  const [newWorkspaceVertical, setNewWorkspaceVertical] = useState<"business" | "education">("education");
 
   const loadCurrentMember = useCallback(async () => {
     if (!supabase) return;
@@ -103,6 +107,28 @@ export default function WorkspaceManagement({ view, organizationId, projects, pr
     setProjectId("");
     await onReload();
     setNotice("Workspace switched.");
+    setBusy(false);
+  }
+
+  async function createWorkspace(event: FormEvent) {
+    event.preventDefault();
+    if (!supabase || !newWorkspaceName.trim() || !newWorkspaceSlug.trim()) return;
+    setBusy(true); setError(""); setNotice("");
+    const { error: rpcError } = await supabase.rpc("create_organization", {
+      org_name: newWorkspaceName.trim(), org_slug: newWorkspaceSlug.trim().toLowerCase(),
+      org_country: "IN", org_timezone: "Asia/Kolkata", org_currency: "INR", org_locale: "en-IN",
+      org_industry: newWorkspaceVertical === "education" ? "Education" : "Technology",
+      org_vertical: newWorkspaceVertical
+    });
+    if (rpcError) {
+      setError(rpcError.message);
+      setBusy(false);
+      return;
+    }
+    setShowCreateWorkspace(false);
+    setNewWorkspaceName(""); setNewWorkspaceSlug("");
+    setNotice("Workspace created. Switching to the new organization…");
+    await onReload();
     setBusy(false);
   }
 
@@ -205,8 +231,14 @@ export default function WorkspaceManagement({ view, organizationId, projects, pr
     <section className="management">
       <header className="management-heading">
         <div><p className="eyebrow">WORKSPACE CONTROL</p><h2>{view === "Projects" ? "Projects" : view === "Team" ? "Team & access" : "Activity timeline"}</h2><p className="muted">{view === "Projects" ? "Create, update and archive organization projects." : view === "Team" ? "Manage members, roles and secure invitations." : "Recent organization audit events, newest first."}</p></div>
-        <label className="org-switch"><Building2 size={15}/><select aria-label="Switch organization" value={organizationId} disabled={busy || organizations.length < 2} onChange={event => void switchOrganization(event.target.value)}>{organizations.map(org => <option key={org.id} value={org.id}>{org.name}</option>)}</select><ChevronDown size={13}/></label>
+        <div className="management-heading-actions"><button className="new-workspace-button" onClick={() => setShowCreateWorkspace(v => !v)} disabled={busy}><Plus size={14}/> New workspace</button><label className="org-switch"><Building2 size={15}/><select aria-label="Switch organization" value={organizationId} disabled={busy || organizations.length < 2} onChange={event => void switchOrganization(event.target.value)}>{organizations.map(org => <option key={org.id} value={org.id}>{org.name}</option>)}</select><ChevronDown size={13}/></label></div>
       </header>
+      {showCreateWorkspace && <form className="management-form new-workspace-form" onSubmit={createWorkspace}>
+        <label>Workspace name<input required minLength={2} maxLength={100} value={newWorkspaceName} onChange={e => setNewWorkspaceName(e.target.value)} placeholder="Institution or company name"/></label>
+        <label>Workspace URL slug<input required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" minLength={3} maxLength={50} value={newWorkspaceSlug} onChange={e => setNewWorkspaceSlug(e.target.value.toLowerCase())} placeholder="my-institution"/></label>
+        <label>Workspace type<select value={newWorkspaceVertical} onChange={e => setNewWorkspaceVertical(e.target.value as "business" | "education")}><option value="education">Education institution</option><option value="business">Business workspace</option></select></label>
+        <button className="primary" disabled={busy}><Plus size={14}/> Create workspace</button>
+      </form>}
       {error && <div className="management-alert error" role="alert">{error}</div>}
       {notice && <div className="management-alert" role="status">{notice}</div>}
       {busy && <p className="management-loading"><RefreshCw size={13}/> Updating workspace…</p>}
