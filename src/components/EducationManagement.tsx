@@ -80,7 +80,7 @@ export default function EducationManagement({ organizationId }: Props) {
 
   const load = useCallback(async () => {
     if (!supabase || !organizationId) return;
-    setBusy(true); setError(""); setNotice("");
+    setBusy(true); setError("");
     try {
       const results = await Promise.all([
         supabase.from("education_institutions").select("*").eq("organization_id", organizationId).maybeSingle(),
@@ -119,7 +119,7 @@ export default function EducationManagement({ organizationId }: Props) {
   async function submit(event: FormEvent, action: () => Promise<void>) {
     event.preventDefault(); if (!supabase) return;
     setBusy(true); setError(""); setNotice("");
-    try { await action(); setNotice("Changes saved."); await load(); }
+    try { await action(); await load(); setNotice("Changes saved."); }
     catch (cause) { setError(cause instanceof Error ? cause.message : "The operation failed."); }
     finally { setBusy(false); }
   }
@@ -165,7 +165,7 @@ export default function EducationManagement({ organizationId }: Props) {
     await submit(event, async () => {
       const { error: e } = await supabase!.from("education_academic_years").insert({
         organization_id: organizationId, name: yearName.trim(), starts_on: yearStart, ends_on: yearEnd,
-        status: "active", is_current: true
+        status: years.some(y => y.is_current && y.status === "active") ? "planned" : "active", is_current: !years.some(y => y.is_current && y.status === "active")
       });
       if (e) throw e;
       setYearName(""); setYearStart(""); setYearEnd("");
