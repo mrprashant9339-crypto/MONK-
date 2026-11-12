@@ -26,9 +26,10 @@ The browser uses only the Supabase publishable/anon key. Never place a service-r
 - Organization team listing, role changes and member removal
 - One-time organization invitations, revocation and email-bound acceptance
 - Audit activity timeline
+- CRM workspace for tenant-scoped leads, contacts and companies, with search and record counts; lead/contact creation uses permission-checked database RPCs
 - Local 25-minute focus timer with pause/reset
 
-Task assignment UI, comments, bulk operations, persistent focus sessions, notifications and realtime updates remain outside the current delivered scope.
+Task assignment UI, comments, bulk operations, persistent focus sessions, notifications and realtime updates remain outside the current delivered scope. CRM create/read flows are implemented for leads and contacts; company records are created through the contact workflow. Full edit/archive and CRM-specific end-to-end role tests remain release work.
 
 ## Education workspace
 
