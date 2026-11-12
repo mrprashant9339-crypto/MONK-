@@ -52,7 +52,7 @@ export default function EducationPortal({organizationId,role}:Props) {
      supabase.from("education_subjects").select("id,name,code").eq("organization_id",organizationId)
     ]);for(const x of [t,s,sub])if(x.error)throw x.error;setTimetable((t.data??[]) as Timetable[]);setSessions((s.data??[]) as Session[]);setSubjects((sub.data??[]) as Subject[]);
    }else{
-    const {error:claimError}=await supabase.from("education_guardians").update({user_id:auth.data.user.id,status:"active"})
+    const {error:claimError}=await supabase.from("education_guardians").update({user_id:auth.data.user.id})
       .eq("organization_id",organizationId).eq("email",auth.data.user.email??"").is("user_id",null);
     if(claimError)throw claimError;
     const {data:g,error:e}=await supabase.from("education_guardians").select("id,full_name,email").eq("organization_id",organizationId).eq("user_id",auth.data.user.id).maybeSingle();if(e)throw e;setGuardian(g as Guardian|null);
