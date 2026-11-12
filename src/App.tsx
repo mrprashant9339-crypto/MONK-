@@ -1,9 +1,10 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { ArrowUpRight, Bell, Check, ChevronRight, Command, LayoutGrid, Plus, Search, ShieldCheck, Sparkles, Target, Workflow, Zap, LoaderCircle, LogOut, Pencil, Trash2, Play, Pause, RotateCcw, Users, Activity, GraduationCap } from "lucide-react";
+import { ArrowUpRight, Bell, Check, ChevronRight, Command, LayoutGrid, Plus, Search, ShieldCheck, Sparkles, Target, Workflow, Zap, LoaderCircle, LogOut, Pencil, Trash2, Play, Pause, RotateCcw, Users, Activity, GraduationCap, Briefcase } from "lucide-react";
 import type { Session } from "@supabase/supabase-js";
 import { isSupabaseConfigured, supabase } from "./lib/supabase";
 import WorkspaceManagement from "./components/WorkspaceManagement";
 import EducationManagement from "./components/EducationManagement";
+import CRMManagement from "./components/CRMManagement";
 
 type Project = { id: string; name: string; code: string; description?: string | null; due_date?: string | null; visibility?: "internal" | "client_visible"; status?: "draft" | "active" | "at_risk" | "in_review" | "completed" };
 type Task = { id: string; title: string; status: "todo" | "in_progress" | "blocked" | "review" | "done"; priority: "low" | "medium" | "high" | "urgent"; due_date: string | null; project_id: string };
@@ -257,7 +258,7 @@ export default function App() {
   const completed = tasks.filter(task => task.status === "done").length;
   const focusTime = `${String(Math.floor(focusSeconds / 60)).padStart(2, "0")}:${String(focusSeconds % 60).padStart(2, "0")}`;
   const openTasks = tasks.length - completed;
-  const nav = [{ name: "Overview", icon: LayoutGrid }, { name: "Projects", icon: Workflow }, { name: "Team", icon: Users }, { name: "Activity", icon: Activity }, ...(organizationVertical === "education" ? [{ name: "Education", icon: GraduationCap }] : []), { name: "Focus", icon: Target }];
+  const nav = [{ name: "Overview", icon: LayoutGrid }, { name: "Projects", icon: Workflow }, ...(organizationVertical === "business" ? [{ name: "CRM", icon: Briefcase }] : []), { name: "Team", icon: Users }, { name: "Activity", icon: Activity }, ...(organizationVertical === "education" ? [{ name: "Education", icon: GraduationCap }] : []), { name: "Focus", icon: Target }];
 
   if (isSupabaseConfigured && !session) return (
     <main className="auth-page"><div className="auth-card">
@@ -344,6 +345,7 @@ export default function App() {
           <section className="bottom-note"><div className="note-icon"><Sparkles size={18} /></div><div><b>Small steps. Serious momentum.</b><p>MONK brings your priorities, projects and focus into one calm workspace.</p></div><span className="note-tag">BUILT FOR BUILDERS</span></section>
           </>}
           {isSupabaseConfigured && session && organizationId && organizationVertical === "education" && active === "Education" && <EducationManagement organizationId={organizationId} />}
+          {isSupabaseConfigured && session && organizationId && organizationVertical === "business" && active === "CRM" && <CRMManagement organizationId={organizationId} />}
           {isSupabaseConfigured && session && organizationId && (active === "Projects" || active === "Team" || active === "Activity") && <WorkspaceManagement
             view={active}
             organizationId={organizationId}
