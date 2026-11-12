@@ -69,3 +69,29 @@ Cloudflare Worker configuration is in `wrangler.jsonc`. Production Worker domain
 - Audit activity timeline under the existing audit-log RLS policy.
 
 Phase 2 database RPCs are defined in `supabase/migrations/20261112065511_phase_2_workspace_management.sql` and `supabase/migrations/20261112065836_phase_2_member_email_cast.sql`. Security regression assertions are in `supabase/tests/phase_2_security.sql`. The assertions were executed against the connected Supabase project and passed. Authenticated browser workflows and the GitHub Actions build still require end-to-end verification before release.
+
+
+## Phase 3 — Education Management System
+
+The education vertical reuses the existing organization tenant boundary. During first-time workspace creation, users can choose Business or Education. Existing business organizations are not converted.
+
+### Education schema
+- Institution profile and verification state; campuses and departments.
+- Academic years, programmes, subjects and batches.
+- Student records, faculty records and enrolments.
+- Timetable entries and attendance sessions/records.
+
+All 13 education tables are organization-scoped, have RLS enabled, and use organization-aware foreign keys for linked records. Policies require the active organization to have the `education` vertical and the corresponding `education.*` permission. PUBLIC and anonymous table privileges are revoked. Education mutations update timestamps and append organization audit events.
+
+### Current education UI
+- Institution profile create/update.
+- Campus and department creation/listing.
+- Academic year, programme and batch creation/listing.
+- Student and faculty record creation/listing.
+- Administration UI is currently restricted to owner, admin and manager organization roles. Teacher/student self-service portals, timetable and attendance screens, admissions workflow, document verification and email notifications are not yet delivered.
+
+### Phase 3 verification
+- `supabase/tests/phase_3_education_security.sql` executed against the connected Supabase database and passed.
+- Tests assert 13 tables, RLS, tenant-vertical guards, revoked anonymous privileges, authenticated read access and audit triggers.
+- No institution, campus, student, faculty or attendance sample data was inserted. Existing business organizations were not converted.
+- Create an Education organization to use the education workspace; existing project organizations are currently Business vertical.
