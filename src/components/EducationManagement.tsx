@@ -111,6 +111,8 @@ export default function EducationManagement({ organizationId }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [studentInviteLink, setStudentInviteLink] = useState("");
+  const [facultyInviteLink, setFacultyInviteLink] = useState("");
 
   const load = useCallback(async () => {
     if (!supabase || !organizationId) return;
@@ -338,6 +340,14 @@ export default function EducationManagement({ organizationId }: Props) {
         target_batch_id: studentBatch || null
       });
       if (e) throw e;
+      if (studentEmail.trim()) {
+        const { data: invite, error: inviteError } = await supabase!.rpc("create_organization_invitation", {
+          target_org: organizationId, invite_email: studentEmail.trim().toLowerCase(), invite_role: "student", expires_in_days: 7
+        });
+        if (inviteError) throw new Error("Student record created, but the login invitation failed: " + inviteError.message);
+        const row = Array.isArray(invite) ? invite[0] : invite;
+        if (row?.invitation_token) setStudentInviteLink(window.location.origin + "/#invite=" + row.invitation_token);
+      }
       setStudentNumber(""); setStudentName(""); setStudentEmail(""); setStudentPhone("");
       setStudentGuardian(""); setStudentGuardianPhone("");
     });
@@ -351,6 +361,14 @@ export default function EducationManagement({ organizationId }: Props) {
         designation: facultyDesignation.trim() || null, department_id: facultyDepartment || null
       });
       if (e) throw e;
+      if (facultyEmail.trim()) {
+        const { data: invite, error: inviteError } = await supabase!.rpc("create_organization_invitation", {
+          target_org: organizationId, invite_email: facultyEmail.trim().toLowerCase(), invite_role: "teacher", expires_in_days: 7
+        });
+        if (inviteError) throw new Error("Faculty record created, but the teacher login invitation failed: " + inviteError.message);
+        const row = Array.isArray(invite) ? invite[0] : invite;
+        if (row?.invitation_token) setFacultyInviteLink(window.location.origin + "/#invite=" + row.invitation_token);
+      }
       setEmployeeNumber(""); setFacultyName(""); setFacultyEmail(""); setFacultyDesignation("");
     });
   }
@@ -474,6 +492,7 @@ export default function EducationManagement({ organizationId }: Props) {
           <label>Batch<select value={studentBatch} onChange={e => setStudentBatch(e.target.value)}><option value="">Not assigned</option>{batches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}</select></label>
           <div className="education-two"><label>Guardian name<input value={studentGuardian} onChange={e => setStudentGuardian(e.target.value)}/></label><label>Guardian phone<input type="tel" value={studentGuardianPhone} onChange={e => setStudentGuardianPhone(e.target.value)}/></label></div>
           <button className="primary" disabled={busy}><Plus size={15}/> Add student</button>
+          {studentInviteLink && <div className="invite-link"><input readOnly value={studentInviteLink}/><button type="button" onClick={() => void navigator.clipboard.writeText(studentInviteLink)}>Copy student login link</button></div>}
         </form>
         <div className="education-card"><h3>Student records <span>{students.length}{students.length === 100 ? "+" : ""}</span></h3>{students.map(s => <div className="education-record" key={s.id}><GraduationCap size={16}/><div><b>{s.full_name}</b><small>{s.admission_number} · {s.email ?? "No email"} · {s.status}</small></div></div>)}{!students.length && <p className="education-empty">No student records yet. Records are not imported or fabricated.</p>}</div>
       </div>}
@@ -485,6 +504,7 @@ export default function EducationManagement({ organizationId }: Props) {
           <div className="education-two"><label>Email<input type="email" value={facultyEmail} onChange={e => setFacultyEmail(e.target.value)}/></label><label>Designation<input value={facultyDesignation} onChange={e => setFacultyDesignation(e.target.value)} placeholder="Lecturer / HOD"/></label></div>
           <label>Department<select value={facultyDepartment} onChange={e => setFacultyDepartment(e.target.value)}><option value="">Unassigned</option>{departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}</select></label>
           <button className="primary" disabled={busy}><Plus size={15}/> Add faculty</button>
+          {facultyInviteLink && <div className="invite-link"><input readOnly value={facultyInviteLink}/><button type="button" onClick={() => void navigator.clipboard.writeText(facultyInviteLink)}>Copy teacher login link</button></div>}
         </form>
         <div className="education-card"><h3>Faculty records <span>{faculty.length}{faculty.length === 100 ? "+" : ""}</span></h3>{faculty.map(f => <div className="education-record" key={f.id}><Users size={16}/><div><b>{f.full_name}</b><small>{f.employee_number} · {f.designation ?? departmentLabel(null)} · {f.employment_status}</small></div></div>)}{!faculty.length && <p className="education-empty">No faculty records yet.</p>}</div>
       </div>}
