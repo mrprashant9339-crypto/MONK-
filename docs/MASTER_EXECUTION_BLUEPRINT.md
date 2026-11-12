@@ -494,6 +494,26 @@ A module is workflow-complete when:
 
 ---
 
-## 15. Next implementation unit
+## 15. Implementation progress — 2026-11-12
 
-Start Phase A, task 1: perform a read-only inventory of the current staging schema and repository migrations, then write a schema reconciliation matrix mapping existing objects to the target domains in this blueprint. Do not create organizations/users or apply production changes as part of inventory.
+### Completed in this implementation pass
+- Phase A, task 1: read-only staging schema and migration inventory completed; see `docs/STAGING_SCHEMA_RECONCILIATION.md`.
+- Applied additive staging migrations for the module permission catalogue, built-in role permission bundles, organization custom roles, teams/team members, CRM pipelines/stages/opportunities, task dependencies, document shares, notification preferences and notification outbox.
+- Added guarded RPCs for custom-role creation/permission assignment/member role assignment, team creation/member assignment, CRM pipeline creation and opportunity stage transitions.
+- Updated tenant membership helper so custom-role members remain recognized as organization members.
+- Added an authenticated workspace shell connected to the organization hub, with responsive navigation, overview metrics, and initial CRM lead/team list/create flows.
+- Added the schema reconciliation matrix and migration files to the implementation branch; staging migration history includes the four new migrations.
+
+### Remaining implementation before QA
+- Finish all member/team administration workflows and custom-role UI.
+- Complete CRM companies/contacts/leads/opportunities/pipeline pages and conversion/history.
+- Complete project, milestone, task, dependency, workload and collaboration interfaces.
+- Complete private Storage bucket policies and signed upload/download functions.
+- Complete document version/share UX and storage lifecycle.
+- Implement notification event fan-out worker, delivery providers and notification inbox/preferences UX.
+- Standardize typed domain services and generated database types.
+- Complete public landing page, auth/OAuth consent edge cases, onboarding checklist, responsive app navigation and module empty/loading/error/permission states.
+- Complete API contracts, webhooks, import/export and operational configuration.
+
+### Next execution unit
+Continue Phase C: finish role/member/team management RPCs and build the roles & teams administration interfaces. Then proceed through CRM, projects, documents/files, activities/notifications and the remaining public/application UX. QA and release verification remain deferred until the user requests them.
