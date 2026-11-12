@@ -16,7 +16,6 @@ const modules: { key: ModuleKey; label: string; icon: typeof LayoutDashboard; ta
   { key: "notifications", label: "Notifications", icon: Bell, table: "notifications" },
   { key: "settings", label: "Settings", icon: Settings2 },
 ];
-const labels: Record<string,string> = { companies:"Companies",contacts:"Contacts",leads:"Leads",projects:"Projects",tasks:"Tasks",teams:"Teams",files:"Files",activities:"Activity",notifications:"Notifications",opportunities:"Opportunities" };
 function display(value: unknown) { if (value === null || value === undefined || value === "") return "—"; if (typeof value === "object") return JSON.stringify(value); return String(value); }
 export default function WorkspaceDashboard({ organizationId, organizationName, onBack }: Props) {
   const [active,setActive] = useState<ModuleKey>("overview");
@@ -52,7 +51,7 @@ export default function WorkspaceDashboard({ organizationId, organizationName, o
     async function loadCounts(){
       const tables=["companies","contacts","leads","projects","tasks","teams","files","opportunities"];
       const results=await Promise.all(tables.map(async table=>{
-        const {count,error:countError}=await supabase.from(table).select("id",{count:"exact",head:true}).eq("organization_id",organizationId);
+        const {count,error:countError}=await db.from(table).select("id",{count:"exact",head:true}).eq("organization_id",organizationId);
         return [table,countError?0:(count??0)] as const;
       }));
       if(!cancelled)setCounts(Object.fromEntries(results));
