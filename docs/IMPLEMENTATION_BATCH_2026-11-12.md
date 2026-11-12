@@ -15,6 +15,7 @@ This batch groups five implementation tasks and records what is actually complet
 - Added explicit null checks around the optional Supabase browser client.
 - Result: GitHub Actions TypeScript + Vite production build passed on commit `1d67391709dbbb1ce2201c920ae1d45f95396ec7`.
 - Run: https://github.com/mrprashant9339-crypto/MONK-/actions/runs/43136928748
+- Staging smoke workflow (staging target/Auth health + type-check/build) also passed on the same code commit: https://github.com/mrprashant9339-crypto/MONK-/actions/runs/43136929012
 
 ### Task 2 — Connect authentication and organization onboarding
 - Organization Hub now opens the authenticated workspace dashboard for the selected active organization.
