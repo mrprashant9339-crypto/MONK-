@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useState } from "react";
 import { ArrowLeftRight, Building2, Copy, GraduationCap, LogOut, Plus, RefreshCw, ShieldCheck, Users } from "lucide-react";
-import { supabase } from "../lib/supabase";
+import { isSupabaseConfigured, supabase } from "../lib/supabase";
 
 type Membership = { organization_id: string; role: string; organizations: { id: string; name: string; slug: string; vertical: string } | null };
 type Invitation = { id: string; email: string; role: string; expires_at: string; accepted_at: string | null; revoked_at: string | null };
@@ -19,7 +19,7 @@ export default function OrganizationHub({ onSignOut }: Props) {
   const [error,setError]=useState("");
   const [notice,setNotice]=useState("");
   async function load(){
-    if(!supabase)return;
+    if(!supabase || !isSupabaseConfigured)return;
     setBusy(true);setError("");
     try{
       const [m,a]=await Promise.all([
@@ -41,7 +41,7 @@ export default function OrganizationHub({ onSignOut }: Props) {
   useEffect(()=>{void load();},[]);
   useEffect(()=>{
     const token=new URLSearchParams(window.location.search).get("invite");
-    if(!token||!supabase)return;
+    if(!token||!supabase||!isSupabaseConfigured)return;
     let cancelled=false;
     (async()=>{setBusy(true);setError("");try{const {error}=await supabase.rpc("accept_organization_invitation",{invite_token:token});if(error)throw error;if(!cancelled){window.history.replaceState({}, "", window.location.pathname);setNotice("Invitation accepted. Your organization access is active.");await load();}}catch(e){if(!cancelled)setError(e instanceof Error?e.message:"Invitation could not be accepted.");}finally{if(!cancelled)setBusy(false)}})();
     return()=>{cancelled=true};
