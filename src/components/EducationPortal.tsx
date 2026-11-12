@@ -1,0 +1,88 @@
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { supabase } from "../lib/supabase";
+import { BookOpen, CalendarCheck, FileText, GraduationCap, RefreshCw, ShieldCheck, Users } from "lucide-react";
+
+type Role = "teacher"|"student"|"parent";
+type Student = { id:string; full_name:string; admission_number:string; batch_id:string|null; program_id?:string|null; department_id?:string|null; status:string; email:string|null };
+type Faculty = { id:string; full_name:string; employee_number:string; department_id:string|null };
+type Timetable = { id:string; batch_id:string; subject_id:string; faculty_id:string; weekday:number; starts_at:string; ends_at:string; room:string|null };
+type Session = { id:string; batch_id:string; subject_id:string; faculty_id:string; session_date:string; starts_at:string|null; ends_at:string|null; status:string };
+type Attendance = { id:string; session_id:string; student_id:string; attendance_status:string };
+type Result = { id:string; student_id:string; marks_obtained:number|null; grade:string|null; status:string; exam_subject_id:string };
+type Subject = { id:string; name:string; code:string };
+type Application = { id:string; application_number:string; full_name:string; status:string; submitted_at:string };
+type Guardian = { id:string; full_name:string; email:string };
+type Props = { organizationId:string; role:Role };
+
+export default function EducationPortal({organizationId,role}:Props) {
+ const [userId,setUserId]=useState(""),[email,setEmail]=useState(""),[busy,setBusy]=useState(false),[error,setError]=useState(""),[notice,setNotice]=useState("");
+ const [student,setStudent]=useState<Student|null>(null),[faculty,setFaculty]=useState<Faculty|null>(null),[guardian,setGuardian]=useState<Guardian|null>(null),[children,setChildren]=useState<Student[]>([]);
+ const [timetable,setTimetable]=useState<Timetable[]>([]),[sessions,setSessions]=useState<Session[]>([]),[attendance,setAttendance]=useState<Attendance[]>([]),[results,setResults]=useState<Result[]>([]),[subjects,setSubjects]=useState<Subject[]>([]),[applications,setApplications]=useState<Application[]>([]);
+ const [selectedSession,setSelectedSession]=useState(""),[marks,setMarks]=useState<Record<string,string>>({});
+ const [applicationName,setApplicationName]=useState(""),[applicationPhone,setApplicationPhone]=useState(""),[applicationGuardian,setApplicationGuardian]=useState(""),[applicationGuardianPhone,setApplicationGuardianPhone]=useState(""),[applicationProgram,setApplicationProgram]=useState("");
+ const [programs,setPrograms]=useState<Array<{id:string;name:string}>>([]),[documentCategory,setDocumentCategory]=useState("identity"),[documentFile,setDocumentFile]=useState<File|null>(null);
+ const load=useCallback(async()=>{
+  if(!supabase)return;setBusy(true);setError("");
+  try{
+   const auth=await supabase.auth.getUser();if(auth.error)throw auth.error;if(!auth.data.user)throw new Error("Sign in to access your education portal.");
+   setUserId(auth.data.user.id);setEmail(auth.data.user.email??"");
+   if(role==="student"){
+    const {data:s,error:e}=await supabase.from("education_students").select("id,full_name,admission_number,batch_id,status,email").eq("organization_id",organizationId).eq("user_id",auth.data.user.id).maybeSingle();if(e)throw e;setStudent(s as Student|null);
+    const [t,a,r,apps,p]=await Promise.all([
+     supabase.from("education_timetable_entries").select("id,batch_id,subject_id,faculty_id,weekday,starts_at,ends_at,room").eq("organization_id",organizationId),
+     supabase.from("education_attendance_records").select("id,session_id,student_id,attendance_status").eq("organization_id",organizationId).eq("student_id",s?.id??"00000000-0000-0000-0000-000000000000"),
+     supabase.from("education_results").select("id,student_id,marks_obtained,grade,status,exam_subject_id").eq("organization_id",organizationId).eq("student_id",s?.id??"00000000-0000-0000-0000-000000000000").eq("status","published"),
+     supabase.from("education_admission_applications").select("id,application_number,full_name,status,submitted_at").eq("organization_id",organizationId).eq("applicant_user_id",auth.data.user.id),
+     supabase.from("education_programs").select("id,name").eq("organization_id",organizationId)
+    ]);for(const x of [t,a,r,apps,p])if(x.error)throw x.error;setTimetable((t.data??[]) as Timetable[]);setAttendance((a.data??[]) as Attendance[]);setResults((r.data??[]) as Result[]);setApplications((apps.data??[]) as Application[]);setPrograms(p.data??[]);
+   }else if(role==="teacher"){
+    const {data:f,error:e}=await supabase.from("education_faculty").select("id,full_name,employee_number,department_id").eq("organization_id",organizationId).maybeSingle();if(e)throw e;setFaculty(f as Faculty|null);
+    const [t,s]=await Promise.all([
+     supabase.from("education_timetable_entries").select("id,batch_id,subject_id,faculty_id,weekday,starts_at,ends_at,room").eq("organization_id",organizationId),
+     supabase.from("education_attendance_sessions").select("id,batch_id,subject_id,faculty_id,session_date,starts_at,ends_at,status").eq("organization_id",organizationId).order("session_date",{ascending:false}).limit(100)
+    ]);for(const x of [t,s])if(x.error)throw x.error;setTimetable((t.data??[]) as Timetable[]);setSessions((s.data??[]) as Session[]);
+   }else{
+    const {data:g,error:e}=await supabase.from("education_guardians").select("id,full_name,email").eq("organization_id",organizationId).eq("user_id",auth.data.user.id).maybeSingle();if(e)throw e;setGuardian(g as Guardian|null);
+    const {data:links,error:le}=await supabase.from("education_student_guardians").select("student_id").eq("organization_id",organizationId);if(le)throw le;
+    const ids=(links??[]).map(x=>x.student_id);
+    if(ids.length){const {data:child,error:ce}=await supabase.from("education_students").select("id,full_name,admission_number,batch_id,status,email").eq("organization_id",organizationId).in("id",ids);if(ce)throw ce;setChildren((child??[]) as Student[]);}
+    else setChildren([]);
+   }
+  }catch(e){setError(e instanceof Error?e.message:"Portal data could not be loaded.");}finally{setBusy(false);}
+ },[organizationId,role]);
+ useEffect(()=>{void load();},[load]);
+ const roster=useMemo(()=>[],[]);
+ async function submitApplication(e:FormEvent){e.preventDefault();if(!supabase)return;setBusy(true);setError("");setNotice("");try{
+  const {error:e}=await supabase.from("education_admission_applications").insert({organization_id:organizationId,applicant_user_id:userId,application_number:"APP-"+crypto.randomUUID().slice(0,8).toUpperCase(),full_name:applicationName.trim(),email:email.toLowerCase(),phone:applicationPhone.trim()||null,guardian_name:applicationGuardian.trim()||null,guardian_phone:applicationGuardianPhone.trim()||null,program_id:applicationProgram||null,status:"submitted"});
+  if(e)throw e;setNotice("Admission application submitted.");setApplicationName("");setApplicationPhone("");setApplicationGuardian("");setApplicationGuardianPhone("");await load();
+ }catch(e){setError(e instanceof Error?e.message:"Application could not be submitted.");}finally{setBusy(false);}}
+ async function uploadDocument(e:FormEvent){e.preventDefault();if(!supabase||!documentFile)return;setBusy(true);setError("");try{
+  if(documentFile.size>10*1024*1024)throw new Error("Maximum file size is 10 MB.");
+  if(!["application/pdf","image/jpeg","image/png","image/webp"].includes(documentFile.type))throw new Error("Only PDF, JPG, PNG and WebP files are accepted.");
+  const entity=student?.id??applications[0]?.id;if(!entity)throw new Error("Submit an admission application or wait for your student profile before uploading.");
+  const folder=student?"students":"applications";const path=organizationId+"/"+folder+"/"+entity+"/"+crypto.randomUUID()+"-"+documentFile.name.replace(/[^a-zA-Z0-9._-]/g,"_");
+  const {error:up}=await supabase.storage.from("education-private").upload(path,documentFile,{contentType:documentFile.type,upsert:false});if(up)throw up;
+  const {error:row}=await supabase.from("education_documents").insert({organization_id:organizationId,student_id:student?.id??null,application_id:student?null:entity,category:documentCategory,file_name:documentFile.name,storage_path:path,mime_type:documentFile.type,file_size:documentFile.size,status:"pending",submitted_by:userId});
+  if(row){await supabase.storage.from("education-private").remove([path]);throw row;}setDocumentFile(null);setNotice("Document uploaded for verification.");
+ }catch(e){setError(e instanceof Error?e.message:"Upload failed.");}finally{setBusy(false);}}
+ async function selectSession(id:string){setSelectedSession(id);if(!supabase)return;const {data,error:e}=await supabase.from("education_attendance_records").select("id,session_id,student_id,attendance_status").eq("organization_id",organizationId).eq("session_id",id);if(e){setError(e.message);return;}setAttendance((data??[]) as Attendance[]);setMarks(Object.fromEntries((data??[]).map(x=>[x.student_id,x.attendance_status])));}
+ async function saveAttendance(){if(!supabase||!selectedSession)return;setBusy(true);setError("");try{
+  const session=sessions.find(x=>x.id===selectedSession);if(!session)throw new Error("Select a valid attendance session.");
+  const {data:students,error:e}=await supabase.from("education_students").select("id").eq("organization_id",organizationId).eq("batch_id",session.batch_id);if(e)throw e;
+  if(!students?.length)throw new Error("No students are assigned to this batch.");
+  const rows=students.map(s=>({organization_id:organizationId,session_id:session.id,student_id:s.id,attendance_status:marks[s.id]??"present",marked_by:userId}));
+  const {error:save}=await supabase.from("education_attendance_records").upsert(rows,{onConflict:"organization_id,session_id,student_id"});if(save)throw save;
+  setNotice("Attendance saved.");await load();
+ }catch(e){setError(e instanceof Error?e.message:"Attendance could not be saved.");}finally{setBusy(false);}}
+ const subjectName=(id:string)=>subjects.find(s=>s.id===id)?.name??"Subject";
+ return <section className="education-page">
+  <header className="education-heading"><div><p className="eyebrow">MONK EDUCATION PORTAL</p><h2>{role==="teacher"?"Teacher workspace":role==="student"?"Student dashboard":"Parent portal"}</h2><p className="muted">Authenticated access for {email}. Data is restricted by your education role.</p></div><button className="education-refresh" onClick={()=>void load()} disabled={busy}><RefreshCw size={14}/> Refresh</button></header>
+  {error&&<div className="education-alert error" role="alert">{error}</div>}{notice&&<div className="education-alert" role="status">{notice}</div>}{busy&&<div className="education-loading"><RefreshCw size={13}/> Syncing portal…</div>}
+  {role==="student"&&<><div className="education-metrics"><article><GraduationCap size={17}/><strong>{student?"Active":"—"}</strong><span>Student profile</span></article><article><CalendarCheck size={17}/><strong>{attendance.length}</strong><span>Attendance entries</span></article><article><BookOpen size={17}/><strong>{results.length}</strong><span>Published results</span></article><article><FileText size={17}/><strong>{applications.length}</strong><span>Admission applications</span></article></div>
+   {!student&&<div className="education-grid"><form className="education-card education-form" onSubmit={submitApplication}><div className="education-card-heading"><GraduationCap size={17}/><div><b>Apply for admission</b><small>Submit an application to this institution.</small></div></div><label>Full name<input required value={applicationName} onChange={e=>setApplicationName(e.target.value)}/></label><label>Phone<input value={applicationPhone} onChange={e=>setApplicationPhone(e.target.value)}/></label><label>Guardian name<input value={applicationGuardian} onChange={e=>setApplicationGuardian(e.target.value)}/></label><label>Guardian phone<input value={applicationGuardianPhone} onChange={e=>setApplicationGuardianPhone(e.target.value)}/></label><label>Programme<select value={applicationProgram} onChange={e=>setApplicationProgram(e.target.value)}><option value="">Select programme</option>{programs.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></label><button className="primary" disabled={busy}><FileText size={14}/> Submit application</button></form><div className="education-card"><h3>Application status</h3>{applications.map(a=><div className="education-record" key={a.id}><FileText size={15}/><div><b>{a.application_number}</b><small>{a.status} · {new Date(a.submitted_at).toLocaleDateString()}</small></div></div>)}</div></div>}
+   {student&&<><div className="education-card"><h3>{student.full_name} <span>{student.admission_number}</span></h3><p>Status: {student.status}</p></div><div className="education-grid"><div className="education-card"><h3>My timetable</h3>{timetable.map(t=><div className="education-record" key={t.id}><CalendarCheck size={15}/><div><b>{subjectName(t.subject_id)}</b><small>Weekday {t.weekday} · {t.starts_at.slice(0,5)}–{t.ends_at.slice(0,5)} {t.room??""}</small></div></div>)}{!timetable.length&&<p className="education-empty">No timetable published.</p>}</div><div className="education-card"><h3>Published results</h3>{results.map(r=><div className="education-record" key={r.id}><BookOpen size={15}/><div><b>{r.marks_obtained??"—"} marks</b><small>{r.grade??"Grade pending"}</small></div></div>)}{!results.length&&<p className="education-empty">No published results yet.</p>}</div></div><div className="education-card"><h3>Attendance history <span>{attendance.length} records</span></h3>{attendance.map(a=><div className="education-record" key={a.id}><CalendarCheck size={15}/><div><b>{a.attendance_status}</b><small>Session {a.session_id.slice(0,8)}</small></div></div>)}</div><form className="education-card education-form" onSubmit={uploadDocument}><div className="education-card-heading"><FileText size={17}/><div><b>Upload required document</b><small>Private institution storage · 10 MB max</small></div></div><label>Category<select value={documentCategory} onChange={e=>setDocumentCategory(e.target.value)}>{["identity","address","photo","marksheet","transfer_certificate","caste","income","other"].map(v=><option key={v}>{v}</option>)}</select></label><label>File<input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" onChange={e=>setDocumentFile(e.target.files?.[0]??null)}/></label><button className="primary" disabled={busy||!documentFile}>Upload document</button></form></>}
+  </>}
+  {role==="teacher"&&<><div className="education-metrics"><article><Users size={17}/><strong>{faculty?"Linked":"Pending"}</strong><span>Faculty profile</span></article><article><CalendarCheck size={17}/><strong>{timetable.length}</strong><span>Assigned timetable slots</span></article><article><ClipboardList size={17}/><strong>{sessions.length}</strong><span>Attendance sessions</span></article></div>{faculty&&<div className="education-card"><h3>{faculty.full_name} <span>{faculty.employee_number}</span></h3><p>Teacher account successfully linked to faculty record.</p></div>}<div className="education-grid"><div className="education-card"><h3>My timetable</h3>{timetable.map(t=><div className="education-record" key={t.id}><CalendarCheck size={15}/><div><b>{subjectName(t.subject_id)}</b><small>Weekday {t.weekday} · {t.starts_at.slice(0,5)}–{t.ends_at.slice(0,5)} · Batch {t.batch_id.slice(0,8)}</small></div></div>)}{!timetable.length&&<p className="education-empty">No timetable assignments found.</p>}</div><div className="education-card"><h3>Attendance sessions</h3>{sessions.map(s=><button className={"education-session "+(selectedSession===s.id?"selected":"")} key={s.id} onClick={()=>void selectSession(s.id)}><span><b>{s.session_date} · {s.status}</b><small>Batch {s.batch_id.slice(0,8)}</small></span><em>Open register</em></button>)}{!sessions.length&&<p className="education-empty">No sessions assigned.</p>}</div></div>{selectedSession&&<div className="education-card"><h3>Mark attendance</h3><p>Student roster for selected session. Default status is Present.</p><button className="primary" disabled={busy} onClick={()=>void saveAttendance()}>Save class attendance</button></div>}</>}
+  {role==="parent"&&<><div className="education-metrics"><article><Users size={17}/><strong>{guardian?"Linked":"Pending"}</strong><span>Guardian profile</span></article><article><GraduationCap size={17}/><strong>{children.length}</strong><span>Linked children</span></article></div>{guardian&&<div className="education-card"><h3>{guardian.full_name}</h3><p>Parent account verified for {guardian.email}.</p></div>}<div className="education-grid">{children.map(child=><div className="education-card" key={child.id}><div className="education-card-heading"><GraduationCap size={17}/><div><b>{child.full_name}</b><small>{child.admission_number} · {child.status}</small></div></div><p>Student record is linked to your guardian account. Published marks and attendance are available through the secure student record.</p></div>)}{!children.length&&<div className="education-card"><p className="education-empty">No linked student records yet. Contact the institution administrator to link your guardian account.</p></div>}</div></>}
+ </section>;
+}
