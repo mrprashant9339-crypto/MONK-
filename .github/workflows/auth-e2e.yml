@@ -1,0 +1,47 @@
+name: MONK Auth Multi-user E2E
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  auth-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      MONK_E2E_SUPABASE_URL: ${{ secrets.MONK_E2E_SUPABASE_URL }}
+      MONK_E2E_SUPABASE_ANON_KEY: ${{ secrets.MONK_E2E_SUPABASE_ANON_KEY }}
+      MONK_E2E_OWNER_EMAIL: ${{ secrets.MONK_E2E_OWNER_EMAIL }}
+      MONK_E2E_OWNER_PASSWORD: ${{ secrets.MONK_E2E_OWNER_PASSWORD }}
+      MONK_E2E_INVITEE_EMAIL: ${{ secrets.MONK_E2E_INVITEE_EMAIL }}
+      MONK_E2E_INVITEE_PASSWORD: ${{ secrets.MONK_E2E_INVITEE_PASSWORD }}
+      MONK_E2E_ALLOW_PRODUCTION: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Validate required staging-only secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          required=(MONK_E2E_SUPABASE_URL MONK_E2E_SUPABASE_ANON_KEY MONK_E2E_OWNER_EMAIL MONK_E2E_OWNER_PASSWORD MONK_E2E_INVITEE_EMAIL MONK_E2E_INVITEE_PASSWORD)
+          missing=()
+          for name in "${required[@]}"; do
+            if [[ -z "${!name:-}" ]]; then missing+=("$name"); fi
+          done
+          if (( ${#missing[@]} )); then
+            printf 'Missing required GitHub Actions secrets: %s\n' "${missing[*]}" >&2
+            exit 1
+          fi
+          if [[ "$MONK_E2E_SUPABASE_URL" != https://ysspnuldfiijagagwiqk.supabase.co ]]; then
+            echo "E2E is restricted to the MONK staging Supabase project." >&2
+            exit 1
+          fi
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Run real two-account Auth E2E
+        run: node --test tests/e2e/organization-auth.test.mjs

@@ -1,270 +1,105 @@
-import { FormEvent, useCallback, useEffect, useState } from "react";
-import { ArrowUpRight, Bell, Check, ChevronRight, Command, LayoutGrid, Plus, Search, ShieldCheck, Sparkles, Target, Workflow, Zap, LoaderCircle, LogOut } from "lucide-react";
-import type { Session } from "@supabase/supabase-js";
-import { isSupabaseConfigured, supabase } from "./lib/supabase";
+import { ArrowUpRight, Check, GraduationCap, Building2, ShieldCheck, Users, CalendarDays, BookOpen, BarChart3, Wallet, FolderKanban, Sparkles, Menu, X, Play } from "lucide-react";
+import { useEffect, useState } from "react";
+import AuthExperience from "./components/AuthExperience";
 
-type Project = { id: string; name: string; code: string };
-type Task = { id: string; title: string; status: "todo" | "in_progress" | "blocked" | "review" | "done"; priority: "low" | "medium" | "high" | "urgent"; due_date: string | null; project_id: string };
-const demoTasks: Task[] = [
-  { id: "demo-1", title: "Define the next milestone", status: "todo", priority: "high", due_date: null, project_id: "demo" },
-  { id: "demo-2", title: "Review product requirements", status: "done", priority: "medium", due_date: null, project_id: "demo" },
-  { id: "demo-3", title: "Prepare the weekly execution plan", status: "in_progress", priority: "medium", due_date: null, project_id: "demo" }
-];
+const educationItems = ["Student & faculty management", "Daily attendance and timetables", "Notes, PDFs and video learning", "Fees, examinations and reports"];
+const businessItems = ["Customers, teams and operations", "Projects, tasks and approvals", "Invoices, income and expenses", "Inventory and performance reports"];
 
-export default function App() {
-  const [session, setSession] = useState<Session | null>(null);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [authBusy, setAuthBusy] = useState(false);
-  const [authMessage, setAuthMessage] = useState("");
-  const [tasks, setTasks] = useState<Task[]>(demoTasks);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [projectId, setProjectId] = useState("");
-  const [organizationId, setOrganizationId] = useState<string | null>(null);
-  const [newTask, setNewTask] = useState("");
-  const [organizationName, setOrganizationName] = useState("MONK Studio");
-  const [organizationSlug, setOrganizationSlug] = useState("monk-studio");
-  const [projectName, setProjectName] = useState("MONK Workspace");
-  const [projectCode, setProjectCode] = useState("MONK-001");
-  const [active, setActive] = useState("Overview");
-  const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [workspaceError, setWorkspaceError] = useState("");
-  const [workspaceReady, setWorkspaceReady] = useState(false);
-
-  const loadWorkspace = useCallback(async () => {
-    if (!supabase || !session) return;
-    setLoading(true);
-    setWorkspaceError("");
-    try {
-      const orgResult = await supabase.rpc("current_organization_id");
-      if (orgResult.error) throw orgResult.error;
-      const orgId = orgResult.data as string | null;
-      setOrganizationId(orgId);
-      if (!orgId) {
-        setProjects([]);
-        setTasks([]);
-        setProjectId("");
-        setWorkspaceReady(true);
-        return;
-      }
-      const projectResult = await supabase.from("projects")
-        .select("id,name,code")
-        .eq("organization_id", orgId)
-        .is("deleted_at", null)
-        .order("created_at", { ascending: true });
-      if (projectResult.error) throw projectResult.error;
-      const nextProjects = (projectResult.data ?? []) as Project[];
-      setProjects(nextProjects);
-      const selected = nextProjects.some(p => p.id === projectId) ? projectId : nextProjects[0]?.id ?? "";
-      setProjectId(selected);
-      if (!selected) {
-        setTasks([]);
-        setWorkspaceReady(true);
-        return;
-      }
-      const taskResult = await supabase.from("tasks")
-        .select("id,title,status,priority,due_date,project_id")
-        .eq("organization_id", orgId)
-        .eq("project_id", selected)
-        .is("deleted_at", null)
-        .order("created_at", { ascending: false });
-      if (taskResult.error) throw taskResult.error;
-      setTasks((taskResult.data ?? []) as Task[]);
-      setWorkspaceReady(true);
-    } catch (error) {
-      setWorkspaceError(error instanceof Error ? error.message : "Unable to load workspace data.");
-    } finally {
-      setLoading(false);
-    }
-  }, [session, projectId]);
-
+function useReveal() {
   useEffect(() => {
-    if (!supabase) return;
-    let alive = true;
-    supabase.auth.getSession().then(({ data }) => { if (alive) setSession(data.session); });
-    const { data } = supabase.auth.onAuthStateChange((_event, next) => { if (alive) setSession(next); });
-    return () => { alive = false; data.subscription.unsubscribe(); };
+    const nodes = document.querySelectorAll("[data-reveal]");
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("is-visible");
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.14 });
+    nodes.forEach((node) => observer.observe(node));
+    return () => observer.disconnect();
   }, []);
+}
 
-  useEffect(() => {
-    if (session && supabase) void loadWorkspace();
-  }, [session, loadWorkspace]);
-
-  async function signIn(mode: "login" | "signup") {
-    if (!supabase) return;
-    if (!email.trim() || password.length < 8) { setAuthMessage("Enter a valid email and a password with at least 8 characters."); return; }
-    setAuthBusy(true); setAuthMessage("");
-    try {
-      const result = mode === "login"
-        ? await supabase.auth.signInWithPassword({ email: email.trim(), password })
-        : await supabase.auth.signUp({ email: email.trim(), password });
-      if (result.error) {
-        setAuthMessage(result.error.message);
-        return;
-      }
-      setAuthMessage(mode === "signup" && !result.data.session
-        ? "Account created. Check your inbox, confirm your email, then sign in."
-        : "Authentication successful.");
-      if (result.data.session) setSession(result.data.session);
-    } catch (error) {
-      setAuthMessage(error instanceof Error ? error.message : "Authentication request failed. Check your connection and try again.");
-    } finally {
-      setAuthBusy(false);
-    }
-  }
-
-  async function createOrganization(e: FormEvent) {
-    e.preventDefault();
-    if (!supabase || !organizationName.trim() || !organizationSlug.trim()) return;
-    setSaving(true); setWorkspaceError("");
-    const { error } = await supabase.rpc("create_organization", {
-      org_name: organizationName.trim(), org_slug: organizationSlug.toLowerCase().trim(),
-      org_country: "IN", org_timezone: "Asia/Kolkata", org_currency: "INR", org_locale: "en-IN", org_industry: "Technology"
-    });
-    setSaving(false);
-    if (error) { setWorkspaceError(error.message); return; }
-    setOrganizationId("created");
-    await loadWorkspace();
-  }
-
-  async function createProject(e: FormEvent) {
-    e.preventDefault();
-    if (!supabase || !projectName.trim() || !projectCode.trim()) return;
-    setSaving(true); setWorkspaceError("");
-    const { error } = await supabase.rpc("create_project", {
-      project_name: projectName.trim(), project_code: projectCode.toUpperCase().trim(),
-      project_description: "MONK primary workspace", project_client_company_id: null,
-      project_due_date: null, project_visibility: "internal"
-    });
-    setSaving(false);
-    if (error) { setWorkspaceError(error.message); return; }
-    await loadWorkspace();
-  }
-
-  async function addTask(e: FormEvent) {
-    e.preventDefault();
-    const title = newTask.trim();
-    if (!title) return;
-    if (!supabase || !isSupabaseConfigured || !session) {
-      setTasks(current => [{ id: String(Date.now()), title, status: "todo", priority: "medium", due_date: null, project_id: "demo" }, ...current]);
-      setNewTask("");
-      return;
-    }
-    if (!projectId) { setWorkspaceError("Create or select a project before adding tasks."); return; }
-    setSaving(true); setWorkspaceError("");
-    const { error } = await supabase.rpc("create_task", {
-      task_project_id: projectId, task_title: title, task_due_date: null, task_priority: "medium"
-    });
-    setSaving(false);
-    if (error) { setWorkspaceError(error.message); return; }
-    setNewTask("");
-    await loadWorkspace();
-  }
-
-  async function toggleTask(task: Task) {
-    const nextStatus = task.status === "done" ? "todo" : "done";
-    if (!supabase || !isSupabaseConfigured || !session || task.id.startsWith("demo-")) {
-      setTasks(current => current.map(t => t.id === task.id ? { ...t, status: nextStatus } : t));
-      return;
-    }
-    setSaving(true); setWorkspaceError("");
-    const { error } = await supabase.rpc("update_task", {
-      task_id: task.id, next_status: nextStatus, next_blocker_reason: null
-    });
-    setSaving(false);
-    if (error) { setWorkspaceError(error.message); return; }
-    await loadWorkspace();
-  }
-
-  const completed = tasks.filter(task => task.status === "done").length;
-  const openTasks = tasks.length - completed;
-  const nav = [{ name: "Overview", icon: LayoutGrid }, { name: "Projects", icon: Workflow }, { name: "Focus", icon: Target }];
-
-  if (isSupabaseConfigured && !session) return (
-    <main className="auth-page"><div className="auth-card">
-      <a className="brand" href="#"><span className="brand-mark">M</span> MONK<span className="brand-dot">.</span></a>
-      <p className="eyebrow">YOUR WORKSPACE, REIMAGINED</p><h1>Make room for<br /><em>meaningful work.</em></h1>
-      <p className="muted">Sign in to continue to your MONK workspace.</p>
-      <label>Email address<input type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.com" /></label>
-      <label>Password<input type="password" autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} placeholder="At least 8 characters" /></label>
-      <button className="primary full" disabled={authBusy} onClick={() => signIn("login")}>{authBusy ? "Please wait…" : "Sign in"} <ArrowUpRight size={17} /></button>
-      <button className="text-button full" disabled={authBusy} onClick={() => signIn("signup")}>Create an account</button>
-      {authMessage && <p className="notice">{authMessage}</p>}<p className="tiny">Protected by Supabase Authentication</p>
-    </div></main>
-  );
-
-  if (isSupabaseConfigured && session && !workspaceReady) return (
-    <main className="auth-page"><section className="auth-card">
-      <a className="brand" href="#"><span className="brand-mark">M</span> MONK<span className="brand-dot">.</span></a>
-      <p className="eyebrow">SECURE WORKSPACE</p><h1>{loading ? "Loading your" : "Workspace"}<br /><em>{loading ? "workspace…" : "could not load."}</em></h1>
-      <p className="muted">{loading ? "Checking your organization membership and workspace access." : "Your session is active, but MONK could not retrieve your workspace."}</p>
-      {workspaceError && <p className="notice" role="alert">{workspaceError}</p>}
-      <button className="primary full" disabled={loading} onClick={() => void loadWorkspace()}>{loading ? "Please wait…" : "Retry workspace loading"} <ArrowUpRight size={17} /></button>
-      <button className="text-button full" onClick={async () => { await supabase?.auth.signOut(); setSession(null); setWorkspaceReady(false); setOrganizationId(null); }}>Sign out</button>
-    </section></main>
-  );
-
-  if (isSupabaseConfigured && session && workspaceReady && !organizationId) return (
-    <main className="auth-page"><form className="auth-card" onSubmit={createOrganization}>
-      <a className="brand" href="#"><span className="brand-mark">M</span> MONK<span className="brand-dot">.</span></a>
-      <p className="eyebrow">FIRST-TIME SETUP</p><h1>Create your<br /><em>workspace.</em></h1>
-      <p className="muted">Your organization is the secure boundary for its projects and tasks.</p>
-      <label>Workspace name<input required maxLength={100} value={organizationName} onChange={e => setOrganizationName(e.target.value)} /></label>
-      <label>Workspace URL slug<input required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" maxLength={50} value={organizationSlug} onChange={e => setOrganizationSlug(e.target.value)} /></label>
-      {workspaceError && <p className="notice">{workspaceError}</p>}
-      <button className="primary full" disabled={saving}>{saving ? "Creating…" : "Create workspace"} <ArrowUpRight size={17} /></button>
-      <button type="button" className="text-button full" onClick={() => supabase?.auth.signOut()}><LogOut size={14} /> Sign out</button>
-    </form></main>
-  );
-
-  if (isSupabaseConfigured && session && workspaceReady && organizationId && projects.length === 0) return (
-    <main className="auth-page"><form className="auth-card" onSubmit={createProject}>
-      <a className="brand" href="#"><span className="brand-mark">M</span> MONK<span className="brand-dot">.</span></a>
-      <p className="eyebrow">WORKSPACE SETUP</p><h1>Create your first<br /><em>project.</em></h1>
-      <p className="muted">Tasks belong to projects, so create one to start tracking work.</p>
-      <label>Project name<input required maxLength={120} value={projectName} onChange={e => setProjectName(e.target.value)} /></label>
-      <label>Project code<input required maxLength={20} value={projectCode} onChange={e => setProjectCode(e.target.value.toUpperCase())} /></label>
-      {workspaceError && <p className="notice">{workspaceError}</p>}
-      <button className="primary full" disabled={saving}>{saving ? "Creating…" : "Create project"} <ArrowUpRight size={17} /></button>
-      <button type="button" className="text-button full" onClick={() => supabase?.auth.signOut()}><LogOut size={14} /> Sign out</button>
-    </form></main>
-  );
+function App() {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
+  useReveal();
 
   return (
-    <div className="app-shell">
-      <aside className="sidebar">
-        <a className="brand" href="#"><span className="brand-mark">M</span> MONK<span className="brand-dot">.</span></a>
-        <div className="workspace-switch"><div className="workspace-avatar">M</div><div><strong>MONK Studio</strong><small>{projects.find(p => p.id === projectId)?.name ?? "Personal workspace"}</small></div><ChevronRight size={15} /></div>
-        <p className="side-label">WORKSPACE</p>
-        <nav>{nav.map(item => <button key={item.name} className={active === item.name ? "nav-item selected" : "nav-item"} onClick={() => setActive(item.name)}><item.icon size={17} />{item.name}{item.name === "Projects" && <span className="nav-count">{projects.length}</span>}</button>)}</nav>
-        <div className="sidebar-bottom"><div className="secure"><ShieldCheck size={16} /><span><b>Private by design</b><small>Organization-scoped access.</small></span></div>
-          <button className="profile" onClick={async () => { await supabase?.auth.signOut(); setSession(null); }}><div className="profile-avatar">{session?.user.email?.[0]?.toUpperCase() ?? "P"}</div><span><b>{session?.user.email ?? "Preview mode"}</b><small>{session ? "Signed in" : "Local demo"}</small></span><LogOut size={14} /></button>
+    <main>
+      <header className="site-header">
+        <a className="wordmark" href="#" aria-label="MONK home">monk<span>.</span></a>
+        <nav className={menuOpen ? "desktop-nav open" : "desktop-nav"} aria-label="Main navigation">
+          <a href="#platform" onClick={() => setMenuOpen(false)}>Platform</a>
+          <a href="#education" onClick={() => setMenuOpen(false)}>Education</a>
+          <a href="#business" onClick={() => setMenuOpen(false)}>Business</a>
+          <a href="#security" onClick={() => setMenuOpen(false)}>Security</a>
+        </nav>
+        <div className="header-actions">
+          <button className="sign-in" onClick={() => setAuthOpen(true)}>Sign in</button>
+          <button className="header-cta" onClick={() => setAuthOpen(true)}>Get started <ArrowUpRight size={15}/></button>
         </div>
-      </aside>
-      <main className="main">
-        <header className="topbar"><div className="crumb">Workspace <span>/</span> {active}</div><div className="top-actions"><button className="icon-btn" aria-label="Search"><Search size={18} /></button><button className="icon-btn" aria-label="Notifications"><Bell size={18} /></button><div className="top-avatar">P</div></div></header>
-        <div className="content">
-          <div className="welcome-row"><div><p className="eyebrow"><Sparkles size={13} /> YOUR WORKSPACE</p><h1>Good to have you here<span>.</span></h1><p className="muted">A clear space for your best work. Start with what matters today.</p></div><button className="primary" onClick={() => document.getElementById("new-task")?.focus()}><Plus size={17} /> New task</button></div>
-          {!isSupabaseConfigured && <div className="config-banner"><Zap size={17} /><span><b>Preview mode</b> — add Supabase environment variables to enable persistent tasks and authentication.</span></div>}
-          {workspaceError && <div className="error-banner" role="alert">{workspaceError}<button onClick={() => void loadWorkspace()}>Retry</button></div>}
-          {loading && <div className="loading-line"><LoaderCircle size={15} /> Syncing workspace…</div>}
-          <section className="stats-grid">
-            <article className="stat-card"><div className="stat-top"><span>Open tasks</span><span className="stat-icon"><Command size={17} /></span></div><strong>{openTasks}</strong><small>Across selected project</small></article>
-            <article className="stat-card"><div className="stat-top"><span>Completed</span><span className="stat-icon green"><Check size={17} /></span></div><strong>{completed}</strong><small>Saved to your workspace</small></article>
-            <article className="stat-card highlight"><div className="stat-top"><span>Projects</span><span className="stat-icon gold"><Target size={17} /></span></div><strong>{projects.length || (isSupabaseConfigured ? "—" : 1)}</strong><small>Organized workspaces</small></article>
-          </section>
-          <section className="work-grid">
-            <article className="panel tasks-panel"><div className="panel-heading"><div><p className="eyebrow">EXECUTION</p><h2>Today's priorities</h2></div><select className="project-select" aria-label="Select project" value={projectId} onChange={e => setProjectId(e.target.value)}>{projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}{!projects.length && <option value="demo">Demo project</option>}</select></div>
-              <form className="add-task" onSubmit={addTask}><input id="new-task" value={newTask} onChange={e => setNewTask(e.target.value)} placeholder="Add a priority…" maxLength={240} /><button aria-label="Add task" type="submit" disabled={saving || (isSupabaseConfigured && !projectId)}><Plus size={18} /></button></form>
-              <div className="task-list">{tasks.map(task => <label className="task-row" key={task.id}><input type="checkbox" checked={task.status === "done"} disabled={saving} onChange={() => void toggleTask(task)} /><span className="custom-check"><Check size={12} /></span><span className={task.status === "done" ? "task-title done" : "task-title"}>{task.title}<small>{task.priority} · {task.status.replace("_", " ")}</small></span><ChevronRight size={15} className="task-arrow" /></label>)}{!tasks.length && !loading && <p className="empty-state">No tasks yet. Add your first priority above.</p>}</div>
-            </article>
-            <article className="panel focus-panel"><div className="panel-heading"><div><p className="eyebrow">STAY INTENTIONAL</p><h2>Focus session</h2></div><span className="live-dot">READY</span></div><div className="focus-orb"><div className="orb-inner"><Target size={27} /><strong>25:00</strong><small>DEEP WORK</small></div></div><p className="focus-copy">One thing at a time.<br />Give your best work the space it needs.</p><button className="primary full" onClick={() => setActive("Focus")}>Start a session <ArrowUpRight size={16} /></button></article>
-          </section>
-          <section className="bottom-note"><div className="note-icon"><Sparkles size={18} /></div><div><b>Small steps. Serious momentum.</b><p>MONK brings your priorities, projects and focus into one calm workspace.</p></div><span className="note-tag">BUILT FOR BUILDERS</span></section>
-          <footer>MONK © 2026 <span>{isSupabaseConfigured && session ? "Synced with Supabase." : "Local preview mode."}</span></footer>
+        <button className="mobile-menu" aria-label={menuOpen ? "Close menu" : "Open menu"} onClick={() => setMenuOpen(v => !v)}>{menuOpen ? <X/> : <Menu/>}</button>
+      </header>
+
+      <section className="hero">
+        <div className="hero-kicker"><span className="kicker-dot"/> THE WORKSPACE FOR WHAT'S NEXT</div>
+        <h1>Bring your whole<br/><em>organization</em> together.</h1>
+        <p className="hero-copy">The people, processes and progress behind your institution or business — finally working in one place.</p>
+        <div className="hero-actions">
+          <button className="button-primary" onClick={() => setAuthOpen(true)}>Explore MONK <ArrowUpRight size={16}/></button>
+          <a className="button-secondary" href="#platform"><Play size={14}/> See how it works</a>
         </div>
-      </main>
-    </div>
+        <div className="hero-footnote"><span>EDUCATION</span><i/> <span>BUSINESS</span><i/> <span>ONE CONNECTED PLATFORM</span></div>
+      </section>
+
+      <section className="product-stage" id="platform" data-reveal>
+        <div className="stage-topline"><span>01 / THE PLATFORM</span><span>ONE CLEAR VIEW</span></div>
+        <div className="product-window">
+          <div className="window-sidebar">
+            <div className="mini-brand">m<span>.</span></div>
+            <div className="mini-nav active"><BarChart3 size={16}/><b>Overview</b></div>
+            <div className="mini-nav"><Users size={16}/> People</div>
+            <div className="mini-nav"><CalendarDays size={16}/> Attendance</div>
+            <div className="mini-nav"><FolderKanban size={16}/> Operations</div>
+            <div className="mini-nav"><Wallet size={16}/> Finance</div>
+            <div className="mini-nav"><BookOpen size={16}/> Resources</div>
+            <div className="window-user"><div className="avatar">M</div><span><b>My workspace</b><small>Administrator</small></span></div>
+          </div>
+          <div className="window-main">
+            <div className="window-toolbar"><span>Workspace overview <b>/ Today</b></span><span className="live-status"><i/> All systems normal</span></div>
+            <div className="window-heading"><div><small>WEDNESDAY, 11 NOVEMBER</small><h3>A clearer view of today.</h3></div><span className="demo-pill">DEMO PREVIEW</span></div>
+            <div className="metric-grid">
+              <article className="metric"><span>People</span><strong>1,248</strong><small>Across your organization</small><div className="metric-line"><i style={{width:"76%"}}/></div></article>
+              <article className="metric"><span>Daily activity</span><strong>86%</strong><small>Activity recorded today</small><div className="metric-line blue"><i style={{width:"86%"}}/></div></article>
+              <article className="metric"><span>Financial overview</span><strong>₹4.8L</strong><small>Illustrative monthly total</small><div className="metric-line gold"><i style={{width:"62%"}}/></div></article>
+            </div>
+            <div className="window-lower">
+              <div className="activity-card"><div className="card-title">Today at a glance <span>DEMO DATA</span></div><div className="activity-row"><b className="activity-icon blue-bg"><Users size={15}/></b><span><strong>People and teams</strong><small>Roles, groups and access</small></span><ArrowUpRight size={15}/></div><div className="activity-row"><b className="activity-icon green-bg"><CalendarDays size={15}/></b><span><strong>Daily operations</strong><small>Attendance, schedule and tasks</small></span><ArrowUpRight size={15}/></div><div className="activity-row"><b className="activity-icon amber-bg"><Wallet size={15}/></b><span><strong>Finance and records</strong><small>Collections, expenses and reports</small></span><ArrowUpRight size={15}/></div></div>
+              <div className="pulse-card"><span>ORGANIZATION HEALTH</span><div className="pulse-ring"><strong>92</strong><small>HEALTH</small></div><p>Everything important,<br/>in view.</p></div>
+            </div>
+          </div>
+        </div>
+        <p className="stage-caption">A considered view of the work that moves your organization forward.</p>
+      </section>
+
+      <section className="vertical-section" id="education">
+        <div className="vertical-copy" data-reveal><span className="section-index">02 / EDUCATION</span><div className="vertical-icon education-icon"><GraduationCap size={21}/></div><p className="vertical-eyebrow">MONK FOR EDUCATION</p><h2>Make more room<br/>for <em>learning.</em></h2><p className="vertical-description">A connected home for colleges, coaching centres and institutes. Bring administrators, teachers, students and parents into a clearer daily rhythm.</p><ul>{educationItems.map(x=><li key={x}><Check size={16}/>{x}</li>)}</ul><button className="text-link" onClick={() => setAuthOpen(true)}>Discover Education <ArrowUpRight size={17}/></button></div>
+        <div className="education-visual" data-reveal><div className="ed-top"><span>EDUCATION WORKSPACE</span><span className="ed-status">● ACTIVE</span></div><div className="ed-title">Good morning, Principal.</div><p className="ed-sub">Your institution, in focus.</p><div className="ed-stats"><div><small>STUDENTS</small><b>1,286</b><span>Across 24 batches</span></div><div><small>FACULTY</small><b>48</b><span>Across 6 departments</span></div></div><div className="attendance-card"><div><span>ATTENDANCE TODAY</span><b>92.4%</b></div><div className="attendance-bars"><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/></div><small>Illustrative preview — not live institution data</small></div><div className="ed-bottom"><span><BookOpen size={16}/> Learning resources</span><span><CalendarDays size={16}/> Timetable</span><span><Wallet size={16}/> Fee records</span></div></div>
+      </section>
+
+      <section className="vertical-section business-section" id="business">
+        <div className="business-visual" data-reveal><div className="biz-top"><span>BUSINESS WORKSPACE</span><span className="biz-status">● OVERVIEW</span></div><small className="biz-eyebrow">YOUR BUSINESS, IN FOCUS</small><h3>Good work.<br/><em>Clear numbers.</em></h3><div className="revenue-panel"><div><span>MONTHLY OVERVIEW</span><b>₹ 4,82,600</b><small>Illustrative revenue</small></div><div className="sparkline"><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/></div></div><div className="biz-bottom"><div><Users size={17}/><span><b>Customers</b><small>Relationships</small></span></div><div><FolderKanban size={17}/><span><b>Operations</b><small>Work in motion</small></span></div><div><Wallet size={17}/><span><b>Finance</b><small>Money in view</small></span></div></div></div>
+        <div className="vertical-copy" data-reveal><span className="section-index">03 / BUSINESS</span><div className="vertical-icon business-icon"><Building2 size={21}/></div><p className="vertical-eyebrow">MONK FOR BUSINESS</p><h2>Run the details.<br/>See the <em>whole.</em></h2><p className="vertical-description">For small businesses, teams and growing companies. Keep customers, employees, daily work and finances connected without adding complexity.</p><ul>{businessItems.map(x=><li key={x}><Check size={16}/>{x}</li>)}</ul><button className="text-link" onClick={() => setAuthOpen(true)}>Discover Business <ArrowUpRight size={17}/></button></div>
+      </section>
+
+      <section className="principles" id="security" data-reveal><span className="section-index">04 / BUILT WITH INTENTION</span><h2>Simple on the surface.<br/><em>Thoughtful underneath.</em></h2><div className="principle-grid"><article><ShieldCheck/><h3>Private by design</h3><p>Organization-scoped workspaces and access shaped around each role.</p></article><article><Users/><h3>People come first</h3><p>Administrators, teachers, students and teams see what matters to them.</p></article><article><Sparkles/><h3>Room to grow</h3><p>Start with the essentials. Add capabilities as your organization evolves.</p></article></div></section>
+
+      <section className="closing" id="get-started"><span>YOUR NEXT CHAPTER, WELL ORGANIZED.</span><h2>Bring it all<br/><em>into focus.</em></h2><p>One connected platform for the people and work that matter.</p><button className="button-primary light" onClick={() => setAuthOpen(true)}>Get started with MONK <ArrowUpRight size={16}/></button></section>
+      <footer className="site-footer"><a className="wordmark" href="#">monk<span>.</span></a><span>One platform. Many ways to move forward.</span><span>© 2026 MONK</span></footer>
+      {authOpen && <AuthExperience onClose={() => setAuthOpen(false)} />}
+    </main>
   );
 }
+export default App;
