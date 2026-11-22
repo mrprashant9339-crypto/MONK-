@@ -1,6 +1,6 @@
 # MONK India-wide Discovery, Local Search & Policy Engine
 
-Status: architecture approved; production data ingestion and integrations are gated on active backend credentials, source access/terms and verification.
+Status: core schema and policy Edge Functions are deployed to the restored production Supabase project. Production directory data ingestion, Google Places and policy acceptance remain gated on source permissions, API secrets and legal publication.
 
 ## Product scope
 
@@ -172,11 +172,11 @@ Tenant-owned records remain tenant-scoped. Public directory data must not contai
 
 - The 36-state/UT taxonomy, 24 institution categories, ownership types, verification states, regulator registry and policy organization classifications are implemented in `src/data/india-directory.ts`.
 - The fixed Bihar-only college sample has been removed. Campus now has an India-wide search UI and a public Worker endpoint that reads only published institution records and source provenance.
-- Additive Supabase migrations define institution, programme, approval, source, snapshot, identity-map, verification, organization classification and policy tables. They are not applied to a live database.
-- A guarded directory-import Edge Function is implemented. It requires source terms to be approved, records stable source identities and hashes, and creates unpublished/unverified entries for human review.
+- Additive Supabase migrations for institution, programme, approval, source, snapshot, identity-map, verification, organization classification and policy tables are applied to production project `yucwackrbekwaxiyuobt`; the migration history was verified.
+- The guarded `directory-import` Edge Function is deployed and active. It requires a valid JWT, a server-held import token and source terms approval; it records stable source identities and hashes and creates unpublished/unverified entries for human review. The import token is not configured yet.
 - The Business portal has consent-first geolocation and manual locality search. The Worker contains Places Nearby/Text Search endpoints, field masks, CORS restrictions, rate limiting and Google Maps attribution. The API key and billing configuration are not present, so this is not live yet.
-- Organization classification is collected during onboarding and a server-side RPC is defined. Policy resolution and explicit version/hash acceptance Edge Functions are implemented, but policy text is not legally reviewed or published.
+- Organization classification is collected during onboarding and its server-side RPC is live; writes are restricted to owner/admin/principal roles. `policy-resolve` and `policy-accept` are deployed. Policy rules are seeded, but no policy text is legally reviewed or published, so acceptance remains unavailable until approved documents exist.
 - Full programme/approval ingestion, institution detail pages, duplicate-review UI, complete campus role workflows and production RBAC audit remain follow-up work.
-- Both connected Supabase projects (`yucwackrbekwaxiyuobt` and `ysspnuldfiijagagwiqk`) reported `INACTIVE` on 2026-11-22. Database migrations and Edge Functions cannot be deployed until the correct project is restored.
-- Cloudflare Worker `monk` has no secret bindings. `GOOGLE_MAPS_API_KEY`, Google billing and quotas must be configured before live local-business search can work.
+- The primary Supabase project `yucwackrbekwaxiyuobt` is restored and `ACTIVE_HEALTHY`; the staging project remains inactive and is not used for production.
+- Cloudflare Worker `monk` has no secret bindings and still serves the prior production version. `GOOGLE_MAPS_API_KEY`, Google billing and quotas must be configured before live local-business search can work.
 - National data has not yet been imported. Source registry entries remain import-disabled until source licences, terms, update cadence and permitted use are reviewed.
