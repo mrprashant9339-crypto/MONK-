@@ -89,6 +89,50 @@ type InstitutionResult = {
   source: { authority_name: string; source_url: string; last_checked_at: string | null } | null;
 };
 
+type InstitutionProgramme = {
+  id: string;
+  programme_name: string;
+  programme_level: string | null;
+  discipline: string | null;
+  duration_months: number | null;
+  study_mode: string | null;
+  eligibility: string | null;
+  awarding_body: string | null;
+  affiliation_body: string | null;
+  academic_year: string | null;
+  intake: number | null;
+  verification_state: InstitutionResult["verification_state"];
+  last_verified_at: string | null;
+  source: { authority_name: string; source_url: string; last_checked_at: string | null } | null;
+};
+
+type InstitutionApproval = {
+  id: string;
+  programme_id: string | null;
+  approval_type: string;
+  approval_status: "approved" | "conditional" | "withdrawn" | "not_approved" | "unknown";
+  academic_year: string;
+  approved_intake: number | null;
+  valid_from: string | null;
+  valid_until: string | null;
+  source_url: string;
+  verified_at: string | null;
+  regulator: { authority_name: string; source_url: string; last_checked_at: string | null } | null;
+};
+
+type InstitutionDetail = {
+  institution: InstitutionResult & {
+    postal_code: string | null;
+    phone_public: string | null;
+    email_public: string | null;
+    source_updated_at: string | null;
+    next_review_at: string | null;
+  };
+  programmes: InstitutionProgramme[];
+  approvals: InstitutionApproval[];
+  retrievedAt: string;
+};
+
 function NationalInstitutionFinder() {
   const [query, setQuery] = useState("");
   const [stateCode, setStateCode] = useState("");
@@ -101,6 +145,23 @@ function NationalInstitutionFinder() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [searched, setSearched] = useState(false);
+  const [detail, setDetail] = useState<InstitutionDetail | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState("");
+
+  async function openDetails(institutionId: string) {
+    setDetail(null); setDetailError(""); setDetailLoading(true);
+    try {
+      const response = await fetch(`/api/directory/institutions/${encodeURIComponent(institutionId)}`);
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "Institution details are temporarily unavailable.");
+      setDetail(payload as InstitutionDetail);
+    } catch (reason) {
+      setDetailError(reason instanceof Error ? reason.message : "Institution details are temporarily unavailable.");
+    } finally {
+      setDetailLoading(false);
+    }
+  }
 
   async function runSearch(nextPage = 1) {
     setLoading(true); setError(""); setSearched(true);
@@ -151,6 +212,58 @@ function NationalInstitutionFinder() {
       <label>Ownership<select value={ownershipKey} onChange={event => setOwnershipKey(event.target.value)}><option value="">All ownership types</option>{INSTITUTION_OWNERSHIP.map(item => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
       <button className="button-dark" type="submit" disabled={loading}>{loading ? "Searching…" : "Search India"} <ArrowRight size={15}/></button>
     </form>
+    {(detailLoading || detailError || detail) && <section className="institution-detail-panel" aria-live="polite">
+      <div className="institution-detail-heading">
+        <div><span className="section-kicker">INSTITUTION PROFILE</span><h3>{detail?.institution.canonical_name ?? (detailLoading ? "Loading institution…" : "Institution details")}</h3></div>
+        <button type="button" className="institution-detail-close" onClick={() => { setDetail(null); setDetailError(""); }} aria-label="Close institution details"><X size={18}/></button>
+      </div>
+      {detailLoading && <p className="no-results">Loading published programmes and regulator approvals…</p>}
+      {detailError && <p className="no-results" role="alert">{detailError}</p>}
+      {detail && <>
+        <div className="institution-detail-meta">
+          <span className={`verification-state state-${detail.institution.verification_state}`}>{verificationLabel(detail.institution.verification_state)}</span>
+          <span>{[detail.institution.city, detail.institution.district, stateName(detail.institution.state_code)].filter(Boolean).join(", ") || "Location not published"}</span>
+          {detail.institution.postal_code && <span>PIN {detail.institution.postal_code}</span>}
+          {detail.institution.aishe_code && <span>AISHE ID: {detail.institution.aishe_code}</span>}
+        </div>
+        <div className="institution-detail-sources">
+          {detail.institution.source && <a href={detail.institution.source.source_url} target="_blank" rel="noreferrer">Primary source: {detail.institution.source.authority_name} <ArrowUpRight size={12}/></a>}
+          {detail.institution.last_verified_at && <small>Last verified: {new Date(detail.institution.last_verified_at).toLocaleDateString("en-IN")}</small>}
+          {detail.institution.next_review_at && <small>Next review: {new Date(detail.institution.next_review_at).toLocaleDateString("en-IN")}</small>}
+          {detail.institution.phone_public && <small>Public phone: {detail.institution.phone_public}</small>}
+          {detail.institution.email_public && <small>Public email: {detail.institution.email_public}</small>}
+        </div>
+        <div className="institution-detail-columns">
+          <section><h4>Published programmes <span>{detail.programmes.length}</span></h4>
+            {detail.programmes.length === 0 ? <p className="detail-empty">No programme records have been published for this institution yet. Check the relevant regulator or institution before relying on course availability.</p> :
+              detail.programmes.map(programme => <article className="institution-detail-record" key={programme.id}>
+                <b>{programme.programme_name}</b>
+                <small>{[programme.programme_level, programme.discipline, programme.study_mode].filter(Boolean).join(" · ") || "Programme classification not published"}</small>
+                <small>{programme.academic_year ? `Academic year: ${programme.academic_year}` : "Academic year not stated"}{programme.intake !== null ? ` · Intake: ${programme.intake}` : ""}{programme.duration_months ? ` · ${programme.duration_months} months` : ""}</small>
+                {programme.eligibility && <small>Eligibility: {programme.eligibility}</small>}
+                {programme.awarding_body && <small>Awarding body: {programme.awarding_body}</small>}
+                {programme.source && <a href={programme.source.source_url} target="_blank" rel="noreferrer">Programme source: {programme.source.authority_name} <ArrowUpRight size={11}/></a>}
+                <span className={`verification-state state-${programme.verification_state}`}>{verificationLabel(programme.verification_state)}</span>
+              </article>)
+            }
+          </section>
+          <section><h4>Regulator approvals <span>{detail.approvals.length}</span></h4>
+            {detail.approvals.length === 0 ? <p className="detail-empty">No regulator approval records have been published. This does not mean approval is absent; verify the specific programme, campus and academic year directly with its regulator.</p> :
+              detail.approvals.map(approval => <article className="institution-detail-record" key={approval.id}>
+                <b>{approval.approval_type.replace(/_/g, " ")}</b>
+                <small>Academic year: {approval.academic_year} · Status: {approval.approval_status.replace(/_/g, " ")}</small>
+                {approval.approved_intake !== null && <small>Approved intake: {approval.approved_intake}</small>}
+                {(approval.valid_from || approval.valid_until) && <small>Validity: {approval.valid_from ?? "Not stated"} – {approval.valid_until ?? "Open-ended"}</small>}
+                {approval.regulator && <small>Regulator: {approval.regulator.authority_name}</small>}
+                <a href={approval.source_url} target="_blank" rel="noreferrer">Approval evidence <ArrowUpRight size={11}/></a>
+                {approval.verified_at && <small>Evidence checked: {new Date(approval.verified_at).toLocaleDateString("en-IN")}</small>}
+              </article>)
+            }
+          </section>
+        </div>
+        <small className="institution-detail-disclaimer">Programme and approval information is shown only when published with source evidence. A listing is not a guarantee of current admission or regulator approval.</small>
+      </>}
+    </section>}
     {error && <p className="no-results" role="alert">{error}</p>}
     {loading && <p className="no-results" aria-live="polite">Searching published institution records…</p>}
     {!loading && searched && !error && results.length === 0 && <p className="no-results">No published institution records match these filters yet. Try a broader search or another state.</p>}
@@ -171,6 +284,7 @@ function NationalInstitutionFinder() {
             {institution.aishe_code && <small>AISHE ID: {institution.aishe_code}</small>}
             {institution.website_url && <a href={institution.website_url} target="_blank" rel="noreferrer">Institution website <ArrowUpRight size={12}/></a>}
           </div>
+          <button type="button" className="institution-details-button" onClick={() => void openDetails(institution.id)}>View programmes &amp; approvals <ArrowRight size={14}/></button>
         </article>;
       })}</div>
       <div className="national-directory-pagination">
