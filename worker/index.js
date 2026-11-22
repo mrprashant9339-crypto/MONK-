@@ -7,7 +7,7 @@ const ALLOWED_ORIGINS = new Set([
 const PLACE_TYPES = new Set([
   "accounting", "atm", "bank", "bar", "beauty_salon", "bicycle_store",
   "book_store", "cafe", "car_dealer", "car_repair", "clothing_store",
-  "dentist", "doctor", "electronics_store", "establishment", "florist",
+  "dentist", "doctor", "electronics_store", "florist",
   "gas_station", "grocery_store", "gym", "hardware_store",
   "hospital", "jewelry_store", "lawyer", "library", "lodging",
   "meal_takeaway", "movie_theater", "pharmacy", "physiotherapist",
