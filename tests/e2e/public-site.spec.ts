@@ -15,7 +15,8 @@ const publicRoutes = [
   "/disclaimer",
   "/security",
   "/accessibility",
-  "/data-rights"
+  "/data-rights",
+  "/contact"
 ];
 
 test("public routes render the application without a blank screen", async ({ page }) => {
@@ -62,11 +63,31 @@ test("public pages remain usable at a narrow mobile viewport", async ({ page }) 
   await page.screenshot({ path: test.info().outputPath("about-mobile.png"), fullPage: true });
 });
 
+test("primary, Campus and Business logos render from their brand assets", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator('img[src="/brand/monk-icon.svg"]').first()).toBeVisible();
+  await page.goto("/campus");
+  await expect(page.getByRole("img", { name: "MONK Campus" })).toBeVisible();
+  await page.goto("/business");
+  await expect(page.getByRole("img", { name: "MONK Business" })).toBeVisible();
+});
+
+test("contact page exposes email and WhatsApp support routes", async ({ page }) => {
+  await page.goto("/contact");
+  await expect(page.getByRole("heading", { name: /a clear path to the right help/i })).toBeVisible();
+  await expect(page.getByRole("link", { name: /WhatsApp support/i })).toHaveAttribute("href", "https://wa.me/919288435641");
+  await expect(page.getByRole("link", { name: /admin@monk.monster/i })).toBeVisible();
+});
+
 test("manifest and favicon are served by the production preview", async ({ request }) => {
   const manifest = await request.get("/manifest.webmanifest");
   expect(manifest.status()).toBe(200);
   const manifestJson = await manifest.json();
   expect(manifestJson.name).toMatch(/MONK/i);
+  expect(manifestJson.icons[0].src).toBe("/brand/monk-icon.svg");
+  const brandIcon = await request.get(manifestJson.icons[0].src);
+  expect(brandIcon.status()).toBe(200);
+  expect(await brandIcon.text()).toContain("<svg");
   const favicon = await request.get("/favicon.svg");
   expect(favicon.status()).toBe(200);
   expect(await favicon.text()).toContain("<svg");
