@@ -36,7 +36,7 @@ const businessFeatures = [
 ];
 
 function MonkMark({ large = false }: { large?: boolean }) {
-  return <span className={large ? "monk-mark monk-mark-large" : "monk-mark"} aria-label="MONK logo">
+  return <span className={large ? "monk-mark monk-mark-large" : "monk-mark"} role="img" aria-label="MONK logo">
     <svg viewBox="0 0 100 100" role="img" aria-hidden="true">
       <path className="mark-letter" d="M19 76V24L50 57 81 24V76" />
       <path className="mark-spark" d="M80 8c2.2 9.8 4.2 11.8 14 14-9.8 2.2-11.8 4.2-14 14-2.2-9.8-4.2-11.8-14-14 9.8-2.2 11.8-4.2 14-14z" />
@@ -113,7 +113,7 @@ function HomePage() {
         <div className="hero-actions"><button className="button-dark hero-primary" onClick={chooseWorkspace}>Choose your workspace <ArrowRight size={17}/></button></div>
         <div className="hero-trust"><span><ShieldCheck size={15}/> Private by design</span><span><Layers3 size={15}/> Built around your work</span></div>
       </div>
-      <div className="hero-art" aria-label="MONK workspace product preview">
+      <div className="hero-art" aria-hidden="true">
         <div className="hero-orbit orbit-one"/><div className="hero-orbit orbit-two"/><div className="hero-glow"/>
         <div className="hero-product-window">
           <div className="product-window-top"><span className="window-dots"><i/><i/><i/></span><span>MONK WORKSPACE</span><span className="window-status"><i/> INTERFACE PREVIEW</span></div>
