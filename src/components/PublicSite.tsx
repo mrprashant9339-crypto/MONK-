@@ -46,7 +46,7 @@ function Header({ active }: { active?: Portal }) {
   const navigate = useNavigate();
   const [menu, setMenu] = useState(false);
   return <header className="public-header"><button className="brand-button" onClick={() => navigate("/")}><Brand /></button>
-    <nav className={menu ? "public-nav open" : "public-nav"}><button className={active === "campus" ? "nav-active" : ""} onClick={() => { navigate("/campus"); setMenu(false); }}>Campus</button><button className={active === "business" ? "nav-active" : ""} onClick={() => { navigate("/business"); setMenu(false); }}>Business</button><a href="/#how-it-works" onClick={() => setMenu(false)}>How it works</a><a href="/#about" onClick={event => { event.preventDefault(); navigate("/about"); setMenu(false); }}>About MONK</a></nav>
+    <nav className={menu ? "public-nav open" : "public-nav"}><button className={active === "campus" ? "nav-active" : ""} onClick={() => { navigate("/campus"); setMenu(false); }}>Campus</button><button className={active === "business" ? "nav-active" : ""} onClick={() => { navigate("/business"); setMenu(false); }}>Business</button><a href="/features" onClick={event=>{event.preventDefault();navigate("/features");setMenu(false);}}>Features</a><a href="/solutions" onClick={event=>{event.preventDefault();navigate("/solutions");setMenu(false);}}>Solutions</a><a href="/pricing" onClick={event=>{event.preventDefault();navigate("/pricing");setMenu(false);}}>Pricing</a><a href="/integrations" onClick={event=>{event.preventDefault();navigate("/integrations");setMenu(false);}}>Integrations</a><a href="/resources" onClick={event=>{event.preventDefault();navigate("/resources");setMenu(false);}}>Resources</a><a href="/faq" onClick={event=>{event.preventDefault();navigate("/faq");setMenu(false);}}>FAQ</a><a href="/#how-it-works" onClick={() => setMenu(false)}>How it works</a><a href="/#about" onClick={event => { event.preventDefault(); navigate("/about"); setMenu(false); }}>About MONK</a></nav>
     <div className="header-actions"><button className="login-link" onClick={() => navigate("/login")}>Log in</button><button className="header-cta" onClick={() => navigate("/login?mode=signup")}>Get started <ArrowUpRight size={15}/></button></div>
     <button className="mobile-menu" aria-label="Toggle navigation" onClick={() => setMenu(v => !v)}>{menu ? <X/> : <Menu/>}</button>
   </header>;
@@ -83,6 +83,11 @@ function Footer() {
         <a className="footer-link" href="/about" onClick={event=>{event.preventDefault();navigate("/about");}}>About the project</a>
         <a className="footer-link" href="/documentation" onClick={event=>{event.preventDefault();navigate("/documentation");}}>Documentation</a>
         <a className="footer-link" href="/updates" onClick={event=>{event.preventDefault();navigate("/updates");}}>Product updates</a>
+        <a className="footer-link" href="/features" onClick={event=>{event.preventDefault();navigate("/features");}}>Features</a>
+        <a className="footer-link" href="/pricing" onClick={event=>{event.preventDefault();navigate("/pricing");}}>Pricing & plans</a>
+        <a className="footer-link" href="/integrations" onClick={event=>{event.preventDefault();navigate("/integrations");}}>Integrations</a>
+        <a className="footer-link" href="/roadmap" onClick={event=>{event.preventDefault();navigate("/roadmap");}}>Product roadmap</a>
+        <a className="footer-link" href="/partners" onClick={event=>{event.preventDefault();navigate("/partners");}}>Partners</a>
         <a className="footer-link" href="/faq" onClick={event=>{event.preventDefault();navigate("/faq");}}>FAQ</a>
         <a className="footer-link" href="/contact" onClick={event=>{event.preventDefault();navigate("/contact");}}>Contact support</a>
         <a className="footer-link" href="/support/tickets" onClick={event=>{event.preventDefault();navigate("/support/tickets");}}>Support tickets</a>

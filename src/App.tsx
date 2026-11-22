@@ -1,12 +1,19 @@
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import PublicSite from "./components/PublicSite";
-import { ArrowUpRight, Bell, Check, ChevronRight, Command, LayoutGrid, Plus, Search, ShieldCheck, Sparkles, Target, Zap, LoaderCircle, LogOut, Pencil, Trash2, Play, Pause, RotateCcw, Users, Activity, GraduationCap, Briefcase, FolderKanban, CheckSquare, FileText, BarChart3, Wallet, Store, Bot, Settings, Building2 } from "lucide-react";
+import { ArrowUpRight, Bell, Check, ChevronRight, Command, LayoutGrid, Plus, Search, ShieldCheck, Sparkles, Target, Zap, LoaderCircle, LogOut, Pencil, Trash2, Play, Pause, RotateCcw, Users, Activity, GraduationCap, Briefcase, FolderKanban, CheckSquare, FileText, BarChart3, Wallet, Store, Bot, Settings, Building2, CalendarDays } from "lucide-react";
 import type { Session } from "@supabase/supabase-js";
 import { isSupabaseConfigured, supabase } from "./lib/supabase";
-import WorkspaceManagement from "./components/WorkspaceManagement";
-import EducationManagement from "./components/EducationManagement";
-import CRMManagement from "./components/CRMManagement";
+import { isAuthRoute } from "./lib/routes/auth-routes";
+import type { OnboardingInput } from "./components/OnboardingFlow";
+const AuthRoutes = lazy(() => import("./components/AuthRoutes"));
+const OnboardingFlow = lazy(() => import("./components/OnboardingFlow"));
+const WorkspaceOverlays = lazy(() => import("./components/WorkspaceOverlays"));
+const WorkspaceSettings = lazy(() => import("./components/WorkspaceSettings"));
+const CalendarView = lazy(() => import("./components/CalendarView"));
+const WorkspaceManagement = lazy(() => import("./components/WorkspaceManagement"));
+const EducationManagement = lazy(() => import("./components/EducationManagement"));
+const CRMManagement = lazy(() => import("./components/CRMManagement"));
 
 type Project = { id: string; name: string; code: string; description?: string | null; due_date?: string | null; visibility?: "internal" | "client_visible"; status?: "draft" | "active" | "at_risk" | "in_review" | "completed" };
 type Task = { id: string; title: string; status: "todo" | "in_progress" | "blocked" | "review" | "done"; priority: "low" | "medium" | "high" | "urgent"; due_date: string | null; project_id: string };
@@ -32,7 +39,6 @@ export default function App() {
   const [newTask, setNewTask] = useState("");
   const [organizationName, setOrganizationName] = useState("MONK Studio");
   const [organizationVertical, setOrganizationVertical] = useState<"business" | "education">(new URLSearchParams(window.location.search).get("vertical") === "education" ? "education" : "business");
-  const [organizationSlug, setOrganizationSlug] = useState("monk-studio");
   const [projectName, setProjectName] = useState("MONK Workspace");
   const [projectCode, setProjectCode] = useState("MONK-001");
   const [active, setActive] = useState("Overview");
@@ -42,6 +48,7 @@ export default function App() {
   const [workspaceReady, setWorkspaceReady] = useState(false);
   const [focusSeconds, setFocusSeconds] = useState(25 * 60);
   const [focusRunning, setFocusRunning] = useState(false);
+  const [overlayMode, setOverlayMode] = useState<"command" | "notifications" | null>(null);
 
   const loadWorkspace = useCallback(async () => {
     if (!supabase || !session) return;
@@ -121,6 +128,18 @@ export default function App() {
   }, [location.search]);
 
   useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setOverlayMode("command");
+      }
+      if (event.key === "Escape") setOverlayMode(null);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  useEffect(() => {
     if (!focusRunning) return;
     const timer = window.setInterval(() => {
       setFocusSeconds(current => Math.max(0, current - 1));
@@ -189,18 +208,32 @@ export default function App() {
     }
   }
 
-  async function createOrganization(e: FormEvent) {
-    e.preventDefault();
-    if (!supabase || !organizationName.trim() || !organizationSlug.trim()) return;
-    setSaving(true); setWorkspaceError("");
-    const { error } = await supabase.rpc("create_organization", {
-      org_name: organizationName.trim(), org_slug: organizationSlug.toLowerCase().trim(),
-      org_country: "IN", org_timezone: "Asia/Kolkata", org_currency: "INR", org_locale: "en-IN", org_industry: organizationVertical === "education" ? "Education" : "Technology", org_vertical: organizationVertical
-    });
-    setSaving(false);
-    if (error) { setWorkspaceError(error.message); return; }
-    setOrganizationId("created");
-    await loadWorkspace();
+  async function createOrganization(input: OnboardingInput) {
+    if (!supabase || !input.name.trim() || !input.slug.trim()) return;
+    setOrganizationName(input.name.trim());
+    setOrganizationVertical(input.vertical);
+    setSaving(true);
+    setWorkspaceError("");
+    try {
+      const { error } = await supabase.rpc("create_organization", {
+        org_name: input.name.trim(),
+        org_slug: input.slug.toLowerCase().trim(),
+        org_country: input.country,
+        org_timezone: input.timezone,
+        org_currency: input.currency,
+        org_locale: input.locale,
+        org_industry: input.industry,
+        org_vertical: input.vertical
+      });
+      if (error) throw error;
+      setOrganizationId("created");
+      try { localStorage.removeItem("monk-onboarding-draft-v1"); } catch { /* storage is optional */ }
+      await loadWorkspace();
+    } catch (error) {
+      setWorkspaceError(error instanceof Error ? error.message : "Unable to create the workspace. Check your connection and retry.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function createProject(e: FormEvent) {
@@ -287,7 +320,9 @@ export default function App() {
   const completed = tasks.filter(task => task.status === "done").length;
   const focusTime = `${String(Math.floor(focusSeconds / 60)).padStart(2, "0")}:${String(focusSeconds % 60).padStart(2, "0")}`;
   const openTasks = tasks.length - completed;
-  const nav = [{ name: "Overview", icon: LayoutGrid, group: "WORKSPACE" }, { name: "Projects", icon: FolderKanban, group: "WORKSPACE" }, { name: "Tasks", icon: CheckSquare, group: "WORKSPACE" }, ...(organizationVertical === "business" ? [{ name: "CRM", icon: Briefcase, group: "GROWTH" }] : []), { name: "Sales", icon: BarChart3, group: "GROWTH" }, { name: "Documents", icon: FileText, group: "WORKSPACE" }, { name: "Team", icon: Users, group: "MANAGE" }, { name: "Analytics", icon: Activity, group: "MANAGE" }, { name: "Finance", icon: Wallet, group: "MANAGE" }, { name: "Marketplace", icon: Store, group: "EXPLORE" }, { name: "AI Copilot", icon: Bot, group: "EXPLORE" }, ...(organizationVertical === "education" ? [{ name: "Education", icon: GraduationCap, group: "MANAGE" }] : []), { name: "Focus", icon: Target, group: "PERSONAL" }, { name: "Settings", icon: Settings, group: "PERSONAL" }];
+  const nav = [{ name: "Overview", icon: LayoutGrid, group: "WORKSPACE" }, { name: "Projects", icon: FolderKanban, group: "WORKSPACE" }, { name: "Tasks", icon: CheckSquare, group: "WORKSPACE" }, { name: "Calendar", icon: CalendarDays, group: "WORKSPACE" }, ...(organizationVertical === "business" ? [{ name: "CRM", icon: Briefcase, group: "GROWTH" }] : []), { name: "Sales", icon: BarChart3, group: "GROWTH" }, { name: "Documents", icon: FileText, group: "WORKSPACE" }, { name: "Team", icon: Users, group: "MANAGE" }, { name: "Analytics", icon: Activity, group: "MANAGE" }, { name: "Finance", icon: Wallet, group: "MANAGE" }, { name: "Marketplace", icon: Store, group: "EXPLORE" }, { name: "AI Copilot", icon: Bot, group: "EXPLORE" }, ...(organizationVertical === "education" ? [{ name: "Education", icon: GraduationCap, group: "MANAGE" }] : []), { name: "Focus", icon: Target, group: "PERSONAL" }, { name: "Settings", icon: Settings, group: "PERSONAL" }];
+
+  if (isAuthRoute(location.pathname)) return <Suspense fallback={<main className="auth-page"><section className="auth-card">Loading secure account page…</section></main>}><AuthRoutes /></Suspense>;
 
   if (!session && location.pathname !== "/login") return <PublicSite />;
 
@@ -301,7 +336,7 @@ export default function App() {
       {authMode === "signup" && <label className="legal-acceptance"><input type="checkbox" checked={legalAccepted} onChange={e => setLegalAccepted(e.target.checked)} /><span>I agree to the <a href="/terms" target="_blank" rel="noreferrer">Terms of Service</a> and acknowledge the <a href="/privacy" target="_blank" rel="noreferrer">Privacy Policy</a>.</span></label>}
       <button className="primary full" disabled={authBusy || (authMode === "signup" && !legalAccepted)} onClick={() => signIn(authMode)}>{authBusy ? "Please wait…" : authMode === "signup" ? "Create account" : "Sign in"} <ArrowUpRight size={17} /></button>
       <button className="text-button full" disabled={authBusy} onClick={() => { setAuthMode(current => current === "login" ? "signup" : "login"); setLegalAccepted(false); setAuthMessage(""); }}>{authMode === "signup" ? "Already have an account? Sign in" : "New to MONK? Create an account"}</button>
-      {authMessage && <p className="notice">{authMessage}</p>}<p className="tiny">Protected by Supabase Authentication · <a href="/">Back to public website</a></p>
+      {authMessage && <p className="notice" role="status" aria-live="polite">{authMessage}</p>}{authMode === "login" && <div className="auth-help-links"><a href="/forgot-password">Forgot password?</a><a href="/verify-email">Resend email verification</a><a href="/mfa">Account security / MFA</a></div>}<p className="tiny">Protected by Supabase Authentication · <a href="/">Back to public website</a></p>
     </div></main>
   );
 
@@ -317,17 +352,7 @@ export default function App() {
   );
 
   if (isSupabaseConfigured && session && workspaceReady && !organizationId) return (
-    <main className="auth-page"><form className="auth-card" onSubmit={createOrganization}>
-      <a className="brand" href="#"><span className="brand-mark">M</span> MONK<span className="brand-dot">.</span></a>
-      <p className="eyebrow">FIRST-TIME SETUP</p><h1>Create your<br /><em>workspace.</em></h1>
-      <p className="muted">Your organization is the secure boundary for its projects and tasks.</p>
-      <label>Workspace name<input required maxLength={100} value={organizationName} onChange={e => setOrganizationName(e.target.value)} /></label>
-      <label>Workspace type<select value={organizationVertical} onChange={e => setOrganizationVertical(e.target.value as "business" | "education")}><option value="business">Business workspace</option><option value="education">Education institution</option></select></label>
-      <label>Workspace URL slug<input required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" maxLength={50} value={organizationSlug} onChange={e => setOrganizationSlug(e.target.value)} /></label>
-      {workspaceError && <p className="notice">{workspaceError}</p>}
-      <button className="primary full" disabled={saving}>{saving ? "Creating…" : "Create workspace"} <ArrowUpRight size={17} /></button>
-      <button type="button" className="text-button full" onClick={() => supabase?.auth.signOut()}><LogOut size={14} /> Sign out</button>
-    </form></main>
+    <Suspense fallback={<main className="auth-page"><section className="auth-card">Preparing workspace setup…</section></main>}><OnboardingFlow busy={saving} error={workspaceError} onCreate={createOrganization} /></Suspense>
   );
 
   if (isSupabaseConfigured && session && workspaceReady && organizationId && organizationVertical === "business" && projects.length === 0 && active === "Overview") return (
@@ -354,7 +379,7 @@ export default function App() {
         </div>
       </aside>
       <main className="main">
-        <header className="topbar"><div className="crumb"><span className="crumb-mark">M</span> Workspace <span>/</span> {active}</div><div className="top-actions"><button className="icon-btn" aria-label="Search"><Search size={18} /></button><button className="icon-btn" aria-label="Notifications"><Bell size={18} /></button><div className="top-avatar">P</div></div></header>
+        <header className="topbar"><div className="crumb"><span className="crumb-mark">M</span> Workspace <span>/</span> {active}</div><div className="top-actions"><button className="icon-btn" aria-label="Search (Ctrl or Command plus K)" onClick={() => setOverlayMode("command")}><Search size={18} /></button><button className="icon-btn" aria-label="Notifications" onClick={() => setOverlayMode("notifications")}><Bell size={18} /></button><button className="top-avatar" aria-label="Open profile settings" onClick={() => setActive("Settings")}>{session?.user.email?.[0]?.toUpperCase() ?? "P"}</button></div></header>
         <div className="content">
           <div className="welcome-row"><div><p className="eyebrow"><Sparkles size={13} /> THE OPERATING SYSTEM FOR YOUR WORK</p><h1>{active === "Overview" ? "One workspace. Entire operation." : active === "Tasks" ? "Turn plans into progress." : active === "Focus" ? "Protect your focus." : `${active}, in one place.`}<span>.</span></h1><p className="muted">{active === "Overview" ? "Projects, customers, people and execution — connected in one calm workspace." : `Bring your ${active.toLowerCase()} workflow into the MONK workspace.`}</p></div>{(["Overview","Tasks","Focus"].includes(active)) && <button className="primary" onClick={() => { setActive("Tasks"); window.setTimeout(() => document.getElementById("new-task")?.focus(), 0); }}><Plus size={17} /> New task</button>}</div>
           {!isSupabaseConfigured && <div className="config-banner"><Zap size={17} /><span><b>Preview mode</b> — add Supabase environment variables to enable persistent tasks and authentication.</span></div>}
@@ -375,10 +400,12 @@ export default function App() {
           </section>
           <section className="bottom-note"><div className="note-icon"><Sparkles size={18} /></div><div><b>Small steps. Serious momentum.</b><p>MONK brings your priorities, projects and focus into one calm workspace.</p></div><span className="note-tag">BUILT FOR BUILDERS</span></section>
           </>}
-          {isSupabaseConfigured && session && organizationId && organizationVertical === "education" && active === "Education" && <EducationManagement organizationId={organizationId} />}
-          {isSupabaseConfigured && session && organizationId && organizationVertical === "business" && (active === "CRM" || active === "Sales") && <CRMManagement organizationId={organizationId} />}
-          {!["Overview","Focus","Tasks","Projects","Team","Activity","CRM","Sales","Education"].includes(active) && <section className="module-hub"><div className="module-hub-head"><div><span className="module-kicker">MONK WORKSPACE / {active.toUpperCase()}</span><h2>{active === "AI Copilot" ? "Your intelligent work companion." : active === "Documents" ? "Every important file, in context." : active === "Analytics" ? "Clarity across your operation." : active === "Finance" ? "Keep the numbers connected." : active === "Marketplace" ? "Extend your workspace." : "Make MONK work your way."}</h2><p>One connected system for your team. This area is being brought online in the approved MVP rollout.</p></div><span className="module-orb"><Sparkles size={22}/></span></div><div className="module-cards">{(active === "Documents" ? [{icon:FileText,title:"Shared documents",desc:"Organize project briefs, contracts and working files.",status:"Storage integration pending"},{icon:ShieldCheck,title:"Access controls",desc:"Keep sensitive files scoped to the right workspace.",status:"Security foundation"}] : active === "Analytics" ? [{icon:BarChart3,title:"Workspace performance",desc:"Understand delivery, workload and customer momentum.",status:"Metrics foundation"},{icon:Activity,title:"Activity insights",desc:"Track meaningful changes across teams and projects.",status:"Event aggregation pending"}] : active === "Finance" ? [{icon:Wallet,title:"Revenue overview",desc:"Bring invoices, expenses and cash visibility together.",status:"Finance module pending"},{icon:Building2,title:"Client accounts",desc:"Connect commercial records with customer work.",status:"CRM foundation available"}] : active === "Marketplace" ? [{icon:Store,title:"Connected tools",desc:"Discover integrations that extend MONK workflows.",status:"Integration catalog pending"},{icon:Zap,title:"Automation recipes",desc:"Connect repetitive work across your stack.",status:"Coming in a later phase"}] : active === "AI Copilot" ? [{icon:Bot,title:"Workspace assistant",desc:"Summarize work, prepare updates and find next actions.",status:"AI runtime not connected"},{icon:Sparkles,title:"AI-assisted reports",desc:"Turn project activity into clear client-ready updates.",status:"Report workflow pending"}] : [{icon:Settings,title:"Workspace preferences",desc:"Manage profile, organization and security preferences.",status:"Settings foundation"}]).map(card => <article className="module-card" key={card.title}><span className="module-card-icon"><card.icon size={18}/></span><h3>{card.title}</h3><p>{card.desc}</p><small>{card.status}</small></article>)}</div><div className="module-hub-foot"><ShieldCheck size={16}/><span>MONK uses organization-scoped access. Features are enabled only when their secure backend workflows are ready.</span></div></section>}
-          {isSupabaseConfigured && session && organizationId && (active === "Projects" || active === "Team" || active === "Activity") && <WorkspaceManagement
+          {isSupabaseConfigured && session && organizationId && organizationVertical === "education" && active === "Education" && <Suspense fallback={<div className="loading-line">Loading education workspace…</div>}><EducationManagement organizationId={organizationId} /></Suspense>}
+          {active === "Calendar" && <Suspense fallback={<div className="loading-line">Loading calendar…</div>}><CalendarView tasks={tasks} /></Suspense>}
+          {active === "Settings" && <Suspense fallback={<div className="loading-line">Loading settings…</div>}><WorkspaceSettings email={session?.user.email ?? ""} onSignOut={async()=>{await supabase?.auth.signOut();setSession(null);setWorkspaceReady(false);setOrganizationId(null);}} /></Suspense>}
+          {isSupabaseConfigured && session && organizationId && organizationVertical === "business" && (active === "CRM" || active === "Sales") && <Suspense fallback={<div className="loading-line">Loading customer workspace…</div>}><CRMManagement organizationId={organizationId} /></Suspense>}
+          {!["Overview","Focus","Tasks","Projects","Team","Activity","CRM","Sales","Education","Calendar","Settings"].includes(active) && <section className="module-hub"><div className="module-hub-head"><div><span className="module-kicker">MONK WORKSPACE / {active.toUpperCase()}</span><h2>{active === "AI Copilot" ? "Your intelligent work companion." : active === "Documents" ? "Every important file, in context." : active === "Analytics" ? "Clarity across your operation." : active === "Finance" ? "Keep the numbers connected." : active === "Marketplace" ? "Extend your workspace." : "Make MONK work your way."}</h2><p>One connected system for your team. This area is being brought online in the approved MVP rollout.</p></div><span className="module-orb"><Sparkles size={22}/></span></div><div className="module-cards">{(active === "Documents" ? [{icon:FileText,title:"Shared documents",desc:"Organize project briefs, contracts and working files.",status:"Storage integration pending"},{icon:ShieldCheck,title:"Access controls",desc:"Keep sensitive files scoped to the right workspace.",status:"Security foundation"}] : active === "Analytics" ? [{icon:BarChart3,title:"Workspace performance",desc:"Understand delivery, workload and customer momentum.",status:"Metrics foundation"},{icon:Activity,title:"Activity insights",desc:"Track meaningful changes across teams and projects.",status:"Event aggregation pending"}] : active === "Finance" ? [{icon:Wallet,title:"Revenue overview",desc:"Bring invoices, expenses and cash visibility together.",status:"Finance module pending"},{icon:Building2,title:"Client accounts",desc:"Connect commercial records with customer work.",status:"CRM foundation available"}] : active === "Marketplace" ? [{icon:Store,title:"Connected tools",desc:"Discover integrations that extend MONK workflows.",status:"Integration catalog pending"},{icon:Zap,title:"Automation recipes",desc:"Connect repetitive work across your stack.",status:"Coming in a later phase"}] : active === "AI Copilot" ? [{icon:Bot,title:"Workspace assistant",desc:"Summarize work, prepare updates and find next actions.",status:"AI runtime not connected"},{icon:Sparkles,title:"AI-assisted reports",desc:"Turn project activity into clear client-ready updates.",status:"Report workflow pending"}] : [{icon:Settings,title:"Workspace preferences",desc:"Manage profile, organization and security preferences.",status:"Settings foundation"}]).map(card => <article className="module-card" key={card.title}><span className="module-card-icon"><card.icon size={18}/></span><h3>{card.title}</h3><p>{card.desc}</p><small>{card.status}</small></article>)}</div><div className="module-hub-foot"><ShieldCheck size={16}/><span>MONK uses organization-scoped access. Features are enabled only when their secure backend workflows are ready.</span></div></section>}
+          {isSupabaseConfigured && session && organizationId && (active === "Projects" || active === "Team" || active === "Activity") && <Suspense fallback={<div className="loading-line">Loading workspace tools…</div>}><WorkspaceManagement
             view={active}
             organizationId={organizationId}
             organizationVertical={organizationVertical}
@@ -386,8 +413,9 @@ export default function App() {
             projectId={projectId}
             setProjectId={setProjectId}
             onReload={loadWorkspace}
-          />}
+          /></Suspense>}
           <footer>MONK © 2026 <span>{isSupabaseConfigured && session ? "Synced with Supabase." : "Local preview mode."}</span></footer>
+          <Suspense fallback={null}><WorkspaceOverlays mode={overlayMode} onClose={()=>setOverlayMode(null)} onNavigate={setActive} projects={projects} tasks={tasks} onSelectProject={setProjectId} /></Suspense>
         </div>
       </main>
     </div>

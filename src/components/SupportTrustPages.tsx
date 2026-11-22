@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   ArrowLeft, ArrowRight, ArrowUpRight, CheckCircle2, CircleHelp, Clock3,
@@ -6,6 +6,8 @@ import {
   AlertTriangle, LockKeyhole, Copy, Activity, Bug, ClipboardList, Home, Server
 } from "lucide-react";
 import "../support-trust.css";
+import { isExtendedPublicRoute } from "../lib/routes/public-routes";
+const ExtendedPublicPages = lazy(() => import("./ExtendedPublicPages"));
 
 type Ticket = { id: string; subject: string; category: string; message: string; email: string; createdAt: string; status: "Saved locally"; };
 const TICKET_KEY = "monk-support-tickets-v1";
@@ -91,14 +93,12 @@ function StatusPage() {
     <p className="st-footnote">A browser page cannot independently prove server uptime. Check again after monitoring is configured.</p>
   </Shell>;
 }
-
 function IncidentHistoryPage() {
   return <Shell eyebrow="INCIDENT HISTORY" title="A transparent record of service events." intro="No verified incident feed is connected yet. We will publish incident timelines here when monitoring and incident management are operational.">
     <section className="st-card st-empty"><Activity/><h2>No verified incident records available</h2><p>This does not mean that no incidents have occurred. The public incident history is not yet connected to an authoritative monitoring source.</p><Link to="/status" className="st-secondary">View current status <ArrowRight size={16}/></Link></section>
     <div className="st-note"><ShieldCheck size={17}/> We will distinguish confirmed incidents, investigations, mitigations and resolved events. Planned maintenance will be labelled separately.</div>
   </Shell>;
 }
-
 function SecurityCenterPage() {
   const cards=[{icon:LockKeyhole,title:"Account safety",desc:"Use a unique password, keep recovery details current and sign out on shared devices.",href:"/security"},{icon:Bug,title:"Report a vulnerability",desc:"Read the responsible disclosure scope and send a private report.",href:"/security/vulnerability-disclosure"},{icon:FileText,title:"Security overview",desc:"Review the controls MONK currently documents and the work still outstanding.",href:"/security"},{icon:Activity,title:"Service status",desc:"Check whether an authoritative uptime monitor is connected.",href:"/status"}];
   return <Shell eyebrow="SECURITY CENTER" title="Security is a process, not a badge." intro="Review account-safety guidance, responsible disclosure and the current limits of MONK's security posture. This page does not claim a certification or completed independent audit.">
@@ -106,7 +106,6 @@ function SecurityCenterPage() {
     <section className="st-card st-security-note"><ShieldCheck/><div><h2>What users should know</h2><p>Do not share passwords, OTPs, access tokens or real student/customer records in public reports. Never test a system or account without explicit authorization. Security controls and certifications are described only when verified.</p><Link to="/security">Read the security overview <ArrowRight size={15}/></Link></div></section>
   </Shell>;
 }
-
 function DisclosurePage() {
   const [type,setType]=useState("Web application vulnerability");const [details,setDetails]=useState("");const [contact,setContact]=useState("");
   const ready=details.trim().length>=30 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact);
@@ -115,13 +114,11 @@ function DisclosurePage() {
     <form className="st-card st-form" onSubmit={e=>{e.preventDefault();if(!ready)return;window.location.href=`mailto:${emailAddress}?subject=${encodeURIComponent("[Security disclosure] "+type)}&body=${encodeURIComponent("Researcher contact: "+contact+"\n\n"+details)}`;}}><h2>Prepare a private report</h2><label>Issue type<select value={type} onChange={e=>setType(e.target.value)}><option>Web application vulnerability</option><option>Authentication or session issue</option><option>Authorization or tenant isolation</option><option>Data exposure</option><option>Other security concern</option></select></label><label>Contact email *<input type="email" required value={contact} onChange={e=>setContact(e.target.value)} placeholder="researcher@example.com"/></label><label>Technical details *<textarea required minLength={30} maxLength={5000} rows={7} value={details} onChange={e=>setDetails(e.target.value)} placeholder="Affected URL, impact and minimal reproduction steps. Remove all secrets and personal data."/></label><button className="st-primary" disabled={!ready}><ShieldCheck size={16}/> Prepare disclosure email <ArrowUpRight size={16}/></button></form></div>
   </Shell>;
 }
-
 function PrivacyCenterPage() {
   return <Shell eyebrow="PRIVACY CENTER" title="Understand and manage your information." intro="Find the privacy policy, browser preferences and data-request routes in one place. Data access, correction or deletion requests require verification and may involve the organisation that manages the workspace.">
     <div className="st-resource-grid">{[{icon:FileText,title:"Privacy policy",desc:"What the current public notice says about information and processing.",href:"/privacy"},{icon:LockKeyhole,title:"Cookie preferences",desc:"Review essential browser storage and optional analytics preferences.",href:"/cookies/preferences"},{icon:ClipboardList,title:"Data rights request",desc:"Prepare a request about access, correction or deletion of personal information.",href:"/data-rights"},{icon:ShieldCheck,title:"Security overview",desc:"Review current security controls and limitations.",href:"/security"}].map(c=><Link className="st-card st-resource" to={c.href} key={c.title}><c.icon/><h2>{c.title}</h2><p>{c.desc}</p><span>Open page <ArrowUpRight size={15}/></span></Link>)}</div>
   </Shell>;
 }
-
 function CookiePreferencesPage() {
   const [analytics,setAnalytics]=useState(false);const [saved,setSaved]=useState(false);const [loaded,setLoaded]=useState(false);
   useEffect(()=>{try{const v=JSON.parse(localStorage.getItem("monk-cookie-preferences-v1")||"{}");setAnalytics(v.analytics===true);}catch{setAnalytics(false);}setLoaded(true);},[]);
@@ -130,7 +127,6 @@ function CookiePreferencesPage() {
     <section className="st-card st-cookie"><div className="st-cookie-row"><div><h2>Essential storage</h2><p>Required for authentication and basic operation. Always active.</p></div><span className="st-required">Required</span></div><div className="st-cookie-row"><div><h2>Optional analytics</h2><p>Preference only. No analytics provider is currently active.</p></div><label className="st-switch"><input type="checkbox" checked={analytics} onChange={e=>{setAnalytics(e.target.checked);setSaved(false);}}/><span/></label></div><button className="st-primary" disabled={!loaded} onClick={()=>save(analytics)}>Save preferences</button>{saved&&<p className="st-success"><CheckCircle2 size={16}/> Your preference was saved in this browser.</p>}<p className="st-footnote">Clearing browser storage may reset these preferences. Read the <Link to="/cookies">cookie policy</Link>.</p></section>
   </Shell>;
 }
-
 function DataRequestPage() {
   const [type,setType]=useState("Access my personal information");const [email,setEmail]=useState("");const [details,setDetails]=useState("");const [saved,setSaved]=useState(false);
   const valid=/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)&&details.trim().length>=10;
@@ -139,7 +135,6 @@ function DataRequestPage() {
     <form className="st-card st-form st-request-form" onSubmit={submit}><label>Request type<select value={type} onChange={e=>{setType(e.target.value);setSaved(false);}}><option>Access my personal information</option><option>Correct inaccurate information</option><option>Delete personal information</option><option>Withdraw consent where applicable</option><option>Raise a privacy complaint</option><option>Ask a question about processing</option></select></label><label>Account email *<input type="email" required value={email} onChange={e=>{setEmail(e.target.value);setSaved(false);}} placeholder="The email associated with your account"/></label><label>Request details *<textarea required minLength={10} maxLength={3000} rows={6} value={details} onChange={e=>{setDetails(e.target.value);setSaved(false);}} placeholder="Describe the data or workspace involved. Do not attach identity documents or passwords here."/></label><div className="st-note"><ShieldCheck size={17}/> Do not send passwords, OTPs, full identity documents or another person's personal data.</div><button className="st-primary" disabled={!valid}><ClipboardList size={16}/> Save request draft</button>{saved&&<div className="st-success-panel">Draft saved in this browser only. It has not been submitted.</div>}<a className="st-secondary st-mail-link" href={`mailto:${emailAddress}?subject=${encodeURIComponent("MONK data rights request: "+type)}&body=${encodeURIComponent("Account email: "+email+"\n\n"+details)}`}><Mail size={16}/> Prepare email to support <ArrowUpRight size={15}/></a></form>
   </Shell>;
 }
-
 function SystemFallbackPage({kind}:{kind:"offline"|"maintenance"|"error"|"not-found"}) {
   const config={
     offline:{icon:WifiOff,kicker:"NETWORK CONNECTION",title:"You appear to be offline.",body:"MONK could not confirm a network connection. Check Wi-Fi or mobile data, then retry. Unsaved form entries may not be recoverable.",action:"Try again"},
@@ -150,12 +145,12 @@ function SystemFallbackPage({kind}:{kind:"offline"|"maintenance"|"error"|"not-fo
   useEffect(()=>{document.title = `${config.title} | MONK`;const on=()=>setOnline(true);const off=()=>setOnline(false);window.addEventListener("online",on);window.addEventListener("offline",off);return()=>{window.removeEventListener("online",on);window.removeEventListener("offline",off);};},[]);
   return <main className="st-system"><Link to="/" className="st-brand"><span className="st-mark">M</span><span>MONK<span>.</span></span></Link><section className="st-system-card"><span className="st-system-icon"><Icon size={28}/></span><span className="st-eyebrow">{config.kicker}</span><h1>{config.title}</h1><p>{kind==="offline"&&!online?"Your device currently reports no network connection. ":kind==="offline"&&online?"Your device is online again. ":""}{config.body}</p>{kind==="offline"&&<span className={online?"st-online":"st-offline"}><i/> {online?"Device reports online":"Device reports offline"}</span>}<div className="st-system-actions"><button className="st-primary" onClick={()=>kind==="maintenance"?navigate("/status"):kind==="not-found"?navigate("/"):window.location.reload()}>{kind==="maintenance"?<Activity size={16}/>:kind==="not-found"?<Home size={16}/>:<RefreshCw size={16}/>} {config.action}</button><Link to="/contact" className="st-secondary">Contact support <ArrowRight size={15}/></Link></div></section><footer>MONK · Independent project in development</footer></main>;
 }
-
 export function isSupportTrustRoute(path:string) {
-  return ["/contact","/support/tickets","/status","/incidents","/security-center","/security/vulnerability-disclosure","/privacy-center","/cookies/preferences","/data-rights","/offline","/maintenance","/error"].includes(path) || /^\/support\/tickets\/[^/]+$/.test(path);
+  return ["/contact","/support/tickets","/status","/incidents","/security-center","/security/vulnerability-disclosure","/privacy-center","/cookies/preferences","/data-rights","/offline","/maintenance","/error"].includes(path) || /^\/support\/tickets\/[^/]+$/.test(path) || isExtendedPublicRoute(path);
 }
 export default function SupportTrustPages() {
   const {pathname}=useLocation();
+  if(isExtendedPublicRoute(pathname)) return <Suspense fallback={<main className="st-system" aria-live="polite"><section className="st-system-card"><p>Loading page…</p></section></main>}><ExtendedPublicPages/></Suspense>;
   if(pathname==="/contact")return <ContactPage/>;
   if(pathname==="/support/tickets")return <TicketListPage/>;
   if(pathname.startsWith("/support/tickets/"))return <TicketDetailPage id={decodeURIComponent(pathname.split("/").pop()||"")}/>;
