@@ -391,6 +391,18 @@ Deno.serve(async (request) => {
             ignoreDuplicates: true,
           });
         if (approvalError) throw new Error("Approval import failed: " + approvalError.message);
+        if (programmeId) {
+          const { error: approvalLinkError } = await supabase
+            .from("monk_directory_approvals")
+            .update({ programme_id: programmeId })
+            .eq("institution_id", institutionId)
+            .eq("regulator_source_id", source.id)
+            .eq("approval_type", approval.approvalType.trim())
+            .eq("academic_year", approval.academicYear)
+            .eq("source_record_id", approval.sourceRecordId)
+            .is("programme_id", null);
+          if (approvalLinkError) throw new Error("Approval programme link update failed: " + approvalLinkError.message);
+        }
         counts.approvals++;
       }
 
