@@ -36,7 +36,22 @@ const businessFeatures = [
 ];
 
 function MonkMark({ large = false }: { large?: boolean }) {
-  return <span className={large ? "monk-mark monk-mark-large" : "monk-mark"} aria-label="MONK logo"><svg viewBox="0 0 48 48" role="img" aria-hidden="true"><path className="mark-path" d="M8 36V12l16 17L40 12v24" /><path className="mark-spark" d="M24 4v5M21.5 6.5h5" /></svg></span>;
+  return <span className={large ? "monk-mark monk-mark-large" : "monk-mark"} aria-label="MONK logo">
+    <svg viewBox="0 0 100 100" role="img" aria-hidden="true">
+      <path className="mark-letter" d="M19 77V23h12l19 27 19-27h12v54H66V43L50 65 34 43v34z" />
+      <path className="mark-spark" d="M80 8c2.2 9.8 4.2 11.8 14 14-9.8 2.2-11.8 4.2-14 14-2.2-9.8-4.2-11.8-14-14 9.8-2.2 11.8-4.2 14-14z" />
+    </svg>
+  </span>;
+}
+function PortalMark({ portal }: { portal: Portal }) {
+  return <span className={`portal-brand-mark ${portal}`} aria-hidden="true">
+    <svg viewBox="0 0 64 64">
+      <path className="portal-mark-letter" d="M10 51V15h8l14 20 14-20h8v36H44V29L32 46 20 29v22z" />
+      {portal === "campus"
+        ? <><path className="portal-mark-accent" d="M32 2 58 12 32 22 6 12 32 2zM18 17v13c8 8 20 8 28 0V17" /><path className="portal-mark-accent" d="M57 13v17" /></>
+        : <><path className="portal-mark-accent" d="M43 51V34h7v17M52 51V24h7v27M34 51V41h7v10" /></>}
+    </svg>
+  </span>;
 }
 function Brand() { return <span className="public-brand"><MonkMark /> <span>MONK<span className="brand-period">.</span></span></span>; }
 function Header({ active }: { active?: Portal }) {
@@ -64,8 +79,7 @@ function Footer() {
   return <footer className="public-footer"><div className="footer-top"><div><Brand/><p>One platform. Two ways to move forward.</p></div><div className="footer-links"><button onClick={() => navigate("/campus")}>MONK Campus</button><button onClick={() => navigate("/business")}>MONK Business</button><a href="https://dashboard.aishe.gov.in/" target="_blank" rel="noreferrer">AISHE India</a><a href="https://www.ugc.gov.in/" target="_blank" rel="noreferrer">UGC</a></div></div><div className="footer-bottom"><span>© {new Date().getFullYear()} MONK. All rights reserved.</span><span className="footer-legal"><a href="/terms">Terms &amp; Conditions</a><a href="/privacy">Privacy Notice</a></span></div></footer>;
 }
 function PortalCard({ portal, title, desc, points, onClick }: { portal: Portal; title: string; desc: string; points: string[]; onClick: () => void }) {
-  const Icon = portal === "campus" ? GraduationCap : Store;
-  return <button className={`portal-card ${portal}`} onClick={onClick}><span className="portal-card-top"><span className="portal-icon"><Icon size={25}/></span><span className="portal-arrow"><ArrowUpRight size={19}/></span></span><span className="portal-kicker">{portal === "campus" ? "FOR EDUCATION" : "FOR COMMERCE & TEAMS"}</span><strong>{title}</strong><span className="portal-desc">{desc}</span><span className="portal-points">{points.map(p => <span key={p}><CheckCircle2 size={14}/>{p}</span>)}</span><span className="portal-explore">Explore {portal === "campus" ? "Campus" : "Business"} <ArrowRight size={16}/></span></button>;
+  return <button className={`portal-card ${portal}`} onClick={onClick}><span className="portal-card-top"><PortalMark portal={portal}/><span className="portal-arrow"><ArrowUpRight size={19}/></span></span><span className="portal-kicker">{portal === "campus" ? "FOR EDUCATION" : "FOR COMMERCE & TEAMS"}</span><strong>{title}</strong><span className="portal-desc">{desc}</span><span className="portal-points">{points.map(p => <span key={p}><CheckCircle2 size={14}/>{p}</span>)}</span><span className="portal-explore">Explore {portal === "campus" ? "Campus" : "Business"} <ArrowRight size={16}/></span></button>;
 }
 function HomePage() {
   const navigate = useNavigate();
