@@ -1,3 +1,4 @@
+import { INDIA_STATES_AND_UTS, INSTITUTION_CATEGORIES } from "./data/india-directory";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import PublicSite from "./components/PublicSite";
@@ -10,6 +11,26 @@ import CRMManagement from "./components/CRMManagement";
 
 type Project = { id: string; name: string; code: string; description?: string | null; due_date?: string | null; visibility?: "internal" | "client_visible"; status?: "draft" | "active" | "at_risk" | "in_review" | "completed" };
 type Task = { id: string; title: string; status: "todo" | "in_progress" | "blocked" | "review" | "done"; priority: "low" | "medium" | "high" | "urgent"; due_date: string | null; project_id: string };
+type OrganizationEntityType = "government_college" | "private_college" | "government_university" | "private_university" | "coaching_institute" | "government_body" | "trust_society" | "business" | "sole_proprietor" | "company" | "partnership" | "other";
+type PolicyDocument = {
+  id: string;
+  policy_key: string;
+  version: string;
+  title: string;
+  jurisdiction: string;
+  effective_at: string;
+  content_markdown: string;
+  content_sha256: string;
+};
+type PolicyResolution = {
+  organization: { id: string; vertical: string; entityType: string | null; institutionCategory: string | null; jurisdiction: string; stateCode: string | null };
+  classificationRequired: boolean;
+  requiredPolicyKeys: string[];
+  availablePolicies: PolicyDocument[];
+  pendingPolicies: PolicyDocument[];
+  missingPolicyKeys: string[];
+  resolvedAt: string;
+};
 const demoTasks: Task[] = [
   { id: "demo-1", title: "Define the next milestone", status: "todo", priority: "high", due_date: null, project_id: "demo" },
   { id: "demo-2", title: "Review product requirements", status: "done", priority: "medium", due_date: null, project_id: "demo" },
@@ -31,6 +52,9 @@ export default function App() {
   const [newTask, setNewTask] = useState("");
   const [organizationName, setOrganizationName] = useState("MONK Studio");
   const [organizationVertical, setOrganizationVertical] = useState<"business" | "education">(new URLSearchParams(window.location.search).get("vertical") === "education" ? "education" : "business");
+  const [organizationEntityType, setOrganizationEntityType] = useState<OrganizationEntityType>(new URLSearchParams(window.location.search).get("vertical") === "education" ? "private_college" : "business");
+  const [organizationInstitutionCategory, setOrganizationInstitutionCategory] = useState("");
+  const [organizationStateCode, setOrganizationStateCode] = useState("");
   const [organizationSlug, setOrganizationSlug] = useState("monk-studio");
   const [projectName, setProjectName] = useState("MONK Workspace");
   const [projectCode, setProjectCode] = useState("MONK-001");
@@ -39,6 +63,11 @@ export default function App() {
   const [saving, setSaving] = useState(false);
   const [workspaceError, setWorkspaceError] = useState("");
   const [workspaceReady, setWorkspaceReady] = useState(false);
+  const [policyResolution, setPolicyResolution] = useState<PolicyResolution | null>(null);
+  const [policyGateRequired, setPolicyGateRequired] = useState(false);
+  const [policyChecks, setPolicyChecks] = useState<Record<string, boolean>>({});
+  const [policyBusy, setPolicyBusy] = useState(false);
+  const [policyError, setPolicyError] = useState("");
   const [focusSeconds, setFocusSeconds] = useState(25 * 60);
   const [focusRunning, setFocusRunning] = useState(false);
 
@@ -56,14 +85,40 @@ export default function App() {
         setProjects([]);
         setTasks([]);
         setProjectId("");
+        setPolicyResolution(null);
+        setPolicyGateRequired(false);
         setWorkspaceReady(true);
         return;
       }
       const organizationResult = await supabase.from("organizations")
-        .select("name,vertical").eq("id", orgId).single();
+        .select("name,vertical,entity_type,institution_category,state_code").eq("id", orgId).single();
       if (organizationResult.error) throw organizationResult.error;
       setOrganizationName(organizationResult.data.name);
       setOrganizationVertical(organizationResult.data.vertical === "education" ? "education" : "business");
+      if (organizationResult.data.entity_type) setOrganizationEntityType(organizationResult.data.entity_type as OrganizationEntityType);
+      setOrganizationInstitutionCategory(organizationResult.data.institution_category ?? "");
+      setOrganizationStateCode(organizationResult.data.state_code ?? "");
+
+      const policyResult = await supabase.functions.invoke("policy-resolve");
+      if (policyResult.error) throw new Error("Unable to resolve the policies for this organization. Workspace access remains paused until policy status can be checked.");
+      const resolvedPolicies = policyResult.data as PolicyResolution;
+      setPolicyResolution(resolvedPolicies);
+      setPolicyChecks({});
+      setPolicyError("");
+      const requiresPolicyGate = Boolean(
+        resolvedPolicies.classificationRequired ||
+        resolvedPolicies.missingPolicyKeys?.length ||
+        resolvedPolicies.pendingPolicies?.length
+      );
+      setPolicyGateRequired(requiresPolicyGate);
+      if (requiresPolicyGate) {
+        setProjects([]);
+        setTasks([]);
+        setProjectId("");
+        setWorkspaceReady(true);
+        return;
+      }
+
       const projectResult = await supabase.from("projects")
         .select("id,name,code,description,due_date,visibility,status")
         .eq("organization_id", orgId)
@@ -116,7 +171,10 @@ export default function App() {
     const mode = params.get("mode");
     if (mode === "login" || mode === "signup") setAuthMode(mode);
     const vertical = params.get("vertical");
-    if (vertical === "education" || vertical === "business") setOrganizationVertical(vertical);
+    if (vertical === "education" || vertical === "business") {
+      setOrganizationVertical(vertical);
+      setOrganizationEntityType(vertical === "education" ? "private_college" : "business");
+    }
   }, [location.search]);
 
   useEffect(() => {
@@ -179,10 +237,67 @@ export default function App() {
       org_name: organizationName.trim(), org_slug: organizationSlug.toLowerCase().trim(),
       org_country: "IN", org_timezone: "Asia/Kolkata", org_currency: "INR", org_locale: "en-IN", org_industry: organizationVertical === "education" ? "Education" : "Technology", org_vertical: organizationVertical
     });
+    if (error) { setSaving(false); setWorkspaceError(error.message); return; }
+    const { error: classificationError } = await supabase.rpc("set_organization_classification", {
+      p_entity_type: organizationEntityType,
+      p_institution_category: organizationVertical === "education" ? organizationInstitutionCategory || null : null,
+      p_state_code: organizationStateCode || null
+    });
     setSaving(false);
-    if (error) { setWorkspaceError(error.message); return; }
+    if (classificationError) { setWorkspaceError(`Workspace created, but organization classification could not be saved: ${classificationError.message}`); return; }
     setOrganizationId("created");
     await loadWorkspace();
+  }
+
+  async function acceptPendingPolicies(e: FormEvent) {
+    e.preventDefault();
+    if (!supabase || !session || !policyResolution) return;
+    const missingKeys = policyResolution.missingPolicyKeys ?? [];
+    const pending = policyResolution.pendingPolicies ?? [];
+    if (missingKeys.length) {
+      setPolicyError("Required policy documents have not been published yet. Workspace access stays paused until the applicable documents are approved and published.");
+      return;
+    }
+    if (!pending.length) {
+      setPolicyGateRequired(false);
+      await loadWorkspace();
+      return;
+    }
+    if (pending.some(document => !policyChecks[document.id])) {
+      setPolicyError("Review and explicitly accept every applicable policy document before continuing.");
+      return;
+    }
+
+    setPolicyBusy(true);
+    setPolicyError("");
+    try {
+      for (const document of pending) {
+        const { data, error } = await supabase.functions.invoke("policy-accept", {
+          body: {
+            policyDocumentId: document.id,
+            acceptedSha256: document.content_sha256,
+            method: "explicit_checkbox",
+            locale: "en-IN",
+            consentEvidence: {
+              source: "workspace_onboarding",
+              policyKey: document.policy_key,
+              version: document.version,
+            },
+          },
+        });
+        if (error || data?.accepted !== true) {
+          throw new Error(error?.message ?? "A policy acceptance could not be confirmed.");
+        }
+      }
+      setPolicyGateRequired(false);
+      setPolicyResolution(null);
+      setPolicyChecks({});
+      await loadWorkspace();
+    } catch (error) {
+      setPolicyError(error instanceof Error ? error.message : "Policy acceptance failed. Please retry.");
+    } finally {
+      setPolicyBusy(false);
+    }
   }
 
   async function createProject(e: FormEvent) {
@@ -271,6 +386,7 @@ export default function App() {
   const openTasks = tasks.length - completed;
   const nav = [{ name: "Overview", icon: LayoutGrid, group: "WORKSPACE" }, { name: "Projects", icon: FolderKanban, group: "WORKSPACE" }, { name: "Tasks", icon: CheckSquare, group: "WORKSPACE" }, ...(organizationVertical === "business" ? [{ name: "CRM", icon: Briefcase, group: "GROWTH" }] : []), { name: "Sales", icon: BarChart3, group: "GROWTH" }, { name: "Documents", icon: FileText, group: "WORKSPACE" }, { name: "Team", icon: Users, group: "MANAGE" }, { name: "Analytics", icon: Activity, group: "MANAGE" }, { name: "Finance", icon: Wallet, group: "MANAGE" }, { name: "Marketplace", icon: Store, group: "EXPLORE" }, { name: "AI Copilot", icon: Bot, group: "EXPLORE" }, ...(organizationVertical === "education" ? [{ name: "Education", icon: GraduationCap, group: "MANAGE" }] : []), { name: "Focus", icon: Target, group: "PERSONAL" }, { name: "Settings", icon: Settings, group: "PERSONAL" }];
 
+  if (location.pathname === "/terms" || location.pathname === "/privacy") return <PublicSite />;
   if (!session && location.pathname !== "/login") return <PublicSite />;
 
   if (!session && location.pathname === "/login") return (
@@ -297,13 +413,46 @@ export default function App() {
     </section></main>
   );
 
+  if (isSupabaseConfigured && session && workspaceReady && organizationId && policyGateRequired) return (
+    <main className="auth-page policy-gate-page"><form className="auth-card policy-gate-card" onSubmit={acceptPendingPolicies}>
+      <a className="brand" href="/"><span className="brand-mark">M</span> MONK<span className="brand-dot">.</span></a>
+      <p className="eyebrow">ORGANIZATION POLICY REVIEW</p>
+      <h1>Review the terms<br /><em>for this workspace.</em></h1>
+      <p className="muted">MONK selects applicable documents from the organization type, education category and enabled services. Organization type is declared by an authorized workspace administrator and may be subject to verification. Each version is shown with its effective date and content hash.</p>
+      {policyResolution?.classificationRequired && <p className="notice" role="alert">Organization classification is incomplete. An authorized workspace administrator must complete it before access can be activated.</p>}
+      {(policyResolution?.missingPolicyKeys?.length ?? 0) > 0 && <div className="policy-blocked-notice" role="alert">
+        <b>Required documents are not published yet.</b>
+        <p>Workspace access remains paused. The following policy documents are required for this organization: {policyResolution?.missingPolicyKeys.join(", ")}.</p>
+        <small>MONK will not ask you to accept missing, draft or legally unreviewed documents.</small>
+      </div>}
+      {(policyResolution?.pendingPolicies ?? []).map(document => <article className="policy-document-card" key={document.id}>
+        <div className="policy-document-meta"><span>{document.policy_key.replace(/_/g, " ")}</span><span>Version {document.version}</span></div>
+        <h2>{document.title}</h2>
+        <small>Jurisdiction: {document.jurisdiction} · Effective: {new Date(document.effective_at).toLocaleDateString("en-IN")}</small>
+        <pre>{document.content_markdown}</pre>
+        <label className="policy-accept-check">
+          <input type="checkbox" checked={Boolean(policyChecks[document.id])} onChange={event => setPolicyChecks(current => ({ ...current, [document.id]: event.target.checked }))} />
+          <span>I have read and agree to this version of {document.title}.</span>
+        </label>
+      </article>)}
+      {policyError && <p className="notice" role="alert">{policyError}</p>}
+      {(policyResolution?.missingPolicyKeys?.length ?? 0) === 0 && (policyResolution?.pendingPolicies?.length ?? 0) > 0 && <button className="primary full" disabled={policyBusy || (policyResolution?.pendingPolicies ?? []).some(document => !policyChecks[document.id])}>{policyBusy ? "Saving acceptance…" : "Accept policies and continue"} <ArrowUpRight size={17} /></button>}
+      <button type="button" className="text-button full" onClick={async () => { await supabase?.auth.signOut(); setSession(null); setWorkspaceReady(false); setOrganizationId(null); setPolicyGateRequired(false); setPolicyResolution(null); }}><LogOut size={14} /> Sign out</button>
+    </form></main>
+  );
+
   if (isSupabaseConfigured && session && workspaceReady && !organizationId) return (
     <main className="auth-page"><form className="auth-card" onSubmit={createOrganization}>
       <a className="brand" href="#"><span className="brand-mark">M</span> MONK<span className="brand-dot">.</span></a>
       <p className="eyebrow">FIRST-TIME SETUP</p><h1>Create your<br /><em>workspace.</em></h1>
       <p className="muted">Your organization is the secure boundary for its projects and tasks.</p>
       <label>Workspace name<input required maxLength={100} value={organizationName} onChange={e => setOrganizationName(e.target.value)} /></label>
-      <label>Workspace type<select value={organizationVertical} onChange={e => setOrganizationVertical(e.target.value as "business" | "education")}><option value="business">Business workspace</option><option value="education">Education institution</option></select></label>
+      <label>Workspace type<select value={organizationVertical} onChange={e => { const nextVertical = e.target.value as "business" | "education"; setOrganizationVertical(nextVertical); setOrganizationEntityType(nextVertical === "education" ? "private_college" : "business"); }}><option value="business">Business workspace</option><option value="education">Education institution</option></select></label>
+      <label>Organization category<select value={organizationEntityType} onChange={e => setOrganizationEntityType(e.target.value as OrganizationEntityType)}>
+        {organizationVertical === "education" ? <><option value="government_college">Government college</option><option value="private_college">Private college</option><option value="government_university">Government university</option><option value="private_university">Private university</option><option value="coaching_institute">Coaching institute</option><option value="government_body">Government education body</option><option value="trust_society">Trust / society</option><option value="other">Other education organization</option></> : <><option value="business">Business</option><option value="sole_proprietor">Sole proprietorship</option><option value="company">Company</option><option value="partnership">Partnership</option><option value="trust_society">Trust / society</option><option value="government_body">Government body</option><option value="other">Other organization</option></>}
+      </select></label>
+      {organizationVertical === "education" && <label>Institution category<select required value={organizationInstitutionCategory} onChange={e => setOrganizationInstitutionCategory(e.target.value)}><option value="">Select academic category</option>{INSTITUTION_CATEGORIES.map(category => <option key={category.id} value={category.id}>{category.label}</option>)}</select></label>}
+      <label>State / Union Territory<select required={organizationVertical === "education"} value={organizationStateCode} onChange={e => setOrganizationStateCode(e.target.value)}><option value="">Select state / UT</option>{INDIA_STATES_AND_UTS.map(region => <option key={region.code} value={region.code}>{region.name}</option>)}</select></label>
       <label>Workspace URL slug<input required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" maxLength={50} value={organizationSlug} onChange={e => setOrganizationSlug(e.target.value)} /></label>
       {workspaceError && <p className="notice">{workspaceError}</p>}
       <button className="primary full" disabled={saving}>{saving ? "Creating…" : "Create workspace"} <ArrowUpRight size={17} /></button>

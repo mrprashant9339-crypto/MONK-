@@ -196,15 +196,27 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 }
 .brand { color: var(--monk-text) !important; font-size: 18px !important; font-weight: 760 !important; letter-spacing: -.065em !important; }
 .brand-mark {
+  position: relative;
   display: inline-grid !important; place-items: center;
   width: 31px !important; height: 31px !important;
   border-radius: 10px !important;
-  color: var(--monk-accent-ink) !important;
-  background: var(--monk-accent) !important;
-  box-shadow: 0 0 28px rgba(200,241,105,.16);
+  color: #ed69a7 !important;
+  background: #111011 !important;
+  border: 1px solid #292329 !important;
+  box-shadow: 0 0 28px rgba(237,105,167,.13);
+  font-family: 'DM Sans', sans-serif !important;
   font-weight: 850 !important;
 }
-.brand-dot { color: var(--monk-accent) !important; }
+.brand-mark::after {
+  content: "✦";
+  position: absolute;
+  top: -8px;
+  right: -7px;
+  color: #f0c65c;
+  font-size: 12px;
+  line-height: 1;
+}
+.brand-dot { color: #ed69a7 !important; }
 .workspace-switch {
   border: 1px solid var(--monk-line) !important;
   border-radius: 13px !important;
@@ -387,3 +399,35 @@ footer { color: #697568 !important; border-top: 1px solid var(--monk-line) !impo
 }
 
 .auth-card .tiny a{color:#d4b77f;text-decoration:none}.auth-card .tiny a:hover{text-decoration:underline}
+
+
+.policy-gate-page{align-items:flex-start;padding-top:42px;padding-bottom:42px}
+.policy-gate-card{width:min(760px,calc(100vw - 32px));max-width:760px}
+.policy-gate-card>h1{margin-bottom:12px}
+.policy-blocked-notice{margin:16px 0;padding:15px;border:1px solid #e8c8c8;border-radius:10px;background:#fff7f7;color:#814747;font-size:12px;line-height:1.65}
+.policy-blocked-notice p{margin:6px 0}
+.policy-blocked-notice small{color:#906767;font-size:10px}
+.policy-document-card{display:grid;gap:10px;margin:16px 0;padding:18px;border:1px solid #e9e2e7;border-radius:12px;background:#fff}
+.policy-document-meta{display:flex;justify-content:space-between;gap:12px;color:#9a5277;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.policy-document-card h2{margin:0;color:#302832;font-size:17px}
+.policy-document-card>small{color:#857b84;font-size:10px}
+.policy-document-card pre{max-height:340px;overflow:auto;margin:4px 0;padding:14px;border-radius:8px;background:#faf8fa;color:#554c55;font:inherit;font-size:11px;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere}
+.policy-accept-check{display:flex;align-items:flex-start;gap:10px;padding-top:10px;border-top:1px solid #f0e9ee;color:#514751;font-size:11px;line-height:1.5}
+.policy-accept-check input{width:16px;height:16px;flex:none;margin:1px 0 0;accent-color:#ad4d7b}
+.policy-gate-card .primary:disabled{opacity:.55;cursor:not-allowed}
+@media(max-width:640px){.policy-gate-page{padding:18px 0}.policy-gate-card{padding:22px 18px}.policy-document-card{padding:13px}.policy-document-meta{font-size:8px}}
+
+/* Authentication screens use the MONK public brand palette */
+.auth-page{background:radial-gradient(ellipse at 50% 0%,rgba(239,120,173,.15),transparent 36rem),#101014!important}
+.auth-card{border:1px solid rgba(239,120,173,.24)!important;background:linear-gradient(155deg,#201920,#111014)!important;box-shadow:0 30px 100px rgba(0,0,0,.42)!important}
+.auth-card .eyebrow{color:#e58ab2!important}
+.auth-card h1 em{color:#ef78ad!important}
+.auth-card label{color:#d1c7ce!important}
+.auth-card input,.auth-card select{border:1px solid #49404a!important;background:#151218!important;color:#faf7fa!important}
+.auth-card input:focus,.auth-card select:focus{border-color:#ef78ad!important;box-shadow:0 0 0 3px rgba(239,120,173,.12)!important}
+.auth-card .primary{border:1px solid #ef78ad!important;background:#ef78ad!important;color:#171017!important;box-shadow:0 8px 26px rgba(239,120,173,.16)!important}
+.auth-card .primary:hover:not(:disabled){background:#f18db9!important;filter:none!important;box-shadow:0 12px 32px rgba(239,120,173,.22)!important}
+.auth-card .text-button,.auth-card .tiny a{color:#f0a5c7!important}
+.auth-card .tiny{color:#a79aa5!important}
+.auth-card .brand-mark{border:1px solid #ef78ad!important;background:#101014!important;color:#ef78ad!important;border-radius:9px!important}
+.auth-card .brand-dot{color:#ef78ad!important}

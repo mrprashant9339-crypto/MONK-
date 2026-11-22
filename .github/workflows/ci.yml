@@ -2,7 +2,7 @@ name: MONK CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, feat/india-wide-discovery-and-policy-engine]
   pull_request:
     branches: [main]
 
@@ -19,7 +19,21 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
       - name: Install dependencies
         run: npm install --no-audit --no-fund
-      - name: Type-check and build
+      - name: Type-check and build frontend
         run: npm run build
+      - name: Check Cloudflare Worker syntax
+        run: node --check worker/index.js
+      - name: Test Cloudflare Worker routes
+        run: npm run test:worker
+      - name: Type-check Supabase Edge Functions
+        run: |
+          deno check --node-modules-dir=auto --no-lock supabase/functions/_shared/policy.ts
+          deno check --node-modules-dir=auto --no-lock supabase/functions/directory-import/index.ts
+          deno check --node-modules-dir=auto --no-lock supabase/functions/policy-resolve/index.ts
+          deno check --node-modules-dir=auto --no-lock supabase/functions/policy-accept/index.ts
