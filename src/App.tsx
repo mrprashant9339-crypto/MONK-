@@ -1,4 +1,6 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
+import PublicSite from "./components/PublicSite";
 import { ArrowUpRight, Bell, Check, ChevronRight, Command, LayoutGrid, Plus, Search, ShieldCheck, Sparkles, Target, Zap, LoaderCircle, LogOut, Pencil, Trash2, Play, Pause, RotateCcw, Users, Activity, GraduationCap, Briefcase, FolderKanban, CheckSquare, FileText, BarChart3, Wallet, Store, Bot, Settings, Building2 } from "lucide-react";
 import type { Session } from "@supabase/supabase-js";
 import { isSupabaseConfigured, supabase } from "./lib/supabase";
@@ -15,6 +17,7 @@ const demoTasks: Task[] = [
 ];
 
 export default function App() {
+  const location = useLocation();
   const [session, setSession] = useState<Session | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -26,7 +29,7 @@ export default function App() {
   const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [newTask, setNewTask] = useState("");
   const [organizationName, setOrganizationName] = useState("MONK Studio");
-  const [organizationVertical, setOrganizationVertical] = useState<"business" | "education">("business");
+  const [organizationVertical, setOrganizationVertical] = useState<"business" | "education">(new URLSearchParams(window.location.search).get("vertical") === "education" ? "education" : "business");
   const [organizationSlug, setOrganizationSlug] = useState("monk-studio");
   const [projectName, setProjectName] = useState("MONK Workspace");
   const [projectCode, setProjectCode] = useState("MONK-001");
@@ -260,7 +263,9 @@ export default function App() {
   const openTasks = tasks.length - completed;
   const nav = [{ name: "Overview", icon: LayoutGrid, group: "WORKSPACE" }, { name: "Projects", icon: FolderKanban, group: "WORKSPACE" }, { name: "Tasks", icon: CheckSquare, group: "WORKSPACE" }, ...(organizationVertical === "business" ? [{ name: "CRM", icon: Briefcase, group: "GROWTH" }] : []), { name: "Sales", icon: BarChart3, group: "GROWTH" }, { name: "Documents", icon: FileText, group: "WORKSPACE" }, { name: "Team", icon: Users, group: "MANAGE" }, { name: "Analytics", icon: Activity, group: "MANAGE" }, { name: "Finance", icon: Wallet, group: "MANAGE" }, { name: "Marketplace", icon: Store, group: "EXPLORE" }, { name: "AI Copilot", icon: Bot, group: "EXPLORE" }, ...(organizationVertical === "education" ? [{ name: "Education", icon: GraduationCap, group: "MANAGE" }] : []), { name: "Focus", icon: Target, group: "PERSONAL" }, { name: "Settings", icon: Settings, group: "PERSONAL" }];
 
-  if (isSupabaseConfigured && !session) return (
+  if (!session && location.pathname !== "/login") return <PublicSite />;
+
+  if (!session && location.pathname === "/login") return (
     <main className="auth-page"><div className="auth-card">
       <a className="brand" href="#"><span className="brand-mark">M</span> MONK<span className="brand-dot">.</span></a>
       <p className="eyebrow">YOUR WORKSPACE, REIMAGINED</p><h1>Make room for<br /><em>meaningful work.</em></h1>
