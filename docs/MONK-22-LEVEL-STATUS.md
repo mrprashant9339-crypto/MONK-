@@ -26,7 +26,7 @@ This tracker separates code, backend activation and production release. A featur
 | 18 | Role-based permissions | Existing organization roles inspected; classification RPC now role-gated | Full RBAC workflow audit |
 | 19 | RLS and tenant isolation | Directory/policy RLS applied; server-only tables explicitly deny client reads | Run two-tenant adversarial tests |
 | 20 | Integrations/operations | Worker config has logs/traces and rate-limit binding; Cloudflare preview builds disabled to avoid failed preview deployment | Deploy production Worker; configure API secrets/quotas |
-| 21 | QA/security | Frontend build and Deno checks passed on previous head after CI fix | Latest head CI run must finish; browser E2E and security review |
+| 21 | QA/security | GitHub Actions frontend build, Worker syntax and all four Deno checks passed on commit `7d6192a` | Browser E2E, authenticated onboarding tests and cross-tenant security review |
 | 22 | Production release | Not released | Worker deploy, live data, legal docs, secrets, E2E and rollback verification |
 
 ## Production state
@@ -35,7 +35,7 @@ This tracker separates code, backend activation and production release. A featur
 - Nine directory/policy migrations plus one hardening migration have been applied to the primary project.
 - Deployed and active Edge Functions: `directory-import`, `policy-resolve`, `policy-accept`; existing `send-education-invitation` remains active.
 - Production database contains 36 regions, 24 categories and 19 source-registry entries. It contains no institution listings yet. This is deliberate: no unverified record is represented as real.
-- All source registry entries remain import-disabled until terms/licence and allowed use are reviewed.
+- All source registry entries remain import-disabled until terms/licence and allowed use are reviewed. AISHE's website copyright policy specifically requires Ministry permission before reproducing its content; this restriction is recorded in the source registry.
 - Directory import requires a server-side `DIRECTORY_IMPORT_TOKEN`, which is not configured yet.
 - Cloudflare Worker `monk` has no secret bindings. `GOOGLE_MAPS_API_KEY`, Google billing, API restrictions and quotas are required before nearby search can return provider results.
 - Policy rules exist, but no policy document is published. Legal review and publication are required before onboarding can require policy acceptance.
