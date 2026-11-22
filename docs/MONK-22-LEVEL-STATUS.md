@@ -2,47 +2,48 @@
 
 Updated: 2026-11-22
 
-This tracker separates repository implementation from production activation. A feature is not complete merely because source code exists.
+This tracker separates code, backend activation and production release. A feature is not complete merely because source code exists.
 
-| Level | Workstream | Repository status | Production status | Gate |
-|---:|---|---|---|---|
-| 1 | Codebase, CI and deployment audit | Complete for inspected repository and latest known deployment | Latest prior Worker deployment was 100% traffic; this feature branch is not deployed | Browser smoke test still required |
-| 2 | National taxonomy | Implemented 36 state/UT codes, 24 institution categories, ownership and verification enums | Not yet applied to database | Migration |
-| 3 | Official source registry | Official regulator/source registry seeded in migration and source URLs documented | Source entries start with import disabled and terms review pending | Review each source's licence, terms and update cadence |
-| 4 | National directory schema | Additive schema migrations drafted for institutions, programmes, approvals, sources and campuses/source identity | Not applied; Supabase projects inactive | Restore correct project and inspect existing schema |
-| 5 | National ingestion | Guarded batch Edge Function created; idempotent source IDs and snapshots | Not deployed; source imports disabled by default | Active Supabase, importer secret, source permission and approved source |
-| 6 | Verification and approval engine | Field-level status, approval-year fields, append-only verification evidence and unpublished import defaults | Not applied or populated | Human/regulator evidence review |
-| 7 | Directory search | India-wide filter/search UI and Worker `/api/directory/search` endpoint implemented | Not live; Supabase project inactive and no institution rows imported | Restore DB, import and publish verified records |
-| 8 | Courses and admissions | Programme/approval schema drafted with academic-year fields | No real programme dataset imported | Regulator/year-specific data import and UI expansion |
-| 9 | Duplicate/stale records | Stable source identity map, unique source identity index and stale/disputed states drafted | No reconciliation UI or reviewer queue deployed | Import data and reviewer workflow |
-| 10 | Consent-first location | “Use my location” button requests geolocation only after click; manual locality search fallback built | Not deployed | Browser E2E |
-| 11 | Nearby provider API | Worker API for Places Nearby/Text Search, field masks, origin allowlist and rate limit config added | Not deployed; Google API key is not configured | Google Places API key, billing and quotas |
-| 12 | Map/list and distance | Results list, distance labels and Google Maps deep links built; Google Maps text attribution styled | No embedded Google map canvas | Map display integration and attribution review |
-| 13 | Business verification | UI labels third-party Google Places results separately from MONK workspace data | Verification workflow not built | Claim/ownership verification process |
-| 14 | Organization classification | Onboarding fields for entity type, institution category and state added; secure RPC migration drafted | Not live until migration applied | Restore DB and E2E onboarding |
-| 15 | Adaptive policy engine | Server-side policy resolver and rule seed migration drafted | No legal policy documents published | Legal review and policy publication |
-| 16 | Policy acceptance | Explicit version/hash acceptance endpoint and append-only acceptance audit drafted | Not deployed | Active DB, published documents, acceptance E2E |
-| 17 | Authentication/onboarding | Existing Supabase Auth retained; organization type, academic category and state integrated into new workspace setup | Supabase currently inactive | Restore and verify email/signup flow |
-| 18 | Role-based permissions | Existing role workflows only partially present | Full RBAC not audited | Inspect existing membership schema and policies |
-| 19 | RLS and tenant isolation | New public/private table RLS policies drafted | Not applied or tested | Two-tenant security tests |
-| 20 | Integrations/operations | Worker logs/traces and approximate per-IP rate limit config added; importer has bounded batches and errors | No provider secret; no live quota/usage test | Deploy and monitor |
-| 21 | QA/security | Frontend build passed on an earlier PR commit; CI expanded to check Worker syntax and Deno Edge Functions | Latest changes not yet confirmed by CI; no browser E2E | Latest CI and mobile browser tests |
-| 22 | Production release | Deployment plan and release gates documented | Not released | All above gates green, secrets configured and rollback verified |
+| Level | Workstream | Current status | Remaining gate |
+|---:|---|---|---|
+| 1 | Codebase/deployment audit | Complete for inspected repository, Supabase project and Worker configuration | Full browser smoke test |
+| 2 | National taxonomy | 36 states/UTs and 24 institution categories seeded in production database | Expand taxonomy only when needed |
+| 3 | Official source registry | 19 official-source records seeded; all remain import-disabled | Review licence, terms, attribution and cadence source by source |
+| 4 | National directory schema | Production migrations applied; institution, programme, approval, source and provenance tables live | Schema/API smoke tests |
+| 5 | National ingestion | Directory import Edge Function deployed and active | Set DIRECTORY_IMPORT_TOKEN; approve source terms; import source datasets |
+| 6 | Verification/approval model | Verification states, academic-year approval records and append-only evidence tables live | Reviewer UI and source-backed verification |
+| 7 | National directory search | UI and Worker API implemented; backend schema live | Deploy Worker from main and import/publish verified records |
+| 8 | Courses and admissions | Programme/approval schema live | Import regulator/year-specific programme and intake records; complete UI |
+| 9 | Duplicate/stale/disputed workflow | Stable source identity map and unique indexes live | Build reviewer queue and collision-resolution UI |
+| 10 | Consent-first location | Explicit location button and manual locality search implemented | Browser E2E |
+| 11 | Nearby provider API | Worker Places endpoints and rate-limit configuration implemented | Deploy Worker; configure GOOGLE_MAPS_API_KEY, billing and quotas |
+| 12 | Map/list and distance | Distance list, map links and Google attribution implemented | Embedded map/list toggle and real provider E2E |
+| 13 | Business verification | Third-party listings are kept distinct from MONK accounts | Build business claim and verification workflow |
+| 14 | Organization classification | Production columns/RPC live; RPC restricted to owner/admin/principal | Authenticated onboarding E2E |
+| 15 | Adaptive policy engine | Rules and policy resolver Edge Function deployed | Legally reviewed policy documents must be drafted and published |
+| 16 | Policy acceptance | Version/hash acceptance Edge Function deployed; append-only audit live | Publish approved documents, then test acceptance/renewal |
+| 17 | Authentication/onboarding | Existing Supabase Auth retained; classification fields integrated in code | End-to-end signup and email verification |
+| 18 | Role-based permissions | Existing organization roles inspected; classification RPC now role-gated | Full RBAC workflow audit |
+| 19 | RLS and tenant isolation | Directory/policy RLS applied; server-only tables explicitly deny client reads | Run two-tenant adversarial tests |
+| 20 | Integrations/operations | Worker config has logs/traces and rate-limit binding; Cloudflare preview builds disabled to avoid failed preview deployment | Deploy production Worker; configure API secrets/quotas |
+| 21 | QA/security | Frontend build and Deno checks passed on previous head after CI fix | Latest head CI run must finish; browser E2E and security review |
+| 22 | Production release | Not released | Worker deploy, live data, legal docs, secrets, E2E and rollback verification |
 
-## Production blockers
+## Production state
 
-1. Both connected Supabase projects reported `INACTIVE` on 2026-11-22:
-   - `yucwackrbekwaxiyuobt` (primary candidate)
-   - `ysspnuldfiijagagwiqk` (staging)
-   Database migrations and Edge Function deployment cannot run until the correct project is restored. Restoring may resume billable compute; obtain explicit approval first.
-2. Cloudflare Worker `monk` currently has no secret bindings. The Places API implementation requires `GOOGLE_MAPS_API_KEY` to be added as a Worker secret; no key is stored in source control or sent to the browser.
-3. Google Places requires an enabled billing account, Places API (New), usage quotas and budget alerts. Search responses are not cached or copied into MONK's permanent business database.
-4. Source registry rows are intentionally disabled until each official source's usage terms and import permissions are reviewed. No national institution data has been bulk-imported yet.
-5. Policy documents are intentionally not auto-published. India-specific Terms, Privacy Notice, DPDP implementation and entity-specific schedules need legal review and versioned publication.
-6. The existing Bihar sample directory and fictional business activity cards remain visibly identified as illustrative content until replaced with live verified records. They must not be disguised as real records.
+- Primary Supabase project: `yucwackrbekwaxiyuobt`, now `ACTIVE_HEALTHY`.
+- Nine directory/policy migrations plus one hardening migration have been applied to the primary project.
+- Deployed and active Edge Functions: `directory-import`, `policy-resolve`, `policy-accept`; existing `send-education-invitation` remains active.
+- Production database contains 36 regions, 24 categories and 19 source-registry entries. It contains no institution listings yet. This is deliberate: no unverified record is represented as real.
+- All source registry entries remain import-disabled until terms/licence and allowed use are reviewed.
+- Directory import requires a server-side `DIRECTORY_IMPORT_TOKEN`, which is not configured yet.
+- Cloudflare Worker `monk` has no secret bindings. `GOOGLE_MAPS_API_KEY`, Google billing, API restrictions and quotas are required before nearby search can return provider results.
+- Policy rules exist, but no policy document is published. Legal review and publication are required before onboarding can require policy acceptance.
+- Existing database security advisor still reports warnings for the pre-existing SECURITY DEFINER RPC surface and disabled leaked-password protection. The new classification RPC checks owner/admin/principal server-side; do not treat the remaining warnings as resolved.
+- Worker production deployment is still the previous version. PR #20 is not merged or deployed.
 
-## Branch
+## Branch and pull request
 
 Feature branch: `feat/india-wide-discovery-and-policy-engine`
 
-Draft pull request: https://github.com/mrprashant9339-crypto/MONK-/pull/20
+Pull request: https://github.com/mrprashant9339-crypto/MONK-/pull/20
