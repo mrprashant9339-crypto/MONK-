@@ -1,13 +1,13 @@
 import { INDIA_STATES_AND_UTS, INSTITUTION_CATEGORIES } from "./data/india-directory";
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, Suspense, lazy, useCallback, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import PublicSite from "./components/PublicSite";
+const PublicSite = lazy(() => import("./components/PublicSite"));
 import { ArrowUpRight, Bell, Check, ChevronRight, Command, LayoutGrid, Plus, Search, ShieldCheck, Sparkles, Target, Zap, LoaderCircle, LogOut, Pencil, Trash2, Play, Pause, RotateCcw, Users, Activity, GraduationCap, Briefcase, FolderKanban, CheckSquare, FileText, BarChart3, Wallet, Store, Bot, Settings, Building2 } from "lucide-react";
 import type { Session } from "@supabase/supabase-js";
 import { isSupabaseConfigured, supabase } from "./lib/supabase";
-import WorkspaceManagement from "./components/WorkspaceManagement";
-import EducationManagement from "./components/EducationManagement";
-import CRMManagement from "./components/CRMManagement";
+const WorkspaceManagement = lazy(() => import("./components/WorkspaceManagement"));
+const EducationManagement = lazy(() => import("./components/EducationManagement"));
+const CRMManagement = lazy(() => import("./components/CRMManagement"));
 
 type Project = { id: string; name: string; code: string; description?: string | null; due_date?: string | null; visibility?: "internal" | "client_visible"; status?: "draft" | "active" | "at_risk" | "in_review" | "completed" };
 type Task = { id: string; title: string; status: "todo" | "in_progress" | "blocked" | "review" | "done"; priority: "low" | "medium" | "high" | "urgent"; due_date: string | null; project_id: string };
@@ -386,8 +386,8 @@ export default function App() {
   const openTasks = tasks.length - completed;
   const nav = [{ name: "Overview", icon: LayoutGrid, group: "WORKSPACE" }, { name: "Projects", icon: FolderKanban, group: "WORKSPACE" }, { name: "Tasks", icon: CheckSquare, group: "WORKSPACE" }, ...(organizationVertical === "business" ? [{ name: "CRM", icon: Briefcase, group: "GROWTH" }] : []), { name: "Sales", icon: BarChart3, group: "GROWTH" }, { name: "Documents", icon: FileText, group: "WORKSPACE" }, { name: "Team", icon: Users, group: "MANAGE" }, { name: "Analytics", icon: Activity, group: "MANAGE" }, { name: "Finance", icon: Wallet, group: "MANAGE" }, { name: "Marketplace", icon: Store, group: "EXPLORE" }, { name: "AI Copilot", icon: Bot, group: "EXPLORE" }, ...(organizationVertical === "education" ? [{ name: "Education", icon: GraduationCap, group: "MANAGE" }] : []), { name: "Focus", icon: Target, group: "PERSONAL" }, { name: "Settings", icon: Settings, group: "PERSONAL" }];
 
-  if (location.pathname === "/terms" || location.pathname === "/privacy") return <PublicSite />;
-  if (!session && location.pathname !== "/login") return <PublicSite />;
+  if (location.pathname === "/terms" || location.pathname === "/privacy") return <Suspense fallback={<main className="auth-page" aria-busy="true">Loading MONK…</main>}><PublicSite /></Suspense>;
+  if (!session && location.pathname !== "/login") return <Suspense fallback={<main className="auth-page" aria-busy="true">Loading MONK…</main>}><PublicSite /></Suspense>;
 
   if (!session && location.pathname === "/login") return (
     <main className="auth-page"><div className="auth-card">
@@ -474,6 +474,7 @@ export default function App() {
   );
 
   return (
+    <Suspense fallback={<main className="auth-page" aria-busy="true">Loading workspace…</main>}>
     <div className="app-shell">
       <aside className="sidebar">
         <a className="brand" href="#"><span className="brand-mark">M</span> MONK<span className="brand-dot">.</span></a>
@@ -521,5 +522,6 @@ export default function App() {
         </div>
       </main>
     </div>
+    </Suspense>
   );
 }
