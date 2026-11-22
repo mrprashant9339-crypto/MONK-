@@ -212,3 +212,6 @@
 .public-brand .brand-period{color:#91345f}
 .footer-bottom{color:#c3bac5}
 .footer-legal a{color:#c3bac5}
+
+.public-footer .public-brand{color:#fff!important}
+.public-footer .footer-bottom>span:first-child{color:#c3bac5!important}
