@@ -12,17 +12,17 @@ This tracker separates repository implementation from production activation. A f
 | 4 | National directory schema | Additive schema migrations drafted for institutions, programmes, approvals, sources and campuses/source identity | Not applied; Supabase projects inactive | Restore correct project and inspect existing schema |
 | 5 | National ingestion | Guarded batch Edge Function created; idempotent source IDs and snapshots | Not deployed; source imports disabled by default | Active Supabase, importer secret, source permission and approved source |
 | 6 | Verification and approval engine | Field-level status, approval-year fields, append-only verification evidence and unpublished import defaults | Not applied or populated | Human/regulator evidence review |
-| 7 | Directory search | Existing UI still needs replacement by the live national database query | Not live | Directory API and search UI |
-| 8 | Courses and admissions | Programme/approval schema drafted | No real programme dataset imported | Regulator/year-specific data import |
-| 9 | Duplicate/stale records | Source identity map and verification state fields drafted | No reconciliation UI or review queue deployed | Import data and reviewer workflow |
+| 7 | Directory search | India-wide filter/search UI and Worker `/api/directory/search` endpoint implemented | Not live; Supabase project inactive and no institution rows imported | Restore DB, import and publish verified records |
+| 8 | Courses and admissions | Programme/approval schema drafted with academic-year fields | No real programme dataset imported | Regulator/year-specific data import and UI expansion |
+| 9 | Duplicate/stale records | Stable source identity map, unique source identity index and stale/disputed states drafted | No reconciliation UI or reviewer queue deployed | Import data and reviewer workflow |
 | 10 | Consent-first location | “Use my location” button requests geolocation only after click; manual locality search fallback built | Not deployed | Browser E2E |
 | 11 | Nearby provider API | Worker API for Places Nearby/Text Search, field masks, origin allowlist and rate limit config added | Not deployed; Google API key is not configured | Google Places API key, billing and quotas |
-| 12 | Map/list and distance | Result list, distance labels and Google Maps deep links built | No embedded map view | Map display integration and attribution review |
+| 12 | Map/list and distance | Results list, distance labels and Google Maps deep links built; Google Maps text attribution styled | No embedded Google map canvas | Map display integration and attribution review |
 | 13 | Business verification | UI labels third-party Google Places results separately from MONK workspace data | Verification workflow not built | Claim/ownership verification process |
 | 14 | Organization classification | Onboarding fields for entity type, institution category and state added; secure RPC migration drafted | Not live until migration applied | Restore DB and E2E onboarding |
 | 15 | Adaptive policy engine | Server-side policy resolver and rule seed migration drafted | No legal policy documents published | Legal review and policy publication |
 | 16 | Policy acceptance | Explicit version/hash acceptance endpoint and append-only acceptance audit drafted | Not deployed | Active DB, published documents, acceptance E2E |
-| 17 | Authentication/onboarding | Existing Supabase Auth retained; organization classification integrated into new workspace setup | Supabase currently inactive | Restore and verify email/signup flow |
+| 17 | Authentication/onboarding | Existing Supabase Auth retained; organization type, academic category and state integrated into new workspace setup | Supabase currently inactive | Restore and verify email/signup flow |
 | 18 | Role-based permissions | Existing role workflows only partially present | Full RBAC not audited | Inspect existing membership schema and policies |
 | 19 | RLS and tenant isolation | New public/private table RLS policies drafted | Not applied or tested | Two-tenant security tests |
 | 20 | Integrations/operations | Worker logs/traces and approximate per-IP rate limit config added; importer has bounded batches and errors | No provider secret; no live quota/usage test | Deploy and monitor |
