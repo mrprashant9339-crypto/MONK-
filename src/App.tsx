@@ -200,15 +200,28 @@ export default function App() {
     if (!supabase || !input.name.trim() || !input.slug.trim()) return;
     setOrganizationName(input.name.trim());
     setOrganizationVertical(input.vertical);
-    setSaving(true); setWorkspaceError("");
-    const { error } = await supabase.rpc("create_organization", {
-      org_name: input.name.trim(), org_slug: input.slug.toLowerCase().trim(),
-      org_country: input.country, org_timezone: input.timezone, org_currency: input.currency, org_locale: input.locale, org_industry: input.industry, org_vertical: input.vertical
-    });
-    setSaving(false);
-    if (error) { setWorkspaceError(error.message); return; }
-    setOrganizationId("created");
-    await loadWorkspace();
+    setSaving(true);
+    setWorkspaceError("");
+    try {
+      const { error } = await supabase.rpc("create_organization", {
+        org_name: input.name.trim(),
+        org_slug: input.slug.toLowerCase().trim(),
+        org_country: input.country,
+        org_timezone: input.timezone,
+        org_currency: input.currency,
+        org_locale: input.locale,
+        org_industry: input.industry,
+        org_vertical: input.vertical
+      });
+      if (error) throw error;
+      setOrganizationId("created");
+      try { localStorage.removeItem("monk-onboarding-draft-v1"); } catch { /* storage is optional */ }
+      await loadWorkspace();
+    } catch (error) {
+      setWorkspaceError(error instanceof Error ? error.message : "Unable to create the workspace. Check your connection and retry.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function createProject(e: FormEvent) {
