@@ -27,8 +27,8 @@ The schema now has 36 regions, 24 categories, 19 official-source registry rows, 
 
 Deployed and active:
 - `directory-import`: valid Supabase JWT plus `x-directory-import-token`; validates source terms and keeps new institutions unpublished/unverified.
-- `policy-resolve`: derives active organization from authenticated membership and returns applicable, published policy versions plus missing keys.
-- `policy-accept`: records explicit acceptance of the exact effective policy version and SHA-256 hash.
+- `policy-resolve` v2: derives active organization from authenticated membership, returns applicable published policy versions, missing keys and pending acceptances for that user/organization.
+- `policy-accept`: records explicit acceptance of the exact effective policy version and SHA-256 hash. The app presents each applicable document with an explicit checkbox and blocks workspace access while required documents are missing or unaccepted.
 - Existing `send-education-invitation` remains active.
 
 Supabase provides standard runtime values `SUPABASE_URL`, `SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY`. Set a high-entropy `DIRECTORY_IMPORT_TOKEN` in Edge Function secrets. Never place it in frontend variables or source control.
@@ -46,7 +46,7 @@ Each record requires a stable `sourceRecordId`, canonical name, institution kind
 
 ## 3. National directory API
 
-The Worker exposes public, read-only `GET /api/directory/search` and `GET /api/directory/institutions/:id`. The detail endpoint returns only published institutions plus their published programme and approval records with source provenance. Same-origin GET requests are supported even when the browser omits the `Origin` header; cross-origin requests remain allowlisted. It uses the Supabase publishable key, not a service-role key. The Worker branch code is implemented but has not yet been deployed to production.
+The Worker exposes public, read-only `GET /api/directory/search`, `GET /api/directory/institutions/:id` and `GET /api/policies/public?key=platform|privacy`. The detail endpoint returns only published institutions plus their published programme and approval records with source provenance. Same-origin GET requests are supported even when the browser omits the `Origin` header; cross-origin requests remain allowlisted. It uses the Supabase publishable key, not a service-role key. The Worker branch code is implemented but has not yet been deployed to production. Public `/terms` and `/privacy` pages display only currently published/effective documents; both currently show no published version.
 
 ## 4. Google Places API
 
@@ -82,7 +82,7 @@ Before onboarding acceptance is activated:
 
 ## 6. Release verification
 
-- Frontend build and Deno checks passed on the previous CI head after fixing Deno npm module resolution; latest head CI is pending.
+- GitHub Actions passed on commit `d24849a`: frontend TypeScript/Vite build, Worker syntax, six Worker route regression tests and all four Deno checks.
 - Worker syntax is checked in CI.
 - Migrations are applied and listed in Supabase migration history.
 - RLS is enabled for new directory/policy tables. Server-only tables explicitly deny client reads.
