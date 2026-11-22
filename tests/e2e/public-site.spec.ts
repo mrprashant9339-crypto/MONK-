@@ -142,3 +142,14 @@ test("unknown editorial slugs and recovery routes provide clear next steps", asy
     await expect(page.getByRole("link", { name: /contact support/i })).toBeVisible();
   }
 });
+
+test("FAQ search and accordion are keyboard-operable", async ({ page }) => {
+  await page.goto("/faq");
+  const firstQuestion = page.getByRole("button", { name: /what is monk/i });
+  await expect(firstQuestion).toHaveAttribute("aria-expanded", "true");
+  await firstQuestion.click();
+  await expect(firstQuestion).toHaveAttribute("aria-expanded", "false");
+  await page.getByRole("textbox", { name: /search frequently asked questions/i }).fill("pricing");
+  await expect(page.getByText(/No verified public price list/i)).toBeVisible();
+  await expect(page.getByRole("button", { name: /what is monk/i })).toHaveCount(0);
+});
