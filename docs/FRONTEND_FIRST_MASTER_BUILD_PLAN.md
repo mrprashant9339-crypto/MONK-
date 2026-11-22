@@ -31,7 +31,7 @@ Each page follows the same acceptance checklist:
 - Build, type-check, lint (when configured), and browser tests pass before marking the page complete.
 - A page is not "complete" merely because it renders; its controls and states must pass the acceptance tests.
 
-## Phase 0 — Inventory, architecture, and design foundation
+## Phase 0 — Inventory, architecture, and design foundation\n\n**Implementation update:** Shared UI primitives, typed frontend service contracts, architecture/acceptance documents and route metadata foundations are now committed on `frontend-first-complete`. The current route inventory is maintained in `docs/ROUTE_AND_PAGE_INVENTORY.md`.\n
 
 - Audit all existing routes, navigation links, footer links, buttons, forms, and module placeholders.
 - Create a route registry with page owner, status, dependencies, and test coverage.
@@ -43,7 +43,7 @@ Each page follows the same acceptance checklist:
 
 **Exit gate:** documented route inventory; reusable component library; baseline production build; route and interaction tests.
 
-## Phase 1 — Public website and product storytelling
+## Phase 1 — Public website and product storytelling\n\n**Implementation update:** Dedicated frontend routes are now present for Features, Solutions, Pricing, Compare Plans, Integrations, Resources, Blog and article detail, Case Studies and illustrative detail, Roadmap, Careers, Partners and searchable FAQ. Pricing deliberately avoids unverified prices or checkout; case-study examples are explicitly illustrative.\n
 
 ### Public routes
 - / — Home
@@ -69,7 +69,7 @@ Each page follows the same acceptance checklist:
 
 **Interactions:** primary/secondary CTAs, navigation, mobile menu, search, FAQ accordions, filters, pricing-period switch (only if real plans are defined), copy/share links, contact mail handoff, and cookie preference entry points.
 
-## Phase 2 — Trust, legal, support, and recovery
+## Phase 2 — Trust, legal, support, and recovery\n\n**Implementation update:** Distinct 403, 500 and session-expired experiences have been added. Existing support drafts, privacy preferences, status transparency, offline and maintenance states are retained. New server-side support/monitoring capabilities remain out of scope until their backend contracts are implemented.\n
 
 ### Existing routes to audit and finish
 - /contact
