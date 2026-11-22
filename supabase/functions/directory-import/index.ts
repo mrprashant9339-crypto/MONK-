@@ -110,7 +110,7 @@ function validProgramme(programme: IncomingProgramme): boolean {
     programme.sourceRecordId.length > 0 && programme.sourceRecordId.length <= 200 &&
     typeof programme.programmeName === "string" && programme.programmeName.trim().length > 1 &&
     programme.programmeName.length <= 300 &&
-    typeof programme.academicYear === "string" && /^\d{4}[-/–]\\d{2,4}$/.test(programme.academicYear) &&
+    typeof programme.academicYear === "string" && /^\d{4}[-/–]\d{2,4}$/.test(programme.academicYear) &&
     validOptionalString(programme.programmeLevel, 100) &&
     validOptionalString(programme.discipline, 150) &&
     validOptionalString(programme.studyMode, 80) &&
@@ -124,14 +124,14 @@ function validProgramme(programme: IncomingProgramme): boolean {
 
 function validApproval(approval: IncomingApproval): boolean {
   const validDate = (value: string | null | undefined) =>
-    value == null || (/^\d{4}-\\d{2}-\\d{2}$/.test(value) && Number.isFinite(Date.parse(value)));
+    value == null || (/^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(value)));
   return Boolean(
     approval && typeof approval.sourceRecordId === "string" &&
     approval.sourceRecordId.length > 0 && approval.sourceRecordId.length <= 200 &&
     typeof approval.approvalType === "string" && approval.approvalType.trim().length > 0 &&
     approval.approvalType.length <= 120 &&
     ["approved", "conditional", "withdrawn", "not_approved", "unknown"].includes(approval.approvalStatus) &&
-    typeof approval.academicYear === "string" && /^\d{4}[-/–]\\d{2,4}$/.test(approval.academicYear) &&
+    typeof approval.academicYear === "string" && /^\d{4}[-/–]\d{2,4}$/.test(approval.academicYear) &&
     typeof approval.sourceUrl === "string" && approval.sourceUrl.length <= 1000 && isSafeHttpUrl(approval.sourceUrl) &&
     validOptionalString(approval.programmeSourceRecordId, 200) &&
     validDate(approval.validFrom) && validDate(approval.validUntil) &&
