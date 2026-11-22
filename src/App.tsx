@@ -23,6 +23,7 @@ export default function App() {
   const [password, setPassword] = useState("");
   const [authBusy, setAuthBusy] = useState(false);
   const [authMessage, setAuthMessage] = useState("");
+  const [legalAccepted, setLegalAccepted] = useState(false);
   const [authMode, setAuthMode] = useState<"login" | "signup">(new URLSearchParams(window.location.search).get("mode") === "signup" ? "signup" : "login");
   const [tasks, setTasks] = useState<Task[]>(demoTasks);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -151,11 +152,12 @@ export default function App() {
   async function signIn(mode: "login" | "signup") {
     if (!supabase) return;
     if (!email.trim() || password.length < 8) { setAuthMessage("Enter a valid email and a password with at least 8 characters."); return; }
+    if (mode === "signup" && !legalAccepted) { setAuthMessage("Please accept the Terms of Service and acknowledge the Privacy Policy before creating an account."); return; }
     setAuthBusy(true); setAuthMessage("");
     try {
       const result = mode === "login"
         ? await supabase.auth.signInWithPassword({ email: email.trim(), password })
-        : await supabase.auth.signUp({ email: email.trim(), password, options: { emailRedirectTo: `${window.location.origin}/login?vertical=${organizationVertical}` } });
+        : await supabase.auth.signUp({ email: email.trim(), password, options: { emailRedirectTo: `${window.location.origin}/login?vertical=${organizationVertical}`, data: { terms_accepted_at: new Date().toISOString(), terms_version: "2026-11-22", privacy_notice_version: "2026-11-22" } } });
       if (result.error) {
         setAuthMessage(result.error.message);
         return;
@@ -280,8 +282,9 @@ export default function App() {
       <p className="muted">{authMode === "signup" ? "Create your account to set up a secure MONK workspace." : "Sign in to continue to your MONK workspace."}</p>
       <label>Email address<input type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.com" /></label>
       <label>Password<input type="password" autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} placeholder="At least 8 characters" /></label>
-      <button className="primary full" disabled={authBusy} onClick={() => signIn(authMode)}>{authBusy ? "Please wait…" : authMode === "signup" ? "Create account" : "Sign in"} <ArrowUpRight size={17} /></button>
-      <button className="text-button full" disabled={authBusy} onClick={() => { setAuthMode(current => current === "login" ? "signup" : "login"); setAuthMessage(""); }}>{authMode === "signup" ? "Already have an account? Sign in" : "New to MONK? Create an account"}</button>
+      {authMode === "signup" && <label className="legal-acceptance"><input type="checkbox" checked={legalAccepted} onChange={e => setLegalAccepted(e.target.checked)} /><span>I agree to the <a href="/terms" target="_blank" rel="noreferrer">Terms of Service</a> and acknowledge the <a href="/privacy" target="_blank" rel="noreferrer">Privacy Policy</a>.</span></label>}
+      <button className="primary full" disabled={authBusy || (authMode === "signup" && !legalAccepted)} onClick={() => signIn(authMode)}>{authBusy ? "Please wait…" : authMode === "signup" ? "Create account" : "Sign in"} <ArrowUpRight size={17} /></button>
+      <button className="text-button full" disabled={authBusy} onClick={() => { setAuthMode(current => current === "login" ? "signup" : "login"); setLegalAccepted(false); setAuthMessage(""); }}>{authMode === "signup" ? "Already have an account? Sign in" : "New to MONK? Create an account"}</button>
       {authMessage && <p className="notice">{authMessage}</p>}<p className="tiny">Protected by Supabase Authentication · <a href="/">Back to public website</a></p>
     </div></main>
   );
