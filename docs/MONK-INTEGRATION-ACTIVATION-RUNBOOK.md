@@ -36,7 +36,11 @@ Each record must have a stable `sourceRecordId`, canonical name, institution kin
 
 Imported institutions remain `unverified` and `published=false`. A separate reviewer process must inspect evidence, verify fields and publish a record. Re-imports use the stable source identity map and content hash to avoid duplicate records.
 
-## 3. Google Places API
+## 3. National directory API
+
+The Worker exposes public, read-only `GET /api/directory/search`. It queries only `published=true` records through the Supabase publishable key and returns public source provenance. The Worker uses `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` from `wrangler.jsonc`; the publishable key is not a service-role secret. RLS remains the security boundary. No directory record is returned until an authorized importer/reviewer publishes it.
+
+## 4. Google Places API
 
 The Worker routes:
 - `POST /api/businesses/nearby`
@@ -55,7 +59,7 @@ Google Cloud configuration:
 
 The Worker applies a 10-request-per-minute approximate per-IP rate limit per Cloudflare location. Provider-side quotas and billing limits are still required; this Worker limit is not a global strict quota.
 
-## 4. Policy document publication
+## 5. Policy document publication
 
 Policy rules are seeded, but no legal policy text is auto-published. Before activating onboarding acceptance:
 1. Have qualified India counsel review MONK's actual data flows and entity-specific contracts.
@@ -68,7 +72,7 @@ Policy rules are seeded, but no legal policy text is auto-published. Before acti
 
 The resolver reports missing policy keys. It must not silently accept missing documents or treat automated policy selection as a legal-compliance guarantee.
 
-## 5. Release and verification
+## 6. Release and verification
 
 - Run `npm run build`.
 - Run `node --check worker/index.js`.
