@@ -1,29 +1,37 @@
 # MONK Integration Activation Runbook
 
-This runbook activates the repository implementation after the required account-level dependencies are available. Do not commit secret values.
+This runbook records the live production state and remaining activation steps. Never commit secret values.
 
-## 1. Supabase project
+## 1. Supabase production
 
-The intended primary candidate is `yucwackrbekwaxiyuobt`; staging is `ysspnuldfiijagagwiqk`. Both reported `INACTIVE` on 2026-11-22.
+Primary project `yucwackrbekwaxiyuobt` is restored and reports `ACTIVE_HEALTHY`. The staging project remains inactive and is not used for production.
 
-Before applying migrations:
-1. Confirm which project is the production database.
-2. Restore it after the owner approves any resumed compute charges.
-3. Wait for `ACTIVE_HEALTHY`.
-4. Inspect existing `organizations`, membership/RLS policies and RPC definitions.
-5. Apply migrations in timestamp order from `supabase/migrations/`.
-6. Run schema, RLS and cross-tenant tests before deploying functions.
+The existing production schema was inspected before changes. Existing organization membership, role and RLS structures were preserved. The following migrations have been applied to the primary project in order:
+
+- `india_directory_discovery_policy`
+- `directory_provenance_read_policies`
+- `directory_source_identity_map`
+- `organization_classification_policy_rules`
+- `policy_and_verification_immutability`
+- `validate_organization_classification`
+- `institution_primary_source`
+- `unique_source_identity`
+- `expand_india_regulator_registry`
+- `restrict_classification_to_admins_and_deny_server_tables`
+
+The schema now has 36 regions, 24 categories, 19 official-source registry rows, national institution/programme/approval/provenance tables, policy tables and source identity mappings. No institution data has been imported.
 
 ## 2. Supabase Edge Functions
 
-Functions in this branch:
-- `directory-import`: internal source ingestion. Requires a valid Supabase JWT plus `x-directory-import-token`.
-- `policy-resolve`: derives the active organization through `current_organization_id()`, reads trusted organization attributes and resolves active policy rules.
-- `policy-accept`: stores explicit acceptance for the exact published policy version and SHA-256 content hash.
+Deployed and active:
+- `directory-import`: valid Supabase JWT plus `x-directory-import-token`; validates source terms and keeps new institutions unpublished/unverified.
+- `policy-resolve`: derives active organization from authenticated membership and returns applicable, published policy versions plus missing keys.
+- `policy-accept`: records explicit acceptance of the exact effective policy version and SHA-256 hash.
+- Existing `send-education-invitation` remains active.
 
-Supabase provides the standard `SUPABASE_URL`, `SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` runtime values. Set a high-entropy `DIRECTORY_IMPORT_TOKEN` in Edge Function secrets. Never place it in frontend environment variables.
+Supabase provides standard runtime values `SUPABASE_URL`, `SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY`. Set a high-entropy `DIRECTORY_IMPORT_TOKEN` in Edge Function secrets. Never place it in frontend variables or source control.
 
-The source registry is deliberately seeded with `terms_review_status='pending'` and `import_enabled=false`. Enable a source only after confirming its official licence, terms, allowed purpose, attribution and storage rules.
+The source registry intentionally has `terms_review_status='pending'` and `import_enabled=false`. Enable a source only after its licence, terms, allowed purpose, attribution, storage rules and update cadence are confirmed.
 
 ### Import request contract
 
@@ -32,55 +40,50 @@ POST `/functions/v1/directory-import` with:
 - `x-directory-import-token: <server-held import token>`
 - JSON body: `{ "sourceKey": "...", "records": [...] }`
 
-Each record must have a stable `sourceRecordId`, canonical name, institution kind, category key and ownership key. Optional source fields include state code, district, city, address, AISHE code, identifiers and source update date. Batch size is 1–200 records and request body size is capped at 2 MB.
-
-Imported institutions remain `unverified` and `published=false`. A separate reviewer process must inspect evidence, verify fields and publish a record. Re-imports use the stable source identity map and content hash to avoid duplicate records.
+Each record requires a stable `sourceRecordId`, canonical name, institution kind, category key and ownership key. Batches contain 1–200 records, with a 2 MB request cap. New records remain `unverified` and `published=false` until field-level review.
 
 ## 3. National directory API
 
-The Worker exposes public, read-only `GET /api/directory/search`. It queries only `published=true` records through the Supabase publishable key and returns public source provenance. The Worker uses `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` from `wrangler.jsonc`; the publishable key is not a service-role secret. RLS remains the security boundary. No directory record is returned until an authorized importer/reviewer publishes it.
+The Worker exposes public, read-only `GET /api/directory/search`. It returns only `published=true` records and public source provenance. It uses the Supabase publishable key, not a service-role key. The Worker branch code is implemented but has not yet been deployed to production.
 
 ## 4. Google Places API
 
-The Worker routes:
+Worker routes:
 - `POST /api/businesses/nearby`
 - `POST /api/businesses/search`
 
-Add `GOOGLE_MAPS_API_KEY` as a Cloudflare Worker secret for Worker `monk`. Do not put it in `wrangler.jsonc`, Vite variables, GitHub source or browser code.
+The Cloudflare Worker currently has no secret bindings. Add `GOOGLE_MAPS_API_KEY` as a Worker secret for `monk`; do not put it in `wrangler.jsonc`, Vite variables or browser code.
 
-Google Cloud configuration:
+Google Cloud setup:
 1. Enable Places API (New).
 2. Enable billing.
-3. Restrict the key to Places API (New); use provider-side quota limits and budget alerts.
-4. Set the key as the Cloudflare Worker secret.
-5. Deploy the branch to a preview/staging Worker first.
-6. Test nearby search with a real browser permission grant and manual text search.
-7. Confirm Google Maps attribution is visible and provider data is not stored or cached beyond permitted exceptions.
+3. Restrict the key to Places API (New).
+4. Set quotas and budget alerts.
+5. Add the key as a Cloudflare Worker secret.
+6. Deploy and test nearby search with explicit browser permission and manual locality search.
+7. Confirm required Google Maps attribution and provider data retention restrictions.
 
-The Worker applies a 10-request-per-minute approximate per-IP rate limit per Cloudflare location. Provider-side quotas and billing limits are still required; this Worker limit is not a global strict quota.
+The Worker rate limit is 10 calls/minute per IP per Cloudflare location. It is approximate, not a strict global quota.
 
-## 5. Policy document publication
+## 5. Policy documents
 
-Policy rules are seeded, but no legal policy text is auto-published. Before activating onboarding acceptance:
-1. Have qualified India counsel review MONK's actual data flows and entity-specific contracts.
-2. Prepare platform Terms and Privacy Notice, education/student data schedules, business schedules, DPA, payments and location notices as applicable.
-3. Calculate SHA-256 over the exact policy content and insert each version as `draft`.
+Policy rules and resolver/acceptance functions are live, but there are no published policy documents. The resolver correctly reports missing policy keys. Do not publish generic or invented legal text as approved.
+
+Before onboarding acceptance is activated:
+1. Have qualified India counsel review MONK's actual data flows, DPDP obligations, student/minor data and organization contracts.
+2. Prepare platform Terms, Privacy Notice, education/student-data schedules, business schedules, DPA and applicable payments/location/marketplace notices.
+3. Calculate SHA-256 for exact policy content and insert versions as drafts.
 4. Review effective date, jurisdiction and entity conditions.
-5. Publish the approved immutable version.
-6. Test `policy-resolve` for government college, private college, university, coaching and business classifications.
-7. Test acceptance and renewal when a new version is published.
+5. Publish approved immutable versions.
+6. Test policy resolution for government/private college, university, coaching and business classifications.
+7. Test explicit acceptance and renewal after a new version.
 
-The resolver reports missing policy keys. It must not silently accept missing documents or treat automated policy selection as a legal-compliance guarantee.
+## 6. Release verification
 
-## 6. Release and verification
-
-- Run `npm run build`.
-- Run `node --check worker/index.js`.
-- Run `deno check` for each Edge Function.
-- Apply migrations to a non-production project first.
-- Verify public directory read policies and tenant RLS using two independent organizations.
-- Verify no Google API key is present in client assets.
-- Verify location is requested only after an explicit click.
-- Verify manual locality search works when geolocation is denied.
-- Verify source provenance and policy acceptance records.
-- Deploy to staging, run desktop/Android E2E, then approve production release.
+- Frontend build and Deno checks passed on the previous CI head after fixing Deno npm module resolution; latest head CI is pending.
+- Worker syntax is checked in CI.
+- Migrations are applied and listed in Supabase migration history.
+- RLS is enabled for new directory/policy tables. Server-only tables explicitly deny client reads.
+- Two-tenant adversarial tests and browser E2E are still required.
+- Production Worker deployment is pending. Cloudflare preview builds are temporarily disabled; production builds remain connected to `main`.
+- Production release requires Worker deployment, API secrets, verified source ingestion, legal policy publication, E2E, security review and rollback verification.
