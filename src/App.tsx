@@ -157,14 +157,29 @@ export default function App() {
     try {
       const result = mode === "login"
         ? await supabase.auth.signInWithPassword({ email: email.trim(), password })
-        : await supabase.auth.signUp({ email: email.trim(), password, options: { emailRedirectTo: `${window.location.origin}/login?vertical=${organizationVertical}`, data: { terms_accepted_at: new Date().toISOString(), terms_version: "2026-11-22", privacy_notice_version: "2026-11-22" } } });
+        : await supabase.auth.signUp({ email: email.trim(), password, options: { emailRedirectTo: `${window.location.origin}/login?vertical=${organizationVertical}`, data: { terms_version: "2026-11-22", privacy_version: "2026-11-22" } } });
       if (result.error) {
         setAuthMessage(result.error.message);
         return;
       }
+      const userMetadata = result.data.user?.user_metadata as Record<string, unknown> | undefined;
+      const termsVersion = typeof userMetadata?.terms_version === "string" ? userMetadata.terms_version : null;
+      const privacyVersion = typeof userMetadata?.privacy_version === "string" ? userMetadata.privacy_version : null;
+      let consentNotice = "";
+      // Email-confirmation projects return no session at signup. The immutable
+      // consent record is written on the first authenticated sign-in instead.
+      if (result.data.session && termsVersion && privacyVersion) {
+        const { error: consentError } = await supabase.rpc("record_legal_consent", {
+          p_terms_version: termsVersion,
+          p_privacy_version: privacyVersion
+        });
+        if (consentError) {
+          consentNotice = " Your account is signed in, but the legal acceptance record could not be saved. Contact support before using the workspace.";
+        }
+      }
       setAuthMessage(mode === "signup" && !result.data.session
         ? "Account created. Check your inbox, confirm your email, then sign in."
-        : "Authentication successful.");
+        : "Authentication successful." + consentNotice);
       if (result.data.session) setSession(result.data.session);
     } catch (error) {
       setAuthMessage(error instanceof Error ? error.message : "Authentication request failed. Check your connection and try again.");
