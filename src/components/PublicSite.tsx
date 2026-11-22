@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { ReactNode, ComponentType } from "react";
 import "../public-site.css";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ArrowRight, ArrowUpRight, Building2, GraduationCap, Store, Users, BookOpen, ShieldCheck, BarChart3, CalendarDays, ClipboardList, Package, Receipt, Menu, X, CheckCircle2, MapPin, Search, Layers3, Workflow, ChevronRight } from "lucide-react";
+import { ArrowRight, ArrowUpRight, GraduationCap, Store, Users, BookOpen, ShieldCheck, BarChart3, CalendarDays, ClipboardList, Package, Receipt, Menu, X, CheckCircle2, MapPin, Search, Layers3, Workflow, ChevronRight } from "lucide-react";
 
 type Portal = "campus" | "business";
 const governmentColleges = [
