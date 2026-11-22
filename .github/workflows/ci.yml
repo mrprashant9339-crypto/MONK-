@@ -31,7 +31,7 @@ jobs:
         run: node --check worker/index.js
       - name: Type-check Supabase Edge Functions
         run: |
-          deno check --no-lock supabase/functions/_shared/policy.ts
-          deno check --no-lock supabase/functions/directory-import/index.ts
-          deno check --no-lock supabase/functions/policy-resolve/index.ts
-          deno check --no-lock supabase/functions/policy-accept/index.ts
+          deno check --node-modules-dir=auto --no-lock supabase/functions/_shared/policy.ts
+          deno check --node-modules-dir=auto --no-lock supabase/functions/directory-import/index.ts
+          deno check --node-modules-dir=auto --no-lock supabase/functions/policy-resolve/index.ts
+          deno check --node-modules-dir=auto --no-lock supabase/functions/policy-accept/index.ts
