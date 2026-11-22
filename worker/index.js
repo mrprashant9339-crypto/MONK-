@@ -144,6 +144,14 @@ async function handlePlaces(request, env, origin, url) {
       return responseJson({ error: "Search text must contain 2–160 characters" }, 400, origin);
     }
     requestBody.textQuery = textQuery;
+    const textPlaceType = body.placeType ?? "all";
+    if (typeof textPlaceType !== "string" || (textPlaceType !== "all" && !PLACE_TYPES.has(textPlaceType))) {
+      return responseJson({ error: "Unsupported business category" }, 400, origin);
+    }
+    if (textPlaceType !== "all") {
+      requestBody.includedType = textPlaceType;
+      requestBody.strictTypeFiltering = true;
+    }
     if (body.latitude !== undefined || body.longitude !== undefined) {
       if (!validCoordinate(body.latitude, -90, 90) || !validCoordinate(body.longitude, -180, 180)) {
         return responseJson({ error: "Both location coordinates must be valid" }, 400, origin);
