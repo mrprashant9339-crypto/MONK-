@@ -2,7 +2,7 @@ name: MONK CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, feat/india-wide-discovery-and-policy-engine]
   pull_request:
     branches: [main]
 
