@@ -36,6 +36,12 @@ Use source-specific adapters and preserve raw source snapshots/metadata. Do not 
 | Teacher education | NCTE | https://web.ncte.gov.in/page/recognized-institutions |
 | Architecture | Council of Architecture | https://www.coa.gov.in/ |
 | Agriculture and agricultural education | ICAR | https://icar.org.in/ |
+| Indian systems of medicine (Ayurveda, Siddha, Unani, Sowa-Rigpa) | NCISM | https://ncism.org.in/ |
+| Homoeopathy | NCH | https://nch.org.in/mqrl |
+| Veterinary education | Veterinary Council of India | https://vci.admissions.nic.in/institutes/ |
+| Rehabilitation and special education | RCI | https://rehabcouncil.nic.in/regular-mode-inst/ |
+| Allied and healthcare professions | NCAHP / Ministry of Health and Family Welfare | https://www.mohfw.gov.in/sites/default/files/Public%20notice%20by%20NCAHP-signed.pdf |
+| Vocational education and training | NCVET | https://ncvet.gov.in/ |
 | ITI / vocational training | DGT / NCVT and state SCVT authorities | https://www.ncvtmis.gov.in/ |
 | Polytechnic / state technical education | State DTEs and technical boards | State-specific official portals |
 | Coaching / private training | Applicable state/local registration authorities | State-specific; no single national approval registry assumed |
