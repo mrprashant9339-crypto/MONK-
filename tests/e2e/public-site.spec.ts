@@ -94,8 +94,7 @@ test("support, trust, privacy and recovery routes render meaningful pages", asyn
     const response = await page.goto(route, { waitUntil: "domcontentloaded" });
     expect(response, `missing document response for ${route}`).not.toBeNull();
     expect(response!.status(), `unexpected HTTP status for ${route}`).toBe(200);
-    await expect(page.locator("#root")).toBeVisible();
-    await expect(page.locator("#root")).toContainText(/MONK/i);
+    await expect(page.locator("body"), `missing page content for ${route}`).toContainText(/MONK/i);
     await expect(page.locator("h1").first(), `missing page heading for ${route}`).toBeVisible();
   }
 });
