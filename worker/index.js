@@ -80,7 +80,7 @@ async function handlePlaces(request, env, origin, url) {
       headers: {
         "Access-Control-Allow-Origin": origin,
         "Access-Control-Allow-Headers": "content-type",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
         "Access-Control-Max-Age": "600",
         "Vary": "Origin",
       },
