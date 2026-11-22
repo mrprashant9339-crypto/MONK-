@@ -218,3 +218,23 @@
 
 .public-footer .public-brand>span:not(.brand-period){color:#fff!important}
 .public-footer .public-brand .brand-period{color:#f0a5c7!important}
+
+
+/* WCAG AA text contrast for light portal preview and information sections */
+.portal-page .preview-status{color:#8f315e!important}
+.portal-page .preview-welcome,.portal-page .preview-welcome>b{color:#242027!important}
+.portal-page .preview-welcome>small{color:#625963!important}
+.portal-page .preview-metrics strong,.portal-page .business-metrics strong{color:#242027!important}
+.portal-page .preview-metrics small,.portal-page .business-metrics small{color:#625963!important}
+.portal-page .preview-schedule>span{color:#8f315e!important}
+.portal-page .preview-schedule b{color:#242027!important}
+.portal-page .preview-schedule small{color:#625963!important}
+.portal-page .preview-notice span{color:#6b4b12!important}
+.portal-page .preview-notice b{color:#302832!important}
+.portal-page .preview-disclaimer{color:#625963!important}
+.portal-page .section-kicker{color:#8f315e!important}
+.portal-page .section-intro h2,.portal-page .directory-head h2,.portal-page .roles-section h2{color:#242027!important}
+.portal-page .section-intro h2 em,.portal-page .directory-head h2 em,.portal-page .roles-section h2 em{color:#8f315e!important}
+.portal-page .section-intro p,.portal-page .directory-head p,.portal-page .roles-section>p{color:#625963!important}
+.portal-page .directory-foot{color:#625963!important}
+.portal-page .directory-foot a{color:#8f315e!important}
