@@ -3,6 +3,10 @@
   "name": "monk",
   "main": "worker/index.js",
   "compatibility_date": "2026-11-11",
+  "vars": {
+    "SUPABASE_URL": "https://yucwackrbekwaxiyuobt.supabase.co",
+    "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_T5QKS6ZJkiUMGfKq8a4OHQ_c1ri_Al9"
+  },
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
