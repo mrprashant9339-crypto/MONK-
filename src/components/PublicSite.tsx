@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import "../public-site.css";
 import LegalPage, { CookieNotice } from "./LegalPages";
+import SupportTrustPages, { isSupportTrustRoute } from "./SupportTrustPages";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ArrowRight, ArrowUpRight, GraduationCap, Store, Users, BookOpen, ShieldCheck, BarChart3, CalendarDays, ClipboardList, Package, Receipt, Menu, X, CheckCircle2, MapPin, Search, Layers3, Workflow, ChevronRight, Mail, Github, Linkedin, Instagram } from "lucide-react";
 
@@ -213,6 +214,7 @@ function BusinessPage() {
 export default function PublicSite() {
   const location = useLocation();
   useEffect(() => { window.scrollTo({ top: 0, behavior: "instant" }); }, [location.pathname]);
+  if (isSupportTrustRoute(location.pathname)) return <><SupportTrustPages/><CookieNotice/></>;
   if (location.pathname === "/about") return <><AboutPage/><CookieNotice/></>;
   if (location.pathname === "/documentation") return <><ProjectInfoPage page="documentation"/><CookieNotice/></>;
   if (location.pathname === "/updates") return <><ProjectInfoPage page="updates"/><CookieNotice/></>;
@@ -220,5 +222,6 @@ export default function PublicSite() {
   if (location.pathname === "/campus") return <><CampusPage/><CookieNotice/></>;
   if (location.pathname === "/business") return <><BusinessPage/><CookieNotice/></>;
   if (["/privacy","/terms","/cookies","/refunds","/disclaimer","/security","/accessibility","/data-rights"].includes(location.pathname)) return <><LegalPage/><CookieNotice/></>;
-  return <><HomePage/><CookieNotice/></>;
+  if (location.pathname === "/") return <><HomePage/><CookieNotice/></>;
+  return <><SupportTrustPages/><CookieNotice/></>;
 }
