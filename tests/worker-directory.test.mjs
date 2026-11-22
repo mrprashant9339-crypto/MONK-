@@ -154,7 +154,7 @@ test("public policy endpoint returns only published effective documents", async 
     assert.equal(payload.published, true);
     assert.equal(payload.documents[0].policy_key, "platform");
     assert.equal(requestedUrl.searchParams.get("publication_state"), "eq.published");
-    assert.match(requestedUrl.searchParams.get("effective_at"), /^lte\\./);
+    assert.ok(requestedUrl.searchParams.get("effective_at").startsWith("lte."));
   } finally {
     globalThis.fetch = originalFetch;
   }
