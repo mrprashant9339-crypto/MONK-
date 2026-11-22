@@ -435,7 +435,7 @@ export default function App() {
         </label>
       </article>)}
       {policyError && <p className="notice" role="alert">{policyError}</p>}
-      {(policyResolution?.missingPolicyKeys?.length ?? 0) === 0 && (policyResolution?.pendingPolicies?.length ?? 0) > 0 && <button className="primary full" disabled={policyBusy || policyResolution.pendingPolicies.some(document => !policyChecks[document.id])}>{policyBusy ? "Saving acceptance…" : "Accept policies and continue"} <ArrowUpRight size={17} /></button>}
+      {(policyResolution?.missingPolicyKeys?.length ?? 0) === 0 && (policyResolution?.pendingPolicies?.length ?? 0) > 0 && <button className="primary full" disabled={policyBusy || (policyResolution?.pendingPolicies ?? []).some(document => !policyChecks[document.id])}>{policyBusy ? "Saving acceptance…" : "Accept policies and continue"} <ArrowUpRight size={17} /></button>}
       <button type="button" className="text-button full" onClick={async () => { await supabase?.auth.signOut(); setSession(null); setWorkspaceReady(false); setOrganizationId(null); setPolicyGateRequired(false); setPolicyResolution(null); }}><LogOut size={14} /> Sign out</button>
     </form></main>
   );
