@@ -27,6 +27,7 @@ The existing production schema was inspected before changes. Existing organizati
 - `seed_tenant_flags_for_new_platform_features`
 - `revoke_public_execution_of_tenant_flag_triggers`
 - `harden_security_definer_search_paths`
+- `fix_education_membership_and_guardian_rls`
 
 The schema now has 36 regions, 24 categories, 19 official-source registry rows, national institution/programme/approval/provenance tables, policy tables and source identity mappings. No institution data has been imported.
 
@@ -94,7 +95,7 @@ Before onboarding acceptance is activated:
 ## 7. Release verification
 
 - GitHub Actions passed on commit `78c49f4`: frontend TypeScript/Vite build, Worker syntax, six Worker route regression tests and all four Deno checks.
-- All 28 existing authenticated SECURITY DEFINER RPCs have `public, extensions, pg_temp` search paths. Supabase Security Advisor still reports their authenticated execution for RBAC review and reports Auth leaked-password protection as disabled.
+- All 28 existing authenticated SECURITY DEFINER RPCs have `public, extensions, pg_temp` search paths. `is_org_member` includes principal, HOD, teacher, student and parent roles so education users can switch workspaces. Parent/student link RLS predicates now compare the relationship and tenant organization IDs; two tautological comparisons were removed. Supabase Security Advisor still reports authenticated RPC execution for RBAC review and Auth leaked-password protection as disabled.
 - Worker syntax is checked in CI.
 - Migrations are applied and listed in Supabase migration history.
 - RLS is enabled for new directory/policy tables. Server-only tables explicitly deny client reads.
