@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { ArrowLeft, ArrowRight, Building2, Check, GraduationCap, Users } from "lucide-react";
 import "../onboarding.css";
 
@@ -9,7 +9,8 @@ export type OnboardingInput = {
 const initial:OnboardingInput={name:"",slug:"",vertical:"business",country:"IN",timezone:"Asia/Kolkata",currency:"INR",locale:"en-IN",industry:"Technology"};
 const slugify=(value:string)=>value.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,48);
 export default function OnboardingFlow({busy,error,onCreate}:{busy:boolean;error:string;onCreate:(input:OnboardingInput)=>void}) {
-  const [step,setStep]=useState(0);const [data,setData]=useState(initial);const [slugTouched,setSlugTouched]=useState(false);
+  const [step,setStep]=useState(()=>{try{return Math.min(4,Math.max(0,Number(JSON.parse(localStorage.getItem("monk-onboarding-draft-v1")||"{}").step)||0));}catch{return 0;}});const [data,setData]=useState<OnboardingInput>(()=>{try{const draft=JSON.parse(localStorage.getItem("monk-onboarding-draft-v1")||"{}");return draft.data&&typeof draft.data==="object"?{...initial,...draft.data}:initial;}catch{return initial;}});const [slugTouched,setSlugTouched]=useState(false);
+  useEffect(()=>{try{localStorage.setItem("monk-onboarding-draft-v1",JSON.stringify({step,data,version:1}));}catch{}},[step,data]);
   const update=(patch:Partial<OnboardingInput>)=>setData(current=>({...current,...patch}));
   const steps=["Welcome","Workspace","Details","Preferences","Review"];
   const slugValid=/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(data.slug)&&data.slug.length>=3;
