@@ -387,3 +387,5 @@ footer { color: #697568 !important; border-top: 1px solid var(--monk-line) !impo
 }
 
 .auth-card .tiny a{color:#d4b77f;text-decoration:none}.auth-card .tiny a:hover{text-decoration:underline}
+
+.auth-help-links{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 15px;margin:3px 0 10px}.auth-help-links a{color:#a9c97d;font-size:10px;text-decoration:none}.auth-help-links a:hover{text-decoration:underline}.top-avatar{border:1px solid var(--monk-line-strong);cursor:pointer;font:inherit}.top-avatar:focus-visible{outline:2px solid var(--monk-accent);outline-offset:3px}
