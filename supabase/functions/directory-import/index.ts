@@ -259,6 +259,14 @@ Deno.serve(async (request) => {
     }
   }
 
+  const { error: sourceCheckError } = await supabase
+    .from("monk_directory_sources")
+    .update({ last_checked_at: new Date().toISOString() })
+    .eq("id", source.id);
+  if (sourceCheckError) {
+    console.error("Source check timestamp update failed:", sourceCheckError.message);
+  }
+
   return json({
     source: { key: source.source_key, authority: source.authority_name },
     counts,
