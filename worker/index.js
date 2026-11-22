@@ -226,9 +226,6 @@ async function handlePlaces(request, env, origin, url) {
   }
 }
 
-
-
-
 async function handlePublicPolicies(request, env, origin, url) {
   if (request.method === "OPTIONS") {
     if (!origin || !ALLOWED_ORIGINS.has(origin)) return new Response(null, { status: 403 });
@@ -531,9 +528,90 @@ async function handleDirectorySearch(request, env, origin, url) {
   }
 }
 
+function countFromContentRange(response) {
+  const match = (response.headers.get("Content-Range") ?? "").match(/\/(\d+|\*)$/);
+  return match && match[1] !== "*" ? Number(match[1]) : null;
+}
+
+async function handleSystemReadiness(request, env, origin) {
+  if (request.method === "OPTIONS") {
+    if (!origin || !ALLOWED_ORIGINS.has(origin)) return new Response(null, { status: 403 });
+    return new Response(null, {
+      status: 204,
+      headers: {
+        "Access-Control-Allow-Origin": origin,
+        "Access-Control-Allow-Headers": "content-type",
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
+        "Access-Control-Max-Age": "600",
+        "Vary": "Origin",
+      },
+    });
+  }
+  if (request.method !== "GET") return responseJson({ error: "Method not allowed" }, 405, origin);
+  if (origin && !ALLOWED_ORIGINS.has(origin)) return responseJson({ error: "Origin not allowed" }, 403, origin);
+  const clientIp = request.headers.get("CF-Connecting-IP");
+  if (!clientIp) return responseJson({ error: "Unable to identify request source" }, 400, origin);
+  const rate = await env.NEARBY_SEARCH_RATE_LIMIT.limit({ key: `readiness:${clientIp}` });
+  if (!rate.success) return responseJson({ error: "Readiness check limit reached. Try again shortly." }, 429, origin);
+  if (!env.SUPABASE_URL || !env.SUPABASE_PUBLISHABLE_KEY) {
+    return responseJson({ error: "Readiness service is not configured." }, 503, origin);
+  }
+
+  try {
+    const definitions = [
+      ["publishedInstitutions", "/rest/v1/monk_directory_institutions", [["published", "eq.true"]]],
+      ["approvedImportSources", "/rest/v1/monk_directory_sources", [["terms_review_status", "eq.approved"], ["import_enabled", "eq.true"]]],
+      ["publishedEffectivePolicies", "/rest/v1/monk_policy_documents", [["publication_state", "eq.published"], ["effective_at", `lte.${new Date().toISOString()}`]]],
+    ];
+    const checks = await Promise.all(definitions.map(async ([key, path, filters]) => {
+      const endpoint = new URL(path, env.SUPABASE_URL);
+      endpoint.searchParams.set("select", "id");
+      endpoint.searchParams.set("limit", "1");
+      for (const [filter, value] of filters) endpoint.searchParams.set(filter, value);
+      const response = await fetch(endpoint, {
+        headers: {
+          apikey: env.SUPABASE_PUBLISHABLE_KEY,
+          Prefer: "count=exact",
+          Range: "0-0",
+          "Cache-Control": "no-store",
+        },
+        signal: AbortSignal.timeout(8000),
+      });
+      if (!response.ok) throw new Error(`Readiness query failed for ${key}`);
+      return [key, countFromContentRange(response)];
+    }));
+    const counts = Object.fromEntries(checks);
+    const googlePlacesConfigured = Boolean(env.GOOGLE_MAPS_API_KEY);
+    const blockers = [];
+    if (!googlePlacesConfigured) blockers.push("GOOGLE_MAPS_API_KEY is not configured on the Cloudflare Worker.");
+    if (counts.publishedInstitutions === 0) blockers.push("No verified and published institution records are available.");
+    if (counts.approvedImportSources === 0) blockers.push("No official source is approved and enabled for import.");
+    if (counts.publishedEffectivePolicies === 0) blockers.push("No legally reviewed policy documents are published and effective.");
+    return responseJson({
+      status: blockers.length ? "blocked" : "ready",
+      checks: {
+        googlePlacesConfigured,
+        ...counts,
+        directoryImportToken: "not introspectable from the public Worker; verify in Supabase Edge Function secrets",
+      },
+      blockers,
+      checkedAt: new Date().toISOString(),
+    }, 200, origin);
+  } catch (error) {
+    console.error(JSON.stringify({
+      event: "system_readiness_failed",
+      message: error instanceof Error ? error.message : "unknown",
+    }));
+    return responseJson({ error: "System readiness could not be verified." }, 502, origin);
+  }
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    if (url.pathname === "/api/system/readiness") {
+      return handleSystemReadiness(request, env, request.headers.get("Origin"));
+    }
     if (url.pathname === "/api/policies/public") {
       return handlePublicPolicies(request, env, request.headers.get("Origin"), url);
     }
