@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter, Link } from "react-router-dom";
 import App from "./App";
 import "./styles.css";
+import "./ui-primitives.css";
 
 class AppErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
   state = { failed: false };
