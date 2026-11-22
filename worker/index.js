@@ -227,6 +227,128 @@ async function handlePlaces(request, env, origin, url) {
 }
 
 
+
+async function handleDirectoryInstitution(request, env, origin, url) {
+  if (request.method === "OPTIONS") {
+    if (!origin || !ALLOWED_ORIGINS.has(origin)) return new Response(null, { status: 403 });
+    return new Response(null, {
+      status: 204,
+      headers: {
+        "Access-Control-Allow-Origin": origin,
+        "Access-Control-Allow-Headers": "content-type",
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
+        "Access-Control-Max-Age": "600",
+        "Vary": "Origin",
+      },
+    });
+  }
+  if (request.method !== "GET") return responseJson({ error: "Method not allowed" }, 405, origin);
+  if (!origin || !ALLOWED_ORIGINS.has(origin)) return responseJson({ error: "Origin not allowed" }, 403, origin);
+
+  const clientIp = request.headers.get("CF-Connecting-IP");
+  if (!clientIp) return responseJson({ error: "Unable to identify request source" }, 400, origin);
+  const rate = await env.NEARBY_SEARCH_RATE_LIMIT.limit({ key: `directory-detail:${clientIp}` });
+  if (!rate.success) return responseJson({ error: "Directory detail limit reached. Try again shortly." }, 429, origin);
+
+  if (!env.SUPABASE_URL || !env.SUPABASE_PUBLISHABLE_KEY) {
+    return responseJson({ error: "National directory service is not configured yet." }, 503, origin);
+  }
+
+  const institutionId = url.pathname.split("/").filter(Boolean).at(-1) ?? "";
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(institutionId)) {
+    return responseJson({ error: "Invalid institution identifier" }, 400, origin);
+  }
+
+  try {
+    const institutionUrl = new URL("/rest/v1/monk_directory_institutions", env.SUPABASE_URL);
+    institutionUrl.searchParams.set("select", "id,canonical_name,institution_kind,category_key,ownership_key,state_code,district,city,locality,postal_code,address,website_url,phone_public,email_public,aishe_code,official_identifiers,verification_state,verified_fields,last_verified_at,source_updated_at,next_review_at,primary_source_id,primary_source_record_id");
+    institutionUrl.searchParams.set("id", `eq.${institutionId}`);
+    institutionUrl.searchParams.set("published", "eq.true");
+    institutionUrl.searchParams.set("limit", "1");
+
+    const institutionResponse = await fetch(institutionUrl, {
+      headers: { apikey: env.SUPABASE_PUBLISHABLE_KEY, "Cache-Control": "no-store" },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!institutionResponse.ok) {
+      console.error(JSON.stringify({ event: "directory_detail_institution_failed", status: institutionResponse.status }));
+      return responseJson({ error: "Institution details are temporarily unavailable." }, 502, origin);
+    }
+    const institutions = await institutionResponse.json();
+    const institution = institutions[0];
+    if (!institution) return responseJson({ error: "Published institution not found" }, 404, origin);
+
+    const programmesUrl = new URL("/rest/v1/monk_directory_programmes", env.SUPABASE_URL);
+    programmesUrl.searchParams.set("select", "id,programme_name,programme_level,discipline,duration_months,study_mode,eligibility,awarding_body,affiliation_body,academic_year,intake,verification_state,last_verified_at,source_id,source_record_id");
+    programmesUrl.searchParams.set("institution_id", `eq.${institutionId}`);
+    programmesUrl.searchParams.set("order", "programme_name.asc");
+    programmesUrl.searchParams.set("limit", "200");
+
+    const approvalsUrl = new URL("/rest/v1/monk_directory_approvals", env.SUPABASE_URL);
+    approvalsUrl.searchParams.set("select", "id,programme_id,regulator_source_id,approval_type,approval_status,academic_year,approved_intake,valid_from,valid_until,source_url,source_record_id,verified_at");
+    approvalsUrl.searchParams.set("institution_id", `eq.${institutionId}`);
+    approvalsUrl.searchParams.set("order", "academic_year.desc");
+    approvalsUrl.searchParams.set("limit", "300");
+
+    const [programmesResponse, approvalsResponse] = await Promise.all([
+      fetch(programmesUrl, {
+        headers: { apikey: env.SUPABASE_PUBLISHABLE_KEY, "Cache-Control": "no-store" },
+        signal: AbortSignal.timeout(8000),
+      }),
+      fetch(approvalsUrl, {
+        headers: { apikey: env.SUPABASE_PUBLISHABLE_KEY, "Cache-Control": "no-store" },
+        signal: AbortSignal.timeout(8000),
+      }),
+    ]);
+    if (!programmesResponse.ok || !approvalsResponse.ok) {
+      return responseJson({ error: "Programme and approval details are temporarily unavailable." }, 502, origin);
+    }
+    const [programmes, approvals] = await Promise.all([programmesResponse.json(), approvalsResponse.json()]);
+    const sourceIds = [...new Set([
+      institution.primary_source_id,
+      ...programmes.map((programme) => programme.source_id),
+      ...approvals.map((approval) => approval.regulator_source_id),
+    ].filter(Boolean))];
+
+    let sourcesById = new Map();
+    if (sourceIds.length) {
+      const sourceUrl = new URL("/rest/v1/monk_directory_sources", env.SUPABASE_URL);
+      sourceUrl.searchParams.set("select", "id,authority_name,source_url,last_checked_at");
+      sourceUrl.searchParams.set("id", `in.(${sourceIds.join(",")})`);
+      const sourceResponse = await fetch(sourceUrl, {
+        headers: { apikey: env.SUPABASE_PUBLISHABLE_KEY, "Cache-Control": "no-store" },
+        signal: AbortSignal.timeout(8000),
+      });
+      if (sourceResponse.ok) {
+        const sourceRows = await sourceResponse.json();
+        sourcesById = new Map(sourceRows.map((source) => [source.id, source]));
+      }
+    }
+
+    return responseJson({
+      institution: {
+        ...institution,
+        source: institution.primary_source_id ? sourcesById.get(institution.primary_source_id) ?? null : null,
+      },
+      programmes: programmes.map((programme) => ({
+        ...programme,
+        source: programme.source_id ? sourcesById.get(programme.source_id) ?? null : null,
+      })),
+      approvals: approvals.map((approval) => ({
+        ...approval,
+        regulator: sourcesById.get(approval.regulator_source_id) ?? null,
+      })),
+      retrievedAt: new Date().toISOString(),
+    }, 200, origin);
+  } catch (error) {
+    console.error(JSON.stringify({
+      event: "directory_detail_failed",
+      message: error instanceof Error ? error.message : "unknown",
+    }));
+    return responseJson({ error: "Institution details are temporarily unavailable." }, 502, origin);
+  }
+}
+
 async function handleDirectorySearch(request, env, origin, url) {
   if (request.method === "OPTIONS") {
     if (!origin || !ALLOWED_ORIGINS.has(origin)) return new Response(null, { status: 403 });
@@ -347,6 +469,9 @@ async function handleDirectorySearch(request, env, origin, url) {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    if (url.pathname.startsWith("/api/directory/institutions/")) {
+      return handleDirectoryInstitution(request, env, request.headers.get("Origin"), url);
+    }
     if (url.pathname === "/api/directory/search") {
       return handleDirectorySearch(request, env, request.headers.get("Origin"), url);
     }
