@@ -241,7 +241,7 @@ async function handleDirectorySearch(request, env, origin, url) {
   const rate = await env.NEARBY_SEARCH_RATE_LIMIT.limit({ key: `directory:${clientIp}` });
   if (!rate.success) return responseJson({ error: "Directory search limit reached. Try again shortly." }, 429, origin);
 
-  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) {
+  if (!env.SUPABASE_URL || !env.SUPABASE_PUBLISHABLE_KEY) {
     return responseJson({ error: "National directory service is not configured yet." }, 503, origin);
   }
 
@@ -281,8 +281,7 @@ async function handleDirectorySearch(request, env, origin, url) {
   try {
     const upstream = await fetch(endpoint, {
       headers: {
-        apikey: env.SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${env.SUPABASE_ANON_KEY}`,
+        apikey: env.SUPABASE_PUBLISHABLE_KEY,
         Prefer: "count=exact",
         "Cache-Control": "no-store",
       },
@@ -302,8 +301,7 @@ async function handleDirectorySearch(request, env, origin, url) {
       sourceEndpoint.searchParams.set("id", `in.(${sourceIds.join(",")})`);
       const sourceResponse = await fetch(sourceEndpoint, {
         headers: {
-          apikey: env.SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${env.SUPABASE_ANON_KEY}`,
+          apikey: env.SUPABASE_PUBLISHABLE_KEY,
           "Cache-Control": "no-store",
         },
         signal: AbortSignal.timeout(8000),
