@@ -204,3 +204,11 @@
 .step-demo-links a:hover{background:#fff0f6;transform:translateY(-1px)}
 .step-demo-links a:focus-visible{outline:3px solid rgba(223,94,152,.55);outline-offset:3px}
 @media(max-width:640px){.product-preview-note{font-size:7px}.step-demo-links{gap:7px}}
+
+
+/* WCAG AA contrast corrections for small public-site text */
+.mini-metrics small{color:#625963}
+.product-preview-note{color:#625963}
+.public-brand .brand-period{color:#91345f}
+.footer-bottom{color:#c3bac5}
+.footer-legal a{color:#c3bac5}
