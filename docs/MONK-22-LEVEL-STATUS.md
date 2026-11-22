@@ -19,7 +19,7 @@ This tracker separates code, backend activation and production release. A featur
 | 11 | Nearby provider API | Worker Places endpoints and rate-limit configuration implemented | Deploy Worker; configure GOOGLE_MAPS_API_KEY, billing and quotas |
 | 12 | Map/list and distance | Distance list, map links and Google attribution implemented | Embedded map/list toggle and real provider E2E |
 | 13 | Business verification | Third-party listings are kept distinct from MONK accounts | Build business claim and verification workflow |
-| 14 | Organization classification | Production columns/RPC live; RPC restricted to owner/admin/principal; enabled modules derive from server-owned tenant flags | Authenticated onboarding E2E |
+| 14 | Organization classification | Production columns/RPC live; RPC restricted to owner/admin/principal; tenant flags are server-owned, seeded for new orgs and synchronized to policy context | Authenticated onboarding E2E |
 | 15 | Adaptive policy engine | Rules and policy resolver v2 deployed; returns pending acceptances per user/org; onboarding resolves entity-specific policies | Legally reviewed policy documents must be drafted and published |
 | 16 | Policy acceptance | Version/hash acceptance Edge Function deployed; explicit-checkbox onboarding gate and public Terms/Privacy routes implemented; append-only audit live | Publish approved documents, then test acceptance/renewal and legal pages |
 | 17 | Authentication/onboarding | Existing Supabase Auth retained; classification fields integrated in code | End-to-end signup and email verification |
@@ -34,8 +34,8 @@ This tracker separates code, backend activation and production release. A featur
 - Primary Supabase project: `yucwackrbekwaxiyuobt`, now `ACTIVE_HEALTHY`.
 - Nine directory/policy migrations plus one hardening migration have been applied to the primary project.
 - Deployed and active Edge Functions: `directory-import` (version 4), `policy-resolve` (version 2), `policy-accept` (version 1); existing `send-education-invitation` remains active.
-- Production database contains 36 regions, 24 categories and 19 source-registry entries. It contains no institution listings yet. This is deliberate: no unverified record is represented as real.
-- All source registry entries remain import-disabled until terms/licence and allowed use are reviewed. AISHE's website copyright policy specifically requires Ministry permission before reproducing its content; this restriction is recorded in the source registry.
+- Production database contains 36 regions, 24 categories and 19 source-registry entries. New organizations inherit server-side feature flags; CRM, documents and projects are enabled by default, while payments, location and marketplace remain disabled. It contains no institution listings yet. This is deliberate: no unverified record is represented as real.
+- All source registry entries remain import-disabled until terms/licence and allowed use are reviewed. Tenant module flags are not readable or writable by anon/authenticated clients. AISHE's website copyright policy specifically requires Ministry permission before reproducing its content; this restriction is recorded in the source registry.
 - Directory import requires a server-side `DIRECTORY_IMPORT_TOKEN`, which is not configured yet.
 - Cloudflare Worker `monk` has no secret bindings. `GOOGLE_MAPS_API_KEY`, Google billing, API restrictions and quotas are required before nearby search can return provider results.
 - Policy rules exist, but no policy document is published. The onboarding gate blocks workspace access until the applicable documents are published and explicitly accepted. Public `/terms` and `/privacy` routes currently show that no effective version is published.
