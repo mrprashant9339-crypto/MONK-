@@ -53,3 +53,12 @@ Brand implementation: the selected black rounded-square MONK M/spark mark is now
 Feature branch: `feat/india-wide-discovery-and-policy-engine`
 
 Pull request: https://github.com/mrprashant9339-crypto/MONK-/pull/20
+
+
+## Landing page — design pass 1 (tokens, header, hero)
+- Centralized public landing design tokens in `src/design-tokens.css`, including the existing brand pink `#ef78ad`, near-black, off-white, yellow sparkle, cream accent, typography, spacing, radius and container tokens.
+- Rebuilt the sticky public header with scroll compression, blur, active links, accessible mobile drawer, Escape handling and visible focus states.
+- Reworked the hero copy around the two-workspace value proposition and made the primary CTA scroll to the workspace selector.
+- Replaced the abstract floating logo composition with a responsive, CSS-built workspace UI preview; retained the orbital motif and Campus/Business labels.
+- Refined the primary M mark to the supplied line-art style and synchronized the SVG favicon; updated page title, description and Open Graph copy.
+- Motion uses CSS transforms/opacity and disables animation under `prefers-reduced-motion`. No selector, social proof, FAQ or later sections changed in this pass; awaiting product approval before proceeding.
