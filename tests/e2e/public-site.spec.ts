@@ -153,3 +153,12 @@ test("FAQ search and accordion are keyboard-operable", async ({ page }) => {
   await expect(page.getByText(/No verified public price list/i)).toBeVisible();
   await expect(page.getByRole("button", { name: /what is monk/i })).toHaveCount(0);
 });
+
+test("new public sections are discoverable from the primary website navigation", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("link", { name: "Features", exact: true }).click();
+  await expect(page).toHaveURL(/\/features$/);
+  await expect(page.getByRole("heading", { name: /one foundation for focused work/i })).toBeVisible();
+  await page.getByRole("link", { name: "Pricing", exact: true }).click();
+  await expect(page).toHaveURL(/\/pricing$/);
+});
