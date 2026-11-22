@@ -26,7 +26,7 @@ test("public directory search accepts same-origin GET without Origin and enforce
 
   try {
     const response = await worker.fetch(
-      new Request("https://monk.monster/api/directory/search?state=BR", {
+      new Request("https://monk.monster/api/directory/search?state=BR&query=muzaffarpur", {
         headers: { "CF-Connecting-IP": "203.0.113.10" },
       }),
       createEnv(),
