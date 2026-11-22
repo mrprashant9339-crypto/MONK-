@@ -52,8 +52,11 @@ test("public MONK portals render and expose expected navigation and consent cont
     if (browser) await browser.close();
     if (server && !server.killed) {
       server.kill("SIGTERM");
-      await delay(250);
-      if (!server.killed) server.kill("SIGKILL");
+      await Promise.race([
+        new Promise(resolve => server.once("exit", resolve)),
+        delay(2_000),
+      ]);
+      if (server.exitCode === null) server.kill("SIGKILL");
     }
   }
 });
