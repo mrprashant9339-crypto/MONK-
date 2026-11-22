@@ -21,5 +21,7 @@ jobs:
           node-version: 22
       - name: Install dependencies
         run: npm install --no-audit --no-fund
-      - name: Type-check and build
+      - name: Type-check and production build
         run: npm run build
+      - name: Release smoke tests
+        run: npm run test:release
