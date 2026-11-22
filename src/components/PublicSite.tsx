@@ -100,6 +100,7 @@ function Footer() {
     <div className="footer-legal"><a href="/privacy" onClick={event=>{event.preventDefault();navigate("/privacy");}}>Privacy policy</a>
       <a href="/terms" onClick={event=>{event.preventDefault();navigate("/terms");}}>Terms of service</a>
       <a href="/cookies" onClick={event=>{event.preventDefault();navigate("/cookies");}}>Cookie policy</a>
+      <button type="button" onClick={() => window.dispatchEvent(new Event("monk:open-cookie-settings"))}>Cookie settings</button>
       <a href="/refunds" onClick={event=>{event.preventDefault();navigate("/refunds");}}>Refunds</a>
       <a href="/disclaimer" onClick={event=>{event.preventDefault();navigate("/disclaimer");}}>Disclaimer</a>
       <a href="/security" onClick={event=>{event.preventDefault();navigate("/security");}}>Security</a>
