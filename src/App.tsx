@@ -165,7 +165,6 @@ export default function App() {
       const userMetadata = result.data.user?.user_metadata as Record<string, unknown> | undefined;
       const termsVersion = typeof userMetadata?.terms_version === "string" ? userMetadata.terms_version : null;
       const privacyVersion = typeof userMetadata?.privacy_version === "string" ? userMetadata.privacy_version : null;
-      let consentNotice = "";
       // Email-confirmation projects return no session at signup. The immutable
       // consent record is written on the first authenticated sign-in instead.
       if (result.data.session && termsVersion && privacyVersion) {
@@ -174,12 +173,14 @@ export default function App() {
           p_privacy_version: privacyVersion
         });
         if (consentError) {
-          consentNotice = " Your account is signed in, but the legal acceptance record could not be saved. Contact support before using the workspace.";
+          await supabase.auth.signOut();
+          setAuthMessage("We could not save the legal acceptance record. Please try again or contact admin@monk.monster.");
+          return;
         }
       }
       setAuthMessage(mode === "signup" && !result.data.session
         ? "Account created. Check your inbox, confirm your email, then sign in."
-        : "Authentication successful." + consentNotice);
+        : "Authentication successful.");
       if (result.data.session) setSession(result.data.session);
     } catch (error) {
       setAuthMessage(error instanceof Error ? error.message : "Authentication request failed. Check your connection and try again.");
