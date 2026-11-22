@@ -1,50 +1,73 @@
 # MONK Route and Page Inventory
 
-This inventory distinguishes routes that currently exist from proposed future routes. A navigation label or module card is not proof that the module is fully implemented.
+This inventory distinguishes implemented foundations, previews, planned surfaces and recovery experiences. A visible navigation item is not proof of backend readiness.
 
 ## Public website routes
 
 | Route | Current state | Notes |
 |---|---|---|
-| / | Implemented | Home and Campus/Business entry paths |
+| / | Implemented | Public home and Campus/Business entry paths |
 | /about | Implemented | Project identity and development status |
-| /documentation | Implemented, content incomplete | Public guide hub; detailed guides remain future work |
+| /campus | Implemented preview | College data is illustrative and incomplete; national directory verification remains separate work |
+| /business | Implemented preview | Fictional local business workflow |
+| /features | Frontend implemented | Filterable catalogue; feature maturity is labelled |
+| /solutions | Frontend implemented | Campus, education groups, local business and startup use cases |
+| /pricing | Frontend implemented | Capability matrix only; no unverified prices or checkout |
+| /compare-plans | Frontend implemented | Current capability comparison; commercial terms pending |
+| /integrations | Frontend implemented | Searchable catalogue with existing/configuration-dependent/planned labels |
+| /resources | Frontend implemented | Documentation, updates, trust and FAQ links |
+| /blog | Frontend implemented | Editorial index with illustrative product notes |
+| /blog/:slug | Frontend implemented | Detail route; unknown slugs render not-found recovery |
+| /case-studies | Frontend implemented | Explicitly illustrative workflow examples, not customer proof |
+| /case-studies/:slug | Frontend implemented | Detail route; unknown slugs render not-found recovery |
+| /roadmap | Frontend implemented | Available/in-progress/planned status labels; no delivery guarantees |
+| /careers | Frontend implemented | Honest no-openings state |
+| /partners | Frontend implemented | Collaboration information; no implied partner endorsements |
+| /documentation | Implemented, content incomplete | Public guide hub; detailed admin guides remain future work |
 | /updates | Implemented | Release-position summary, not a full changelog |
-| /faq | Implemented | Current project FAQ |
-| /campus | Implemented preview | Campus overview; college data is illustrative and incomplete |
-| /business | Implemented preview | Business overview and fictional workflow |
-| /privacy | Implemented | Legal information page |
-| /terms | Implemented | Legal information page |
+| /faq | Implemented | Existing public FAQ overview |
+| /privacy | Implemented | Legal information page; legal review required before launch |
+| /terms | Implemented | Legal information page; legal review required before launch |
 | /cookies | Implemented | Cookie policy and notice |
 | /refunds | Implemented | Refund policy page |
 | /disclaimer | Implemented | Product and data disclaimer |
 | /security | Implemented | Security overview; not a certification |
 | /accessibility | Implemented | Accessibility information |
-| /data-rights | Implemented | Data-rights page and request draft |
-| /login | Implemented foundation | Login/signup UI; live authentication depends on existing Supabase configuration |
+| /data-rights | Implemented | Local request draft; not server submission |
+| /login | Implemented foundation | Auth UI; live authentication depends on configured Supabase Auth |
 
-## Support, trust, and recovery routes
+## Trust, support and recovery
 
 | Route | Current state | Notes |
 |---|---|---|
-| /contact | Implemented | Mail-client handoff, not server ticket submission |
-| /support/tickets | Implemented frontend draft | Local-only ticket drafts |
-| /support/tickets/:id | Implemented frontend draft detail | Reads local browser draft only |
-| /status | Implemented transparency page | Correctly reports monitoring as unavailable |
-| /incidents | Implemented transparency page | No verified incident feed connected |
-| /security-center | Implemented | Trust navigation and security guidance |
-| /security/vulnerability-disclosure | Implemented frontend handoff | Prepares private email; no ticket backend |
+| /contact | Implemented frontend handoff | Opens a prepared email; does not claim server receipt |
+| /support/tickets | Implemented local draft | Browser-local ticket drafts only |
+| /support/tickets/:id | Implemented local draft detail | Reads current browser storage |
+| /status | Transparency page | Monitoring is unavailable; no uptime claim |
+| /incidents | Transparency page | No authoritative incident feed connected |
+| /security-center | Implemented | Security navigation and safe reporting guidance |
+| /security/vulnerability-disclosure | Implemented frontend handoff | Prepares private email; no bug bounty/safe-harbour claim |
 | /privacy-center | Implemented | Privacy navigation hub |
-| /cookies/preferences | Implemented | Stores browser preference locally |
-| /offline | Implemented React fallback | Network state notice |
-| /maintenance | Implemented fallback | Does not claim maintenance is active |
-| /error | Implemented fallback | Generic recovery screen |
-| /offline.html | Added standalone fallback | Available for offline navigation fallback |
-| /sw.js | Added service worker | Minimal shell and static-asset caching |
+| /cookies/preferences | Implemented | Stores browser preference locally; no analytics provider connected |
+| /offline | Implemented React fallback | Network guidance and retry |
+| /offline.html | Implemented standalone fallback | Service-worker navigation fallback |
+| /maintenance | Implemented fallback | Does not assert an active maintenance event |
+| /error | Implemented fallback | Generic error recovery |
+| /403 | Frontend implemented | Permission-denied guidance |
+| /500 | Frontend implemented | Service error guidance and safe retry warning |
+| /session-expired | Frontend implemented | Sign-in recovery |
+| Unknown route | Implemented | Not-found recovery screen |
+| /sw.js | Implemented | Minimal shell and static-asset caching |
+
+## Shared frontend foundation
+
+- Reusable UI primitives: buttons, fields, text inputs, status messages and empty states.
+- Typed frontend domain contracts for authentication, workspace, project/task and support boundaries.
+- Public page metadata updates (title, description and canonical URL).
+- Mobile navigation, responsive card grids, contained horizontal table scrolling and reduced-motion styles.
+- No new runtime dependency added by Phases 0–2.
 
 ## Workspace sections currently exposed in navigation
-
-The following are authenticated workspace sections, not all independent URL routes. The app switches visible modules through workspace navigation state.
 
 | Section | Current state from source review |
 |---|---|
@@ -64,34 +87,19 @@ The following are authenticated workspace sections, not all independent URL rout
 | Focus | Basic client-side timer |
 | Settings | Foundation / incomplete sub-settings |
 
-## Proposed public routes not yet implemented
+## Not yet implemented in Phase 0–2
 
-- /features
-- /solutions
-- /pricing
-- /compare-plans
-- /integrations
-- /resources
-- /blog
-- /blog/:slug
-- /case-studies
-- /case-studies/:slug
-- /roadmap
-- /careers
-- /careers/:slug
-- /partners
-
-## Proposed recovery routes not yet implemented as distinct screens
-
-- /403
-- /500
-- /session-expired
-- /browser-not-supported (only if a support policy is defined)
+- Detailed documentation articles and administrator guides.
+- Verified careers vacancy detail routes; no vacancies are currently published.
+- Actual status monitoring, incident ingestion, support ticket delivery and privacy request submission.
+- Backend pricing, subscription checkout and billing entitlements.
+- Real customer case studies or independently verified outcomes.
+- Complete national college directory population and source verification.
 
 ## Inventory maintenance rules
 
-- Update this file whenever a route is added, removed, renamed, or changes implementation status.
-- Mark a page "implemented" only after its controls and relevant states pass automated tests.
-- Keep "preview", "partial", "placeholder", and "backend pending" labels explicit.
-- Do not add dead navigation links. If a route is planned but not built, do not present it as a live destination.
-- Every new route must have a route test and at least one meaningful interaction test where the page contains controls.
+- Update this file whenever a route is added, removed or changes implementation status.
+- Mark a page complete only after controls and relevant states pass automated tests.
+- Keep preview, partial, placeholder and backend-pending labels explicit.
+- Do not add dead navigation links or fake server-success messages.
+- Every new route must have a route test and meaningful interaction tests where controls exist.
