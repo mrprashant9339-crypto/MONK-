@@ -32,7 +32,7 @@ const businessFeatures = [
   { icon: Package, title: "Products & inventory", desc: "Products, stock levels, categories, suppliers and low-stock visibility." },
   { icon: Receipt, title: "Orders & invoices", desc: "Sales records, invoices, payment status and simple order tracking." },
   { icon: CalendarDays, title: "Bookings & work", desc: "Appointments, service jobs, team assignments and due dates." },
-  { icon: ChartNoAxesCombined, title: "Business insights", desc: "Revenue, sales activity, outstanding payments and team performance." },
+  { icon: BarChart3, title: "Business insights", desc: "Revenue, sales activity, outstanding payments and team performance." },
   { icon: Workflow, title: "Workflow automation", desc: "Reusable reminders, status updates and connected business processes." }
 ];
 
