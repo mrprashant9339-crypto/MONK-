@@ -166,7 +166,10 @@ function NationalInstitutionFinder() {
           <div className="institution-provenance">
             {institution.source && <a href={institution.source.source_url} target="_blank" rel="noreferrer">Source: {institution.source.authority_name} <ArrowUpRight size={12}/></a>}
             {institution.last_verified_at && <small>Verified: {new Date(institution.last_verified_at).toLocaleDateString("en-IN")}</small>}
+            {institution.source?.last_checked_at && <small>Source checked: {new Date(institution.source.last_checked_at).toLocaleDateString("en-IN")}</small>}
+            {institution.verified_fields?.length > 0 && <small>Verified fields: {institution.verified_fields.join(", ").replace(/_/g, " ")}</small>}
             {institution.aishe_code && <small>AISHE ID: {institution.aishe_code}</small>}
+            {institution.website_url && <a href={institution.website_url} target="_blank" rel="noreferrer">Institution website <ArrowUpRight size={12}/></a>}
           </div>
         </article>;
       })}</div>
