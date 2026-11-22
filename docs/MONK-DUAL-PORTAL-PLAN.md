@@ -57,10 +57,12 @@ MONK has one public website and two distinct product journeys. The root route is
 
 ## Current implementation status (2026-11-22)
 - Public root purpose chooser, Campus page, Business page and animated brand system exist in the repository.
-- Existing Campus directory UI is a small Bihar polytechnic preview; it is not an India-wide verified directory.
-- Existing Business page contains fictional sample metrics/transactions; it is not a live Google Places integration.
-- New architecture and delivery requirements are documented in `docs/INDIA-WIDE-DISCOVERY-AND-POLICY-ENGINE.md`.
-- National data import, Places provider integration, policy engine, full institution role workflows and production RBAC audit are not yet implemented.
-- Connected Supabase projects `yucwackrbekwaxiyuobt` and `ysspnuldfiijagagwiqk` both reported INACTIVE during inspection; database work is blocked until the correct project is active.
-- Google Places API credentials/billing were not found in inspected repository files; nearby search must not be called live until configured.
-- Do not remove truthful sample-data disclosures. Prefer a concise provenance/record-status panel on each detail page rather than disguising illustrative content as live data.
+- The Bihar-only static college sample has been removed. Campus now exposes a national search interface across 36 states/UTs and 24 institution categories. It returns only published directory records from the Worker API; the actual national dataset is not yet imported.
+- National institution/programme/approval/source/verification schema migrations and a guarded, idempotent import Edge Function are written but not applied/deployed.
+- Business page has a consent-first nearby search UI and manual locality/city/PIN search. A Worker Places Nearby/Text Search API, field masks, per-IP rate limiting and Google Maps attribution are implemented in the branch but not deployed.
+- Organization type, academic category and state are collected during onboarding. Server-side classification RPC, adaptive policy resolver and explicit version/hash acceptance functions are written but not deployed. Actual legal policy documents still require legal review and publication.
+- Existing Business sample sales/order metrics remain visibly illustrative; they are not real customer records.
+- Full programme/approval ingestion, institution detail pages, duplicate-review UI, complete campus role workflows, production RLS audit and end-to-end tests remain pending.
+- Both connected Supabase projects `yucwackrbekwaxiyuobt` and `ysspnuldfiijagagwiqk` reported `INACTIVE`. Database migrations and Edge Functions cannot be deployed until the correct project is restored.
+- Cloudflare Worker `monk` has no secret bindings. `GOOGLE_MAPS_API_KEY`, billing and quota configuration are required before nearby search can return live places.
+- The feature branch and draft PR are documented at https://github.com/mrprashant9339-crypto/MONK-/pull/20. Keep all illustrative data clearly identified and never represent unverified records as verified.
