@@ -265,6 +265,7 @@ function LocalBusinessFinder() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           query: searchText,
+          placeType: category,
           ...(location ? { latitude: location.latitude, longitude: location.longitude, radiusMeters: Number(radius) } : {})
         })
       });
