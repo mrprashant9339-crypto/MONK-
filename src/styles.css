@@ -387,3 +387,5 @@ footer { color: #697568 !important; border-top: 1px solid var(--monk-line) !impo
 }
 
 .auth-card .tiny a{color:#d4b77f;text-decoration:none}.auth-card .tiny a:hover{text-decoration:underline}
+
+.brand-mark-image{display:block;width:32px;height:32px;object-fit:contain;border-radius:8px;flex:none}
