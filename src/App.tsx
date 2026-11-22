@@ -112,6 +112,11 @@ export default function App() {
   }, [organizationVertical, active]);
 
   useEffect(() => {
+    const vertical = new URLSearchParams(location.search).get("vertical");
+    if (vertical === "education" || vertical === "business") setOrganizationVertical(vertical);
+  }, [location.search]);
+
+  useEffect(() => {
     if (!focusRunning) return;
     const timer = window.setInterval(() => {
       setFocusSeconds(current => Math.max(0, current - 1));
