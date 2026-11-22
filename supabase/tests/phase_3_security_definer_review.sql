@@ -56,7 +56,14 @@ begin
   where n.nspname = 'public'
     and p.prosecdef
     and has_function_privilege('authenticated', p.oid, 'EXECUTE')
-    and pg_get_functiondef(p.oid) !~* '\\m(auth\\.uid\\(\\)|current_organization_id\\(|current_member_id\\(|has_org_role\\(|has_org_permission\\(|is_org_member\\()'
+    and not (
+      position('auth.uid()' in pg_get_functiondef(p.oid)) > 0
+      or position('current_organization_id()' in pg_get_functiondef(p.oid)) > 0
+      or position('current_member_id()' in pg_get_functiondef(p.oid)) > 0
+      or position('has_org_role(' in pg_get_functiondef(p.oid)) > 0
+      or position('has_org_permission(' in pg_get_functiondef(p.oid)) > 0
+      or position('is_org_member(' in pg_get_functiondef(p.oid)) > 0
+    )
   limit 1;
   if found then
     raise exception 'Authenticated SECURITY DEFINER function has no detectable caller/tenant guard: %', bad.signature;
@@ -68,7 +75,10 @@ begin
   join pg_namespace n on n.oid = p.pronamespace
   where n.nspname = 'public'
     and p.prosecdef
-    and pg_get_functiondef(p.oid) ~* '\\mEXECUTE\\m|\\mformat\\s*\\('
+    and (
+      position('execute ' in lower(pg_get_functiondef(p.oid))) > 0
+      or position('format(' in lower(pg_get_functiondef(p.oid))) > 0
+    )
   limit 1;
   if found then
     raise exception 'Dynamic SQL requires manual review in SECURITY DEFINER function: %', bad.signature;
