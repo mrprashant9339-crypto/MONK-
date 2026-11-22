@@ -34,7 +34,7 @@ This inventory distinguishes implemented foundations, previews, planned surfaces
 | /security | Implemented | Security overview; not a certification |
 | /accessibility | Implemented | Accessibility information |
 | /data-rights | Implemented | Local request draft; not server submission |
-| /login | Implemented foundation | Auth UI; live authentication depends on configured Supabase Auth |
+| /login | Implemented foundation | Password sign-in and signup with legal acknowledgement; Supabase Auth required |\n| /forgot-password | Frontend + existing auth API | Password recovery request; generic privacy-safe response |\n| /account-recovery | Frontend + existing auth API | Alias for password recovery |\n| /reset-password | Frontend + existing auth API | Strong password and confirmation validation; requires valid recovery session |\n| /verify-email | Frontend + existing auth API | Confirmation guidance and resend signup email |\n| /mfa | Frontend + existing auth API | Authenticated TOTP enrolment, verification and factor removal |\n| /invite | Frontend + existing invitation RPC | Preserves invite token through sign-in; server validates invitation after authentication |
 
 ## Trust, support and recovery
 
@@ -67,11 +67,11 @@ This inventory distinguishes implemented foundations, previews, planned surfaces
 - Mobile navigation, responsive card grids, contained horizontal table scrolling and reduced-motion styles.
 - No new runtime dependency added by Phases 0–2.
 
-## Workspace sections currently exposed in navigation
+## Workspace sections currently exposed in navigation\n\n| Route / capability | Current state | Notes |\n|---|---|---|\n| Workspace search / command palette | Frontend implemented | Ctrl/Command+K, search across navigation, projects and tasks; arrow-key and Enter selection |\n| Notifications centre | Frontend implemented | Honest empty state; notification preferences are local-only until delivery is connected |\n| Calendar | Frontend implemented | Month navigation and agenda from task due dates; no external calendar sync or event creation |\n| Profile settings | Frontend implemented | Display name update through existing Supabase Auth user metadata |\n| Display preferences | Frontend implemented | Compact density, week start and notification preferences stored locally |\n| Account security settings | Frontend implemented | Links to MFA, password recovery and security guidance |\n| First-time onboarding | Frontend implemented | Five-step Campus/Business organisation setup; local draft persistence; existing create_organization RPC |\n
 
 | Section | Current state from source review |
 |---|---|
-| Overview | Implemented foundation |
+| Calendar | Frontend implemented | Task due-date calendar and selected-day agenda |\n| Overview | Implemented foundation |
 | Projects | Implemented foundation |
 | Tasks | Implemented foundation |
 | Team | Implemented foundation |
