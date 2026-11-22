@@ -36,6 +36,8 @@ test("public directory search accepts same-origin GET without Origin and enforce
     assert.equal(requestedUrl.pathname, "/rest/v1/monk_directory_institutions");
     assert.equal(requestedUrl.searchParams.get("published"), "eq.true");
     assert.equal(requestedUrl.searchParams.get("state_code"), "eq.BR");
+    assert.ok(requestedUrl.searchParams.get("or").includes("postal_code.ilike"));
+    assert.ok(requestedUrl.searchParams.get("or").includes("aishe_code.ilike"));
   } finally {
     globalThis.fetch = originalFetch;
   }
