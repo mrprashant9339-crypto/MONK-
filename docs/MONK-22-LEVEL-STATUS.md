@@ -19,7 +19,7 @@ This tracker separates code, backend activation and production release. A featur
 | 11 | Nearby provider API | Worker Places endpoints and rate-limit configuration implemented | Deploy Worker; configure GOOGLE_MAPS_API_KEY, billing and quotas |
 | 12 | Map/list and distance | Distance list, map links and Google attribution implemented | Embedded map/list toggle and real provider E2E |
 | 13 | Business verification | Third-party listings are kept distinct from MONK accounts | Build business claim and verification workflow |
-| 14 | Organization classification | Production columns/RPC live; RPC restricted to owner/admin/principal | Authenticated onboarding E2E |
+| 14 | Organization classification | Production columns/RPC live; RPC restricted to owner/admin/principal; enabled modules derive from server-owned tenant flags | Authenticated onboarding E2E |
 | 15 | Adaptive policy engine | Rules and policy resolver Edge Function deployed | Legally reviewed policy documents must be drafted and published |
 | 16 | Policy acceptance | Version/hash acceptance Edge Function deployed; append-only audit live | Publish approved documents, then test acceptance/renewal |
 | 17 | Authentication/onboarding | Existing Supabase Auth retained; classification fields integrated in code | End-to-end signup and email verification |
