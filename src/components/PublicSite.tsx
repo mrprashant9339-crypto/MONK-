@@ -97,7 +97,7 @@ function Footer() {
       <section className="footer-column footer-connect" aria-labelledby="footer-connect-title"><h2 id="footer-connect-title">Connect with MONK</h2>
         <a className="footer-email" href="mailto:admin@monk.monster"><Mail size={16}/>admin@monk.monster</a>
         <p className="footer-contact-note">For account, workspace and general enquiries.</p>
-        <a className="footer-contact-action" href="/contact">Contact support <ArrowUpRight size={14}/></a>
+        <a className="footer-contact-action" href="/contact" onClick={event=>{event.preventDefault();navigate("/contact");}}>Contact support <ArrowUpRight size={14}/></a>
         <a className="footer-whatsapp" href="https://wa.me/919288435641" target="_blank" rel="noreferrer"><span aria-hidden="true">WA</span> WhatsApp · +91 92884 35641</a>
         <div className="footer-socials" aria-label="Social profiles">
           <span title="LinkedIn profile will be added"><Linkedin size={17}/><small>LinkedIn</small></span>
