@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   ArrowLeft, ArrowRight, ArrowUpRight, CheckCircle2, CircleHelp, Clock3,
@@ -6,7 +6,8 @@ import {
   AlertTriangle, LockKeyhole, Copy, Activity, Bug, ClipboardList, Home, Server
 } from "lucide-react";
 import "../support-trust.css";
-import ExtendedPublicPages, { isExtendedPublicRoute } from "./ExtendedPublicPages";
+import { isExtendedPublicRoute } from "../lib/routes/public-routes";
+const ExtendedPublicPages = lazy(() => import("./ExtendedPublicPages"));
 
 type Ticket = { id: string; subject: string; category: string; message: string; email: string; createdAt: string; status: "Saved locally"; };
 const TICKET_KEY = "monk-support-tickets-v1";
@@ -149,7 +150,7 @@ export function isSupportTrustRoute(path:string) {
 }
 export default function SupportTrustPages() {
   const {pathname}=useLocation();
-  if(isExtendedPublicRoute(pathname)) return <ExtendedPublicPages/>;
+  if(isExtendedPublicRoute(pathname)) return <Suspense fallback={<main className="st-system" aria-live="polite"><section className="st-system-card"><p>Loading page…</p></section></main>}><ExtendedPublicPages/></Suspense>;
   if(pathname==="/contact")return <ContactPage/>;
   if(pathname==="/support/tickets")return <TicketListPage/>;
   if(pathname.startsWith("/support/tickets/"))return <TicketDetailPage id={decodeURIComponent(pathname.split("/").pop()||"")}/>;
