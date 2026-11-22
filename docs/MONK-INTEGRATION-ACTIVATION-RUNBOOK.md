@@ -30,6 +30,7 @@ The existing production schema was inspected before changes. Existing organizati
 - `fix_education_membership_and_guardian_rls`
 - `scope_teacher_hod_attendance_results_to_students`
 - `require_verified_email_for_student_guardian_claims`
+- `prevent_stale_invitation_role_downgrade`
 
 The schema now has 36 regions, 24 categories, 19 official-source registry rows, national institution/programme/approval/provenance tables, policy tables and source identity mappings. No institution data has been imported.
 
@@ -97,7 +98,7 @@ Before onboarding acceptance is activated:
 ## 7. Release verification
 
 - GitHub Actions passed on commit `78c49f4`: frontend TypeScript/Vite build, Worker syntax, six Worker route regression tests and all four Deno checks.
-- All 28 existing authenticated SECURITY DEFINER RPCs have `public, extensions, pg_temp` search paths. `is_org_member` includes principal, HOD, teacher, student and parent roles so education users can switch workspaces. Parent/student link RLS predicates compare the relationship and tenant organization IDs; two tautological comparisons were removed. Teacher attendance/results writes are constrained to the teacher's assigned batch; HOD attendance/results access is constrained to students in the HOD's department and batch. Student and guardian account-claim RLS now also requires `auth.users.email_confirmed_at` to be non-null. Supabase Security Advisor still reports authenticated RPC execution for RBAC review and Auth leaked-password protection as disabled.
+- All 28 existing authenticated SECURITY DEFINER RPCs have `public, extensions, pg_temp` search paths. `is_org_member` includes principal, HOD, teacher, student and parent roles so education users can switch workspaces. Parent/student link RLS predicates compare the relationship and tenant organization IDs; two tautological comparisons were removed. Teacher attendance/results writes are constrained to the teacher's assigned batch; HOD attendance/results access is constrained to students in the HOD's department and batch. Student and guardian account-claim RLS now also requires `auth.users.email_confirmed_at` to be non-null. Invitation acceptance serializes membership changes, rejects already-active members and preserves an existing owner role. Supabase Security Advisor still reports authenticated RPC execution for RBAC review and Auth leaked-password protection as disabled.
 - Worker syntax is checked in CI.
 - Migrations are applied and listed in Supabase migration history.
 - RLS is enabled for new directory/policy tables. Server-only tables explicitly deny client reads.
