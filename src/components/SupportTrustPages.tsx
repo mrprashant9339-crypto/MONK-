@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
-  ArrowLeft, ArrowRight, ArrowUpRight, CheckCircle2, ChevronDown, CircleHelp,
-  Clock3, FileText, LifeBuoy, Mail, MessageSquare, RefreshCw, Search,
-  ShieldCheck, WifiOff, AlertTriangle, LockKeyhole, ExternalLink, Copy,
-  Send, Activity, Bug, ClipboardList, Home, Server, Globe, XCircle
+  ArrowLeft, ArrowRight, ArrowUpRight, CheckCircle2, CircleHelp, Clock3,
+  FileText, LifeBuoy, Mail, MessageSquare, RefreshCw, ShieldCheck, WifiOff,
+  AlertTriangle, LockKeyhole, Copy, Activity, Bug, ClipboardList, Home, Server
 } from "lucide-react";
 import "../support-trust.css";
 
@@ -21,6 +20,7 @@ const storeList = <T,>(key: string, value: T[]) => {
 const emailAddress = "admin@monk.monster";
 
 function Shell({ eyebrow, title, intro, children }: { eyebrow: string; title: string; intro: string; children: ReactNode }) {
+  useEffect(() => { document.title = `${title} | MONK`; const meta = document.querySelector('meta[name="description"]'); if (meta) meta.setAttribute("content", intro.slice(0, 155)); }, [title, intro]);
   return <main className="st-shell">
     <header className="st-header">
       <Link to="/" className="st-brand"><span className="st-mark">M</span><span>MONK<span>.</span></span></Link>
@@ -147,7 +147,7 @@ function SystemFallbackPage({kind}:{kind:"offline"|"maintenance"|"error"|"not-fo
     error:{icon:AlertTriangle,kicker:"UNEXPECTED ERROR",title:"Something did not load as expected.",body:"Try reloading the page. If the problem continues, contact support and include the page and approximate time. Do not share passwords or tokens.",action:"Reload page"},
     "not-found":{icon:CircleHelp,kicker:"404 · PAGE NOT FOUND",title:"This page does not exist.",body:"The address may be incorrect, the page may have moved, or the link may be out of date.",action:"Return home"}
   }[kind];const Icon=config.icon;const navigate=useNavigate();const [online,setOnline]=useState(typeof navigator==="undefined"?true:navigator.onLine);
-  useEffect(()=>{const on=()=>setOnline(true);const off=()=>setOnline(false);window.addEventListener("online",on);window.addEventListener("offline",off);return()=>{window.removeEventListener("online",on);window.removeEventListener("offline",off);};},[]);
+  useEffect(()=>{document.title = `${config.title} | MONK`;const on=()=>setOnline(true);const off=()=>setOnline(false);window.addEventListener("online",on);window.addEventListener("offline",off);return()=>{window.removeEventListener("online",on);window.removeEventListener("offline",off);};},[]);
   return <main className="st-system"><Link to="/" className="st-brand"><span className="st-mark">M</span><span>MONK<span>.</span></span></Link><section className="st-system-card"><span className="st-system-icon"><Icon size={28}/></span><span className="st-eyebrow">{config.kicker}</span><h1>{config.title}</h1><p>{kind==="offline"&&!online?"Your device currently reports no network connection. ":kind==="offline"&&online?"Your device is online again. ":""}{config.body}</p>{kind==="offline"&&<span className={online?"st-online":"st-offline"}><i/> {online?"Device reports online":"Device reports offline"}</span>}<div className="st-system-actions"><button className="st-primary" onClick={()=>kind==="maintenance"?navigate("/status"):kind==="not-found"?navigate("/"):window.location.reload()}>{kind==="maintenance"?<Activity size={16}/>:kind==="not-found"?<Home size={16}/>:<RefreshCw size={16}/>} {config.action}</button><Link to="/contact" className="st-secondary">Contact support <ArrowRight size={15}/></Link></div></section><footer>MONK · Independent project in development</footer></main>;
 }
 
