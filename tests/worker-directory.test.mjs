@@ -26,7 +26,9 @@ test("public directory search accepts same-origin GET without Origin and enforce
 
   try {
     const response = await worker.fetch(
-      new Request("https://monk.monster/api/directory/search?state=BR"),
+      new Request("https://monk.monster/api/directory/search?state=BR", {
+        headers: { "CF-Connecting-IP": "203.0.113.10" },
+      }),
       createEnv(),
     );
     assert.equal(response.status, 200);
@@ -65,7 +67,9 @@ test("institution detail returns only a published institution and its programmes
 
   try {
     const response = await worker.fetch(
-      new Request(`https://monk.monster/api/directory/institutions/${institutionId}`),
+      new Request(`https://monk.monster/api/directory/institutions/${institutionId}`, {
+        headers: { "CF-Connecting-IP": "203.0.113.10" },
+      }),
       createEnv(),
     );
     assert.equal(response.status, 200);
