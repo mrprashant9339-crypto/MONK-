@@ -60,3 +60,27 @@
 .national-directory-pagination button:disabled{opacity:.45;cursor:not-allowed}
 @media(max-width:900px){.national-directory-filters{grid-template-columns:repeat(2,minmax(0,1fr))}.national-directory-filters .national-search{grid-column:1/-1}.national-directory-filters .button-dark{grid-column:1/-1}}
 @media(max-width:640px){.national-directory-filters{grid-template-columns:1fr}.national-directory-filters .national-search,.national-directory-filters .button-dark{grid-column:auto}.national-directory-summary{font-size:8px}}
+
+
+.institution-details-button{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:36px;margin-top:14px;padding:0 12px;border:1px solid #ecd6e1;border-radius:8px;background:#fff8fb;color:#a84470;font-size:9px;font-weight:800;cursor:pointer}
+.institution-details-button:hover{background:#fcecf3;border-color:#e7bfd0}
+.institution-detail-panel{max-width:1100px;margin:18px auto 24px;padding:22px;border:1px solid #ecdde4;border-radius:15px;background:#fff;box-shadow:0 14px 36px rgba(65,35,49,.07)}
+.institution-detail-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.institution-detail-heading h3{margin:7px 0 0;color:#29232a;font-size:19px;line-height:1.35}
+.institution-detail-close{display:grid;place-items:center;width:34px;height:34px;flex:none;border:1px solid #eee4e9;border-radius:50%;background:#fff;color:#766b73;cursor:pointer}
+.institution-detail-meta{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:15px;color:#766d75;font-size:9px}
+.institution-detail-meta>span:not(.verification-state){padding:6px 9px;border-radius:99px;background:#f7f3f5}
+.institution-detail-sources{display:flex;align-items:center;flex-wrap:wrap;gap:9px;margin-top:12px;padding-bottom:15px;border-bottom:1px solid #f0e9ed}
+.institution-detail-sources a,.institution-detail-record a{display:inline-flex;align-items:center;gap:4px;color:#b94f80;font-size:9px;font-weight:700;text-decoration:none}
+.institution-detail-sources small{font-size:8px;color:#8c838c}
+.institution-detail-columns{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px}
+.institution-detail-columns>section{min-width:0}
+.institution-detail-columns h4{display:flex;align-items:center;gap:8px;margin:0 0 12px;color:#312a31;font-size:12px}
+.institution-detail-columns h4 span{display:inline-grid;place-items:center;min-width:21px;height:21px;padding:0 5px;border-radius:99px;background:#f8edf2;color:#a84470;font-size:9px}
+.institution-detail-record{display:grid;gap:6px;margin-bottom:9px;padding:13px;border:1px solid #f0e8ec;border-radius:10px;background:#fffdfd}
+.institution-detail-record>b{color:#302831;font-size:10px;line-height:1.5}
+.institution-detail-record>small{color:#817780;font-size:8px;line-height:1.6}
+.institution-detail-record .verification-state{margin-top:2px}
+.detail-empty{margin:0;padding:14px;border-radius:9px;background:#faf7f8;color:#827780;font-size:9px;line-height:1.7}
+.institution-detail-disclaimer{display:block;margin-top:8px;color:#8b8188;font-size:8px;line-height:1.6}
+@media(max-width:700px){.institution-detail-panel{padding:16px}.institution-detail-columns{grid-template-columns:1fr;gap:14px}.institution-detail-heading h3{font-size:16px}}
