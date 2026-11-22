@@ -1,10 +1,10 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft, ArrowRight, CheckCircle2, KeyRound, LockKeyhole, Mail, ShieldCheck, Smartphone } from "lucide-react";
 import { isSupabaseConfigured, supabase } from "../lib/supabase";
 import "../auth-routes.css";
 
-function AuthShell({eyebrow,title,description,children}:{eyebrow:string;title:string;description:string;children:React.ReactNode}) {
+function AuthShell({eyebrow,title,description,children}:{eyebrow:string;title:string;description:string;children:ReactNode}) {
   useEffect(()=>{document.title=`${title} | MONK`;},[title]);
   return <main className="ar-page"><Link className="ar-brand" to="/"><span className="ar-mark">M</span> MONK<span>.</span></Link><section className="ar-card"><span className="ar-eyebrow">{eyebrow}</span><h1>{title}</h1><p className="ar-description">{description}</p>{children}</section><footer className="ar-footer">MONK · Secure account access · <Link to="/privacy">Privacy</Link> · <Link to="/security">Security</Link></footer></main>;
 }
