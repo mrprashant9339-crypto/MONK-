@@ -1,5 +1,31 @@
 import { createClient } from "npm:@supabase/supabase-js@2.57.0";
 
+type IncomingProgramme = {
+  sourceRecordId: string;
+  programmeName: string;
+  academicYear: string;
+  programmeLevel?: string | null;
+  discipline?: string | null;
+  durationMonths?: number | null;
+  studyMode?: string | null;
+  eligibility?: string | null;
+  awardingBody?: string | null;
+  affiliationBody?: string | null;
+  intake?: number | null;
+};
+
+type IncomingApproval = {
+  sourceRecordId: string;
+  programmeSourceRecordId?: string | null;
+  approvalType: string;
+  approvalStatus: "approved" | "conditional" | "withdrawn" | "not_approved" | "unknown";
+  academicYear: string;
+  approvedIntake?: number | null;
+  validFrom?: string | null;
+  validUntil?: string | null;
+  sourceUrl: string;
+};
+
 type IncomingInstitution = {
   sourceRecordId: string;
   canonicalName: string;
@@ -16,6 +42,8 @@ type IncomingInstitution = {
   aisheCode?: string | null;
   officialIdentifiers?: Record<string, string>;
   sourceUpdatedAt?: string | null;
+  programmes?: IncomingProgramme[];
+  approvals?: IncomingApproval[];
 };
 
 const corsHeaders = {
@@ -76,6 +104,41 @@ function isSafeHttpUrl(value: string): boolean {
   }
 }
 
+function validProgramme(programme: IncomingProgramme): boolean {
+  return Boolean(
+    programme && typeof programme.sourceRecordId === "string" &&
+    programme.sourceRecordId.length > 0 && programme.sourceRecordId.length <= 200 &&
+    typeof programme.programmeName === "string" && programme.programmeName.trim().length > 1 &&
+    programme.programmeName.length <= 300 &&
+    typeof programme.academicYear === "string" && /^\\d{4}[-/–]\\d{2,4}$/.test(programme.academicYear) &&
+    validOptionalString(programme.programmeLevel, 100) &&
+    validOptionalString(programme.discipline, 150) &&
+    validOptionalString(programme.studyMode, 80) &&
+    validOptionalString(programme.eligibility, 2000) &&
+    validOptionalString(programme.awardingBody, 300) &&
+    validOptionalString(programme.affiliationBody, 300) &&
+    (programme.durationMonths == null || (Number.isInteger(programme.durationMonths) && programme.durationMonths > 0 && programme.durationMonths <= 1200)) &&
+    (programme.intake == null || (Number.isInteger(programme.intake) && programme.intake >= 0))
+  );
+}
+
+function validApproval(approval: IncomingApproval): boolean {
+  const validDate = (value: string | null | undefined) =>
+    value == null || (/^\\d{4}-\\d{2}-\\d{2}$/.test(value) && Number.isFinite(Date.parse(value)));
+  return Boolean(
+    approval && typeof approval.sourceRecordId === "string" &&
+    approval.sourceRecordId.length > 0 && approval.sourceRecordId.length <= 200 &&
+    typeof approval.approvalType === "string" && approval.approvalType.trim().length > 0 &&
+    approval.approvalType.length <= 120 &&
+    ["approved", "conditional", "withdrawn", "not_approved", "unknown"].includes(approval.approvalStatus) &&
+    typeof approval.academicYear === "string" && /^\\d{4}[-/–]\\d{2,4}$/.test(approval.academicYear) &&
+    typeof approval.sourceUrl === "string" && approval.sourceUrl.length <= 1000 && isSafeHttpUrl(approval.sourceUrl) &&
+    validOptionalString(approval.programmeSourceRecordId, 200) &&
+    validDate(approval.validFrom) && validDate(approval.validUntil) &&
+    (approval.approvedIntake == null || (Number.isInteger(approval.approvedIntake) && approval.approvedIntake >= 0))
+  );
+}
+
 function validRecord(record: IncomingInstitution): boolean {
   return Boolean(
     record && typeof record.sourceRecordId === "string" && record.sourceRecordId.length > 0 && record.sourceRecordId.length <= 200 &&
@@ -95,7 +158,9 @@ function validRecord(record: IncomingInstitution): boolean {
       Object.entries(record.officialIdentifiers).every(([key, value]) =>
         key.length <= 80 && typeof value === "string" && value.length <= 200
       )
-    ))
+    )) &&
+    (record.programmes === undefined || (Array.isArray(record.programmes) && record.programmes.length <= 200 && record.programmes.every(validProgramme))) &&
+    (record.approvals === undefined || (Array.isArray(record.approvals) && record.approvals.length <= 300 && record.approvals.every(validApproval)))
   );
 }
 
@@ -145,7 +210,7 @@ Deno.serve(async (request) => {
     return json({ error: "Source import is disabled until its terms and ingestion permissions are reviewed" }, 403);
   }
 
-  const counts = { snapshots: 0, newInstitutions: 0, mappedRecords: 0, rejected: 0 };
+  const counts = { snapshots: 0, newInstitutions: 0, mappedRecords: 0, programmes: 0, approvals: 0, rejected: 0 };
   const errors: Array<{ sourceRecordId: string; error: string }> = [];
 
   for (const record of body.records) {
@@ -264,6 +329,70 @@ Deno.serve(async (request) => {
           last_seen_at: new Date().toISOString(),
         }, { onConflict: "source_id,source_record_id" });
       if (mapUpsertError) throw new Error("Source identity mapping failed: " + mapUpsertError.message);
+
+      for (const programme of record.programmes ?? []) {
+        const { error: programmeError } = await supabase
+          .from("monk_directory_programmes")
+          .upsert({
+            institution_id: institutionId,
+            programme_name: programme.programmeName.trim(),
+            programme_level: programme.programmeLevel ?? null,
+            discipline: programme.discipline ?? null,
+            duration_months: programme.durationMonths ?? null,
+            study_mode: programme.studyMode ?? null,
+            eligibility: programme.eligibility ?? null,
+            awarding_body: programme.awardingBody ?? null,
+            affiliation_body: programme.affiliationBody ?? null,
+            academic_year: programme.academicYear,
+            intake: programme.intake ?? null,
+            source_id: source.id,
+            source_record_id: programme.sourceRecordId,
+            verification_state: "unverified",
+            last_verified_at: null,
+          }, {
+            onConflict: "institution_id,programme_name,academic_year,source_id,source_record_id",
+            ignoreDuplicates: true,
+          });
+        if (programmeError) throw new Error("Programme import failed: " + programmeError.message);
+        counts.programmes++;
+      }
+
+      for (const approval of record.approvals ?? []) {
+        let programmeId: string | null = null;
+        if (approval.programmeSourceRecordId) {
+          const { data: linkedProgramme, error: programmeLookupError } = await supabase
+            .from("monk_directory_programmes")
+            .select("id")
+            .eq("institution_id", institutionId)
+            .eq("source_id", source.id)
+            .eq("source_record_id", approval.programmeSourceRecordId)
+            .maybeSingle();
+          if (programmeLookupError) throw new Error("Approval programme link lookup failed: " + programmeLookupError.message);
+          programmeId = linkedProgramme?.id ?? null;
+        }
+
+        const { error: approvalError } = await supabase
+          .from("monk_directory_approvals")
+          .upsert({
+            institution_id: institutionId,
+            programme_id: programmeId,
+            regulator_source_id: source.id,
+            approval_type: approval.approvalType.trim(),
+            approval_status: approval.approvalStatus,
+            academic_year: approval.academicYear,
+            approved_intake: approval.approvedIntake ?? null,
+            valid_from: approval.validFrom ?? null,
+            valid_until: approval.validUntil ?? null,
+            source_url: approval.sourceUrl,
+            source_record_id: approval.sourceRecordId,
+            verified_at: null,
+          }, {
+            onConflict: "institution_id,regulator_source_id,approval_type,academic_year,source_record_id",
+            ignoreDuplicates: true,
+          });
+        if (approvalError) throw new Error("Approval import failed: " + approvalError.message);
+        counts.approvals++;
+      }
 
       if (snapshotId) {
         const { error: reviewStatusError } = await supabase.from("monk_directory_source_snapshots")
