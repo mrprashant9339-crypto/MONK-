@@ -311,7 +311,7 @@ export default function App() {
       {authMode === "signup" && <label className="legal-acceptance"><input type="checkbox" checked={legalAccepted} onChange={e => setLegalAccepted(e.target.checked)} /><span>I agree to the <a href="/terms" target="_blank" rel="noreferrer">Terms of Service</a> and acknowledge the <a href="/privacy" target="_blank" rel="noreferrer">Privacy Policy</a>.</span></label>}
       <button className="primary full" disabled={authBusy || (authMode === "signup" && !legalAccepted)} onClick={() => signIn(authMode)}>{authBusy ? "Please wait…" : authMode === "signup" ? "Create account" : "Sign in"} <ArrowUpRight size={17} /></button>
       <button className="text-button full" disabled={authBusy} onClick={() => { setAuthMode(current => current === "login" ? "signup" : "login"); setLegalAccepted(false); setAuthMessage(""); }}>{authMode === "signup" ? "Already have an account? Sign in" : "New to MONK? Create an account"}</button>
-      {authMessage && <p className="notice">{authMessage}</p>}<p className="tiny">Protected by Supabase Authentication · <a href="/">Back to public website</a></p>
+      {authMessage && <p className="notice" role="status" aria-live="polite">{authMessage}</p>}{authMode === "login" && <div className="auth-help-links"><a href="/forgot-password">Forgot password?</a><a href="/verify-email">Resend email verification</a><a href="/mfa">Account security / MFA</a></div>}<p className="tiny">Protected by Supabase Authentication · <a href="/">Back to public website</a></p>
     </div></main>
   );
 
