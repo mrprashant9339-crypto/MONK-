@@ -50,7 +50,7 @@ function ContactPage() {
       <div className="st-note"><ShieldCheck size={17}/> Never send passwords, one-time passcodes, full payment-card details or unnecessary identity documents.</div>
       <button className="st-primary" type="submit" disabled={!valid}><Mail size={16}/> Prepare support email <ArrowUpRight size={16}/></button>
     </form><aside className="st-card st-side-card"><span className="st-icon"><LifeBuoy/></span><h2>Other support routes</h2>
-      <Link to="/support/tickets"><ClipboardList/> Support tickets <ArrowRight/></Link><Link to="/security-center"><ShieldCheck/> Security center <ArrowRight/></Link><Link to="/privacy-center"><LockKeyhole/> Privacy center <ArrowRight/></Link><Link to="/status"><Activity/> Service status <ArrowRight/></Link>
+      <Link to="/support/tickets"><ClipboardList/> Support tickets <ArrowRight/></Link><a href="https://wa.me/919288435641" target="_blank" rel="noreferrer"><MessageSquare/> WhatsApp support <ArrowUpRight/></a><Link to="/security-center"><ShieldCheck/> Security center <ArrowRight/></Link><Link to="/privacy-center"><LockKeyhole/> Privacy center <ArrowRight/></Link><Link to="/status"><Activity/> Service status <ArrowRight/></Link>
       <div className="st-divider"/><p className="st-small">Prefer email? Use the published support address.</p><div className="st-email"><a href={`mailto:${emailAddress}`}>{emailAddress}</a><button type="button" aria-label="Copy support email" onClick={()=>{void navigator.clipboard?.writeText(emailAddress);setCopied(true);}}><Copy size={15}/></button></div>{copied&&<small className="st-success">Email address copied when clipboard permission is available.</small>}
     </aside></div>
   </Shell>;
