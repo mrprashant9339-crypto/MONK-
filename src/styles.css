@@ -416,3 +416,18 @@ footer { color: #697568 !important; border-top: 1px solid var(--monk-line) !impo
 .policy-accept-check input{width:16px;height:16px;flex:none;margin:1px 0 0;accent-color:#ad4d7b}
 .policy-gate-card .primary:disabled{opacity:.55;cursor:not-allowed}
 @media(max-width:640px){.policy-gate-page{padding:18px 0}.policy-gate-card{padding:22px 18px}.policy-document-card{padding:13px}.policy-document-meta{font-size:8px}}
+
+/* Authentication screens use the MONK public brand palette */
+.auth-page{background:radial-gradient(ellipse at 50% 0%,rgba(239,120,173,.15),transparent 36rem),#101014!important}
+.auth-card{border:1px solid rgba(239,120,173,.24)!important;background:linear-gradient(155deg,#201920,#111014)!important;box-shadow:0 30px 100px rgba(0,0,0,.42)!important}
+.auth-card .eyebrow{color:#e58ab2!important}
+.auth-card h1 em{color:#ef78ad!important}
+.auth-card label{color:#d1c7ce!important}
+.auth-card input,.auth-card select{border:1px solid #49404a!important;background:#151218!important;color:#faf7fa!important}
+.auth-card input:focus,.auth-card select:focus{border-color:#ef78ad!important;box-shadow:0 0 0 3px rgba(239,120,173,.12)!important}
+.auth-card .primary{border:1px solid #ef78ad!important;background:#ef78ad!important;color:#171017!important;box-shadow:0 8px 26px rgba(239,120,173,.16)!important}
+.auth-card .primary:hover:not(:disabled){background:#f18db9!important;filter:none!important;box-shadow:0 12px 32px rgba(239,120,173,.22)!important}
+.auth-card .text-button,.auth-card .tiny a{color:#f0a5c7!important}
+.auth-card .tiny{color:#a79aa5!important}
+.auth-card .brand-mark{border:1px solid #ef78ad!important;background:#101014!important;color:#ef78ad!important;border-radius:9px!important}
+.auth-card .brand-dot{color:#ef78ad!important}
