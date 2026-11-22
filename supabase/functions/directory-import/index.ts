@@ -169,6 +169,17 @@ Deno.serve(async (request) => {
 
       let institutionId = mapping?.institution_id as string | undefined;
 
+      if (!institutionId) {
+        const { data: existingBySource, error: sourceIdentityError } = await supabase
+          .from("monk_directory_institutions")
+          .select("id")
+          .eq("primary_source_id", source.id)
+          .eq("primary_source_record_id", record.sourceRecordId)
+          .maybeSingle();
+        if (sourceIdentityError) throw new Error("Primary source identity lookup failed: " + sourceIdentityError.message);
+        institutionId = existingBySource?.id;
+      }
+
       if (!institutionId && record.aisheCode) {
         const { data: existingByAishe, error: aisheError } = await supabase
           .from("monk_directory_institutions")
