@@ -59,12 +59,6 @@ test("public pages remain usable at a narrow mobile viewport", async ({ page }) 
     viewport: document.documentElement.clientWidth,
     document: document.documentElement.scrollWidth
   }));
-  const overflow = await page.locator("body *").evaluateAll(nodes => nodes.map(node => {
-    const element = node as HTMLElement;
-    const rect = element.getBoundingClientRect();
-    return { tag: element.tagName, className: String(element.className || ""), left: Math.round(rect.left), right: Math.round(rect.right), width: Math.round(rect.width), text: (element.innerText || "").slice(0, 70) };
-  }).filter(item => item.right > window.innerWidth + 2 || item.left < -2).sort((a,b) => b.right-a.right).slice(0, 20));
-  console.log("MOBILE_OVERFLOW_ELEMENTS", JSON.stringify(overflow));
   expect(dimensions.document).toBeLessThanOrEqual(dimensions.viewport + 2);
   await page.screenshot({ path: test.info().outputPath("about-mobile.png"), fullPage: true });
 });
