@@ -39,13 +39,16 @@ const businessFeatures = [
 ];
 
 function MonkMark({ large = false }: { large?: boolean }) {
-  return <span className={large ? "monk-mark monk-mark-large" : "monk-mark"} aria-label="MONK logo"><svg viewBox="0 0 48 48" role="img" aria-hidden="true"><path className="mark-path" d="M8 36V12l16 17L40 12v24" /><path className="mark-spark" d="M24 4v5M21.5 6.5h5" /></svg></span>;
+  return <span className={large ? "monk-mark monk-mark-large" : "monk-mark"}><img src="/brand/monk-icon.svg" alt="MONK" /></span>;
 }
-function Brand() { return <span className="public-brand"><MonkMark /> <span>MONK<span className="brand-period">.</span></span></span>; }
+function Brand({ portal }: { portal?: Portal }) {
+  if (portal) return <img className={`brand-lockup brand-lockup-${portal}`} src={`/brand/monk-${portal}-logo.svg`} alt={portal === "campus" ? "MONK Campus" : "MONK Business"} />;
+  return <span className="public-brand"><MonkMark /> <span>MONK<span className="brand-period">.</span></span></span>;
+}
 function Header({ active }: { active?: Portal }) {
   const navigate = useNavigate();
   const [menu, setMenu] = useState(false);
-  return <header className="public-header"><button className="brand-button" onClick={() => navigate("/")}><Brand /></button>
+  return <header className="public-header"><button className="brand-button" onClick={() => navigate("/")}><Brand portal={active} /></button>
     <nav className={menu ? "public-nav open" : "public-nav"}><button className={active === "campus" ? "nav-active" : ""} onClick={() => { navigate("/campus"); setMenu(false); }}>Campus</button><button className={active === "business" ? "nav-active" : ""} onClick={() => { navigate("/business"); setMenu(false); }}>Business</button><a href="/#how-it-works" onClick={() => setMenu(false)}>How it works</a><a href="/#about" onClick={event => { event.preventDefault(); navigate("/about"); setMenu(false); }}>About MONK</a></nav>
     <div className="header-actions"><button className="login-link" onClick={() => navigate("/login")}>Log in</button><button className="header-cta" onClick={() => navigate("/login?mode=signup")}>Get started <ArrowUpRight size={15}/></button></div>
     <button className="mobile-menu" aria-label="Toggle navigation" onClick={() => setMenu(v => !v)}>{menu ? <X/> : <Menu/>}</button>
@@ -94,6 +97,8 @@ function Footer() {
       <section className="footer-column footer-connect" aria-labelledby="footer-connect-title"><h2 id="footer-connect-title">Connect with MONK</h2>
         <a className="footer-email" href="mailto:admin@monk.monster"><Mail size={16}/>admin@monk.monster</a>
         <p className="footer-contact-note">For account, workspace and general enquiries.</p>
+        <a className="footer-contact-action" href="/contact">Contact support <ArrowUpRight size={14}/></a>
+        <a className="footer-whatsapp" href="https://wa.me/919288435641" target="_blank" rel="noreferrer"><span aria-hidden="true">WA</span> WhatsApp · +91 92884 35641</a>
         <div className="footer-socials" aria-label="Social profiles">
           <span title="LinkedIn profile will be added"><Linkedin size={17}/><small>LinkedIn</small></span>
           <a href="https://github.com/mrprashant9339-crypto/MONK-" target="_blank" rel="noreferrer" aria-label="MONK GitHub repository"><Github size={17}/><small>GitHub</small></a>
@@ -115,7 +120,7 @@ function Footer() {
       <a href="/cookies/preferences" onClick={event=>{event.preventDefault();navigate("/cookies/preferences");}}>Cookie preferences</a>
       <a href="/security/vulnerability-disclosure" onClick={event=>{event.preventDefault();navigate("/security/vulnerability-disclosure");}}>Vulnerability disclosure</a>
       <a href="/contact" onClick={event=>{event.preventDefault();navigate("/contact");}}>Contact support</a></div>
-    <div className="footer-bottom"><span>© {new Date().getFullYear()} MONK. All rights reserved.</span><span className="footer-company-placeholder"><span className="footer-company-mark">M</span><span><small>FUTURE COMPANY IDENTITY</small><strong>Reserved for company logo / name</strong></span></span></div>
+    <div className="footer-bottom"><span>© {new Date().getFullYear()} MONK. All rights reserved.</span><span className="footer-bottom-note">Independent project · Built in India</span></div>
   </footer>;
 }
 
