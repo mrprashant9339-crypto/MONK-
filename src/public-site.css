@@ -195,3 +195,12 @@
  .public-header,.header-cta,.button-dark,.button-light,.public-nav,.monk-mark,.hero-product-window,.hero-orbit,.hero-orbit-label,.hero-spark,.headline-line{animation:none!important;transition:none!important;scroll-behavior:auto!important}
  .headline-line{opacity:1;transform:none}
 }
+
+/* Public trust and demo clarity fixes */
+.product-preview-note{padding:8px 12px;border-top:1px solid #f1e9ed;background:#fff;color:#8c828a;text-align:center;font-size:8px;letter-spacing:.02em}
+.window-status{white-space:nowrap}
+.step-demo-links{display:flex;flex-wrap:wrap;gap:10px;margin-top:15px}
+.step-demo-links a{display:inline-flex;align-items:center;gap:5px;padding:8px 11px;border:1px solid #efd9e4;border-radius:999px;color:#a84978;text-decoration:none;font-size:10px;font-weight:700;transition:background .2s,transform .2s}
+.step-demo-links a:hover{background:#fff0f6;transform:translateY(-1px)}
+.step-demo-links a:focus-visible{outline:3px solid rgba(223,94,152,.55);outline-offset:3px}
+@media(max-width:640px){.product-preview-note{font-size:7px}.step-demo-links{gap:7px}}
