@@ -45,7 +45,7 @@ function Header({ active }: { active?: Portal }) {
   const navigate = useNavigate();
   const [menu, setMenu] = useState(false);
   return <header className="public-header"><button className="brand-button" onClick={() => navigate("/")}><Brand /></button>
-    <nav className={menu ? "public-nav open" : "public-nav"}><button className={active === "campus" ? "nav-active" : ""} onClick={() => { navigate("/campus"); setMenu(false); }}>Campus</button><button className={active === "business" ? "nav-active" : ""} onClick={() => { navigate("/business"); setMenu(false); }}>Business</button><a href="/#how-it-works" onClick={() => setMenu(false)}>How it works</a><a href="/#about" onClick={() => setMenu(false)}>About MONK</a></nav>
+    <nav className={menu ? "public-nav open" : "public-nav"}><button className={active === "campus" ? "nav-active" : ""} onClick={() => { navigate("/campus"); setMenu(false); }}>Campus</button><button className={active === "business" ? "nav-active" : ""} onClick={() => { navigate("/business"); setMenu(false); }}>Business</button><a href="/#how-it-works" onClick={() => setMenu(false)}>How it works</a><a href="/#about" onClick={event => { event.preventDefault(); navigate("/about"); setMenu(false); }}>About MONK</a></nav>
     <div className="header-actions"><button className="login-link" onClick={() => navigate("/login")}>Log in</button><button className="header-cta" onClick={() => navigate("/login?mode=signup")}>Get started <ArrowUpRight size={15}/></button></div>
     <button className="mobile-menu" aria-label="Toggle navigation" onClick={() => setMenu(v => !v)}>{menu ? <X/> : <Menu/>}</button>
   </header>;
@@ -79,10 +79,10 @@ function Footer() {
         <a className="footer-link" href="/login?mode=signup" onClick={event=>{event.preventDefault();navigate("/login?mode=signup");}}>Get started</a>
       </nav>
       <nav className="footer-column" aria-label="Resources and support"><h2>Resources &amp; Support</h2>
-        <a className="footer-link" href="/#about" onClick={event=>{event.preventDefault();navigate("/");window.setTimeout(()=>document.querySelector("#about")?.scrollIntoView({behavior:"smooth"}),60);}}>About the project</a>
-        <span className="footer-link footer-link-muted">Documentation<small>Coming soon</small></span>
-        <span className="footer-link footer-link-muted">Product updates<small>Coming soon</small></span>
-        <span className="footer-link footer-link-muted">FAQ<small>Coming soon</small></span>
+        <a className="footer-link" href="/about" onClick={event=>{event.preventDefault();navigate("/about");}}>About the project</a>
+        <a className="footer-link" href="/documentation" onClick={event=>{event.preventDefault();navigate("/documentation");}}>Documentation</a>
+        <a className="footer-link" href="/updates" onClick={event=>{event.preventDefault();navigate("/updates");}}>Product updates</a>
+        <a className="footer-link" href="/faq" onClick={event=>{event.preventDefault();navigate("/faq");}}>FAQ</a>
         <a className="footer-link" href="mailto:admin@monk.monster">Contact support</a>
       </nav>
       <section className="footer-column footer-connect" aria-labelledby="footer-connect-title"><h2 id="footer-connect-title">Connect with MONK</h2>
@@ -110,6 +110,52 @@ function Footer() {
     <div className="footer-bottom"><span>© {new Date().getFullYear()} MONK. All rights reserved.</span><span className="footer-company-placeholder"><span className="footer-company-mark">M</span><span><small>FUTURE COMPANY IDENTITY</small><strong>Reserved for company logo / name</strong></span></span></div>
   </footer>;
 }
+
+function AboutPage() {
+  const navigate = useNavigate();
+  return <><Header/><main className="project-info-page about-page">
+    <section className="project-info-hero">
+      <span className="section-kicker">ABOUT THE PROJECT</span>
+      <h1>One foundation.<br/><em>Two focused workspaces.</em></h1>
+      <p>MONK is an independently developed software project bringing education and business workflows into a connected, permission-aware workspace experience.</p>
+      <div className="project-info-actions"><button className="button-dark" onClick={() => navigate("/campus")}>Explore Campus <ArrowUpRight size={16}/></button><button className="button-light" onClick={() => navigate("/business")}>Explore Business <ArrowUpRight size={16}/></button></div>
+    </section>
+    <section className="project-info-section">
+      <div className="project-info-heading"><span className="section-kicker">THE PRODUCT</span><h2>Designed around<br/><em>different kinds of work.</em></h2></div>
+      <div className="about-product-grid">
+        <article><span className="about-product-icon"><GraduationCap size={22}/></span><h3>MONK Campus</h3><p>Academic and institution workflows for students, faculty, departments and college administrators.</p><button onClick={() => navigate("/campus")}>Explore Campus <ArrowUpRight size={14}/></button></article>
+        <article><span className="about-product-icon"><Store size={22}/></span><h3>MONK Business</h3><p>Operational workflows for growing teams, including projects, customers, sales and day-to-day execution.</p><button onClick={() => navigate("/business")}>Explore Business <ArrowUpRight size={14}/></button></article>
+      </div>
+    </section>
+    <section className="project-info-section about-principles">
+      <div className="project-info-heading"><span className="section-kicker">BUILDING PRINCIPLES</span><h2>Useful first.<br/><em>Trust by design.</em></h2></div>
+      <div className="about-principle-list">
+        <article><ShieldCheck size={19}/><div><h3>Permission-aware access</h3><p>Workspace roles and organisation boundaries are part of the product foundation. They are not a substitute for independent security certification.</p></div></article>
+        <article><Layers3 size={19}/><div><h3>Focused experiences</h3><p>Campus and Business have separate workflows while sharing the same underlying platform foundation.</p></div></article>
+        <article><Workflow size={19}/><div><h3>Transparent development</h3><p>Features that are not connected or ready are labelled as planned, preview or in development rather than presented as live services.</p></div></article>
+      </div>
+    </section>
+    <section className="project-info-section about-status">
+      <div><span className="section-kicker">PROJECT STATUS</span><h2>Independently built.<br/><em>Still in development.</em></h2><p>MONK is not currently presented as an incorporated company, government portal, college authority or accredited institution. Public previews may change, and sample records are illustrative unless clearly identified otherwise.</p></div>
+      <div className="about-status-card"><span className="status-dot"/> <strong>Development status</strong><b>Active development</b><small>Product scope, integrations and release readiness are being verified in stages.</small><a href="https://github.com/mrprashant9339-crypto/MONK-" target="_blank" rel="noreferrer"><Github size={15}/> View public code repository <ArrowUpRight size={14}/></a></div>
+    </section>
+    <section className="project-info-contact"><div><span className="section-kicker">CONTACT</span><h2>Questions about MONK?</h2><p>For project, account or responsible disclosure enquiries.</p></div><a href="mailto:admin@monk.monster"><Mail size={16}/> admin@monk.monster <ArrowUpRight size={15}/></a></section>
+  </main><Footer/></>;
+}
+
+function ProjectInfoPage({ page }: { page: "documentation" | "updates" | "faq" }) {
+  const content = {
+    documentation: { kicker: "PRODUCT DOCUMENTATION", title: "Understand the MONK workspace.", intro: "The public product guides are being prepared. The current overview pages explain the Campus and Business experiences, while detailed setup and administrator guides are still in progress.", cards: [{title:"MONK Campus",desc:"Explore the public overview of academic and institution workflows.",href:"/campus",label:"Campus overview"},{title:"MONK Business",desc:"Explore the public overview of customer, team and business workflows.",href:"/business",label:"Business overview"},{title:"Account setup",desc:"Create an account and configure an organisation workspace when registration is enabled.",href:"/login?mode=signup",label:"Account setup"}] },
+    updates: { kicker: "PRODUCT UPDATES", title: "Progress, without the guesswork.", intro: "MONK is under active development. This page records the current public release position; it does not imply that planned features are already available.", cards: [{title:"Public website and footer",desc:"Four-column responsive footer, legal navigation, cookie preference controls and project contact details.",href:"/",label:"View website"},{title:"Campus and Business previews",desc:"Separate public product experiences for education and business workflows.",href:"/campus",label:"View product previews"},{title:"Trust and transparency",desc:"Privacy, terms, cookie, security, accessibility and data-rights information pages are available for review.",href:"/security",label:"Trust overview"}] },
+    faq: { kicker: "FREQUENTLY ASKED QUESTIONS", title: "A clear start with MONK.", intro: "Answers to common questions about the current project and public preview.", cards: [{title:"Is MONK a registered company?",desc:"The current project is independently developed. The website does not claim a separately incorporated operating company.",href:"/about",label:"About the project"},{title:"Are the public figures real customer data?",desc:"No. Public sample figures and records are illustrative and should not be treated as live customer or institution records.",href:"/disclaimer",label:"Read disclaimer"},{title:"Can I create an account?",desc:"Account creation is available only when the authentication and workspace configuration is active. If setup is unavailable, do not assume a successful registration.",href:"/login?mode=signup",label:"Open signup"},{title:"How can I contact the project?",desc:"Send project, account or privacy enquiries to the published support mailbox.",href:"mailto:admin@monk.monster",label:"Email support"}] }
+  }[page];
+  const navigate = useNavigate();
+  return <><Header/><main className="project-info-page">
+    <section className="project-info-hero compact"><span className="section-kicker">{content.kicker}</span><h1>{content.title}</h1><p>{content.intro}</p></section>
+    <section className="project-info-section project-resource-grid">{content.cards.map(card=><article key={card.title}><h2>{card.title}</h2><p>{card.desc}</p><a href={card.href} onClick={event=>{if(card.href.startsWith("/")){event.preventDefault();navigate(card.href);}}}>{card.label} <ArrowUpRight size={14}/></a></article>)}</section>
+  </main><Footer/></>;
+}
+
 function PortalCard({ portal, title, desc, points, onClick }: { portal: Portal; title: string; desc: string; points: string[]; onClick: () => void }) {
   const Icon = portal === "campus" ? GraduationCap : Store;
   return <button className={`portal-card ${portal}`} onClick={onClick}><span className="portal-card-top"><span className="portal-icon"><Icon size={25}/></span><span className="portal-arrow"><ArrowUpRight size={19}/></span></span><span className="portal-kicker">{portal === "campus" ? "FOR EDUCATION" : "FOR COMMERCE & TEAMS"}</span><strong>{title}</strong><span className="portal-desc">{desc}</span><span className="portal-points">{points.map(p => <span key={p}><CheckCircle2 size={14}/>{p}</span>)}</span><span className="portal-explore">Explore {portal === "campus" ? "Campus" : "Business"} <ArrowRight size={16}/></span></button>;
@@ -163,6 +209,10 @@ function BusinessPage() {
 export default function PublicSite() {
   const location = useLocation();
   useEffect(() => { window.scrollTo({ top: 0, behavior: "instant" }); }, [location.pathname]);
+  if (location.pathname === "/about") return <><AboutPage/><CookieNotice/></>;
+  if (location.pathname === "/documentation") return <><ProjectInfoPage page="documentation"/><CookieNotice/></>;
+  if (location.pathname === "/updates") return <><ProjectInfoPage page="updates"/><CookieNotice/></>;
+  if (location.pathname === "/faq") return <><ProjectInfoPage page="faq"/><CookieNotice/></>;
   if (location.pathname === "/campus") return <><CampusPage/><CookieNotice/></>;
   if (location.pathname === "/business") return <><BusinessPage/><CookieNotice/></>;
   if (["/privacy","/terms","/cookies","/refunds","/disclaimer","/security","/accessibility","/data-rights"].includes(location.pathname)) return <><LegalPage/><CookieNotice/></>;
