@@ -4,6 +4,8 @@ import PublicSite from "./components/PublicSite";
 import { ArrowUpRight, Bell, Check, ChevronRight, Command, LayoutGrid, Plus, Search, ShieldCheck, Sparkles, Target, Zap, LoaderCircle, LogOut, Pencil, Trash2, Play, Pause, RotateCcw, Users, Activity, GraduationCap, Briefcase, FolderKanban, CheckSquare, FileText, BarChart3, Wallet, Store, Bot, Settings, Building2 } from "lucide-react";
 import type { Session } from "@supabase/supabase-js";
 import { isSupabaseConfigured, supabase } from "./lib/supabase";
+import AuthRoutes, { isAuthRoute } from "./components/AuthRoutes";
+import OnboardingFlow, { type OnboardingInput } from "./components/OnboardingFlow";
 import WorkspaceManagement from "./components/WorkspaceManagement";
 import EducationManagement from "./components/EducationManagement";
 import CRMManagement from "./components/CRMManagement";
@@ -189,13 +191,15 @@ export default function App() {
     }
   }
 
-  async function createOrganization(e: FormEvent) {
-    e.preventDefault();
-    if (!supabase || !organizationName.trim() || !organizationSlug.trim()) return;
+  async function createOrganization(input: OnboardingInput) {
+    if (!supabase || !input.name.trim() || !input.slug.trim()) return;
+    setOrganizationName(input.name.trim());
+    setOrganizationSlug(input.slug.trim());
+    setOrganizationVertical(input.vertical);
     setSaving(true); setWorkspaceError("");
     const { error } = await supabase.rpc("create_organization", {
-      org_name: organizationName.trim(), org_slug: organizationSlug.toLowerCase().trim(),
-      org_country: "IN", org_timezone: "Asia/Kolkata", org_currency: "INR", org_locale: "en-IN", org_industry: organizationVertical === "education" ? "Education" : "Technology", org_vertical: organizationVertical
+      org_name: input.name.trim(), org_slug: input.slug.toLowerCase().trim(),
+      org_country: input.country, org_timezone: input.timezone, org_currency: input.currency, org_locale: input.locale, org_industry: input.industry, org_vertical: input.vertical
     });
     setSaving(false);
     if (error) { setWorkspaceError(error.message); return; }
@@ -289,6 +293,8 @@ export default function App() {
   const openTasks = tasks.length - completed;
   const nav = [{ name: "Overview", icon: LayoutGrid, group: "WORKSPACE" }, { name: "Projects", icon: FolderKanban, group: "WORKSPACE" }, { name: "Tasks", icon: CheckSquare, group: "WORKSPACE" }, ...(organizationVertical === "business" ? [{ name: "CRM", icon: Briefcase, group: "GROWTH" }] : []), { name: "Sales", icon: BarChart3, group: "GROWTH" }, { name: "Documents", icon: FileText, group: "WORKSPACE" }, { name: "Team", icon: Users, group: "MANAGE" }, { name: "Analytics", icon: Activity, group: "MANAGE" }, { name: "Finance", icon: Wallet, group: "MANAGE" }, { name: "Marketplace", icon: Store, group: "EXPLORE" }, { name: "AI Copilot", icon: Bot, group: "EXPLORE" }, ...(organizationVertical === "education" ? [{ name: "Education", icon: GraduationCap, group: "MANAGE" }] : []), { name: "Focus", icon: Target, group: "PERSONAL" }, { name: "Settings", icon: Settings, group: "PERSONAL" }];
 
+  if (isAuthRoute(location.pathname)) return <AuthRoutes />;
+
   if (!session && location.pathname !== "/login") return <PublicSite />;
 
   if (!session && location.pathname === "/login") return (
@@ -317,17 +323,7 @@ export default function App() {
   );
 
   if (isSupabaseConfigured && session && workspaceReady && !organizationId) return (
-    <main className="auth-page"><form className="auth-card" onSubmit={createOrganization}>
-      <a className="brand" href="#"><span className="brand-mark">M</span> MONK<span className="brand-dot">.</span></a>
-      <p className="eyebrow">FIRST-TIME SETUP</p><h1>Create your<br /><em>workspace.</em></h1>
-      <p className="muted">Your organization is the secure boundary for its projects and tasks.</p>
-      <label>Workspace name<input required maxLength={100} value={organizationName} onChange={e => setOrganizationName(e.target.value)} /></label>
-      <label>Workspace type<select value={organizationVertical} onChange={e => setOrganizationVertical(e.target.value as "business" | "education")}><option value="business">Business workspace</option><option value="education">Education institution</option></select></label>
-      <label>Workspace URL slug<input required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" maxLength={50} value={organizationSlug} onChange={e => setOrganizationSlug(e.target.value)} /></label>
-      {workspaceError && <p className="notice">{workspaceError}</p>}
-      <button className="primary full" disabled={saving}>{saving ? "Creating…" : "Create workspace"} <ArrowUpRight size={17} /></button>
-      <button type="button" className="text-button full" onClick={() => supabase?.auth.signOut()}><LogOut size={14} /> Sign out</button>
-    </form></main>
+    <OnboardingFlow busy={saving} error={workspaceError} onCreate={createOrganization} />
   );
 
   if (isSupabaseConfigured && session && workspaceReady && organizationId && organizationVertical === "business" && projects.length === 0 && active === "Overview") return (
