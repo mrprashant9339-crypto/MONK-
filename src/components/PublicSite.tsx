@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import type { ReactNode, ComponentType } from "react";
+import type { ReactNode } from "react";
+import type { LucideIcon } from "lucide-react";
 import "../public-site.css";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ArrowRight, ArrowUpRight, GraduationCap, Store, Users, BookOpen, ShieldCheck, BarChart3, CalendarDays, ClipboardList, Package, Receipt, Menu, X, CheckCircle2, MapPin, Search, Layers3, Workflow, ChevronRight } from "lucide-react";
@@ -91,7 +92,7 @@ function DirectoryDemo() {
     <div className="directory-foot"><span>Sample preview · Not a complete live admission directory</span><a href={type === "government" ? "https://sbte.bihar.gov.in/government-institute" : "https://sbte.bihar.gov.in/private-institutes"} target="_blank" rel="noreferrer">Open official SBTE directory <ArrowUpRight size={15}/></a></div>
   </section>;
 }
-function FeatureGrid({ items }: { items: Array<{ icon: ComponentType<{ size?: number }>; title: string; desc: string }> }) {
+function FeatureGrid({ items }: { items: Array<{ icon: LucideIcon; title: string; desc: string }> }) {
   return <div className="feature-grid">{items.map((item, i) => <Reveal key={item.title}><article className="feature-card" style={{transitionDelay:`${i * 45}ms`}}><span><item.icon size={19}/></span><h3>{item.title}</h3><p>{item.desc}</p></article></Reveal>)}</div>;
 }
 function CampusPage() {
