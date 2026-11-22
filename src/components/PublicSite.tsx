@@ -120,7 +120,7 @@ function Footer() {
       <a href="/cookies/preferences" onClick={event=>{event.preventDefault();navigate("/cookies/preferences");}}>Cookie preferences</a>
       <a href="/security/vulnerability-disclosure" onClick={event=>{event.preventDefault();navigate("/security/vulnerability-disclosure");}}>Vulnerability disclosure</a>
       <a href="/contact" onClick={event=>{event.preventDefault();navigate("/contact");}}>Contact support</a></div>
-    <div className="footer-bottom"><span>© {new Date().getFullYear()} MONK. All rights reserved.</span><span className="footer-bottom-note">Independent project · Built in India</span></div>
+    <div className="footer-bottom"><span>© {new Date().getFullYear()} MONK. All rights reserved.</span><span className="footer-bottom-note">Built independently in India</span></div>
   </footer>;
 }
 
