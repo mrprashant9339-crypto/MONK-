@@ -90,7 +90,7 @@ function Footer() {
         <p className="footer-contact-note">For account, workspace and general enquiries.</p>
         <div className="footer-socials" aria-label="Social profiles">
           <span title="LinkedIn profile will be added"><Linkedin size={17}/><small>LinkedIn</small></span>
-          <span title="GitHub profile will be added"><Github size={17}/><small>GitHub</small></span>
+          <a href="https://github.com/mrprashant9339-crypto/MONK-" target="_blank" rel="noreferrer" aria-label="MONK GitHub repository"><Github size={17}/><small>GitHub</small></a>
           <span title="Instagram profile will be added"><Instagram size={17}/><small>Instagram</small></span>
         </div>
         <p className="footer-social-note">Official social profile links will be published here once verified.</p>
