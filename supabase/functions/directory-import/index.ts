@@ -196,6 +196,8 @@ Deno.serve(async (request) => {
             address: record.address ?? null,
             website_url: record.websiteUrl ?? null,
             aishe_code: record.aisheCode ?? null,
+            primary_source_id: source.id,
+            primary_source_record_id: record.sourceRecordId,
             official_identifiers: record.officialIdentifiers ?? {},
             source_updated_at: record.sourceUpdatedAt ?? null,
             verification_state: "unverified",
@@ -207,6 +209,15 @@ Deno.serve(async (request) => {
         if (createError || !created) throw new Error("Institution insert failed: " + (createError?.message ?? "No ID returned"));
         institutionId = created.id;
         counts.newInstitutions++;
+      }
+
+      if (mapping?.institution_id === undefined && institutionId) {
+        const { error: provenanceError } = await supabase
+          .from("monk_directory_institutions")
+          .update({ primary_source_id: source.id, primary_source_record_id: record.sourceRecordId })
+          .eq("id", institutionId)
+          .is("primary_source_id", null);
+        if (provenanceError) throw new Error("Primary source provenance could not be attached: " + provenanceError.message);
       }
 
       const { error: mapUpsertError } = await supabase
