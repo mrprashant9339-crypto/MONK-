@@ -84,7 +84,12 @@ function Footer() {
         <a className="footer-link" href="/documentation" onClick={event=>{event.preventDefault();navigate("/documentation");}}>Documentation</a>
         <a className="footer-link" href="/updates" onClick={event=>{event.preventDefault();navigate("/updates");}}>Product updates</a>
         <a className="footer-link" href="/faq" onClick={event=>{event.preventDefault();navigate("/faq");}}>FAQ</a>
-        <a className="footer-link" href="mailto:admin@monk.monster">Contact support</a>
+        <a className="footer-link" href="/contact" onClick={event=>{event.preventDefault();navigate("/contact");}}>Contact support</a>
+        <a className="footer-link" href="/support/tickets" onClick={event=>{event.preventDefault();navigate("/support/tickets");}}>Support tickets</a>
+        <a className="footer-link" href="/status" onClick={event=>{event.preventDefault();navigate("/status");}}>System status</a>
+        <a className="footer-link" href="/incidents" onClick={event=>{event.preventDefault();navigate("/incidents");}}>Incident history</a>
+        <a className="footer-link" href="/security-center" onClick={event=>{event.preventDefault();navigate("/security-center");}}>Security center</a>
+        <a className="footer-link" href="/privacy-center" onClick={event=>{event.preventDefault();navigate("/privacy-center");}}>Privacy center</a>
       </nav>
       <section className="footer-column footer-connect" aria-labelledby="footer-connect-title"><h2 id="footer-connect-title">Connect with MONK</h2>
         <a className="footer-email" href="mailto:admin@monk.monster"><Mail size={16}/>admin@monk.monster</a>
@@ -107,7 +112,9 @@ function Footer() {
       <a href="/security" onClick={event=>{event.preventDefault();navigate("/security");}}>Security</a>
       <a href="/accessibility" onClick={event=>{event.preventDefault();navigate("/accessibility");}}>Accessibility</a>
       <a href="/data-rights" onClick={event=>{event.preventDefault();navigate("/data-rights");}}>Data rights</a>
-      <a href="mailto:admin@monk.monster">Support</a></div>
+      <a href="/cookies/preferences" onClick={event=>{event.preventDefault();navigate("/cookies/preferences");}}>Cookie preferences</a>
+      <a href="/security/vulnerability-disclosure" onClick={event=>{event.preventDefault();navigate("/security/vulnerability-disclosure");}}>Vulnerability disclosure</a>
+      <a href="/contact" onClick={event=>{event.preventDefault();navigate("/contact");}}>Contact support</a></div>
     <div className="footer-bottom"><span>© {new Date().getFullYear()} MONK. All rights reserved.</span><span className="footer-company-placeholder"><span className="footer-company-mark">M</span><span><small>FUTURE COMPANY IDENTITY</small><strong>Reserved for company logo / name</strong></span></span></div>
   </footer>;
 }
