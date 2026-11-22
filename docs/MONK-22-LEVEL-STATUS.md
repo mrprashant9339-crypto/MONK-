@@ -26,7 +26,7 @@ This tracker separates code, backend activation and production release. A featur
 | 18 | Role-based permissions | Organization RPCs check active membership/roles; search paths hardened; education roles and parent/student tenant-link policies corrected | Complete per-role matrix and two-tenant adversarial tests; Auth leaked-password protection is disabled; 29 public SECURITY DEFINER functions are executable by authenticated role and require per-function review |
 | 19 | RLS and tenant isolation | Directory/policy RLS applied; server-only tables explicitly deny client reads | Run two-tenant adversarial tests |
 | 20 | Integrations/operations | Worker config has logs/traces and rate-limit binding; Cloudflare preview builds disabled to avoid failed preview deployment | Deploy production Worker; configure API secrets/quotas |
-| 21 | QA/security | GitHub Actions run #505 passed on `90484c8fd66b10534381ac0bd17c7fab31a81e68`: frontend build, Worker syntax, 6 Worker route tests and all Deno checks | Browser E2E, authenticated onboarding tests and cross-tenant security review |
+| 21 | QA/security | GitHub Actions run #515 passed on `daa0e19557744d194db7ee189ae3c47f2a3f5472`: frontend build, Worker syntax, 6 Worker route tests and all Deno checks | Browser E2E, authenticated onboarding tests and cross-tenant security review |
 | 22 | Production release | Not released | Worker deploy, live data, legal docs, secrets, E2E and rollback verification |
 
 ## Production state
@@ -42,6 +42,7 @@ This tracker separates code, backend activation and production release. A featur
 - Latest Supabase catalog check: 34 public SECURITY DEFINER functions; 29 are executable by `authenticated`, 0 by `anon`, and 5 are service/owner-only. This is an advisory surface, not proof that all 29 are exploitable. Function definitions show role/membership checks on the organization and data RPCs, but a full per-function authorization review and adversarial tenant tests remain open.
 - Supabase Security Advisor also reports Auth leaked-password protection disabled. No authenticated users or production auth settings were modified during this audit.
 - Performance advisor reports unindexed foreign keys and multiple permissive RLS policies; these need table-by-table query-plan and policy review rather than blind index/policy changes.
+- A read-only repeatable database audit is available at `scripts/audit-monk-security.sql`.
 - Worker production deployment is still the previous version. PR #20 is not merged or deployed.
 
 ## Branch and pull request
