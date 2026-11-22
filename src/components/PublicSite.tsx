@@ -7,19 +7,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { ArrowRight, ArrowUpRight, GraduationCap, Store, Users, BookOpen, ShieldCheck, BarChart3, CalendarDays, ClipboardList, Package, Receipt, Menu, X, CheckCircle2, MapPin, Search, Layers3, Workflow, ChevronRight } from "lucide-react";
 
 type Portal = "campus" | "business";
-const governmentColleges = [
-  { code: "117", name: "Government Polytechnic, Muzaffarpur", city: "Muzaffarpur", branches: "Civil · Mechanical · Electrical · CSE · Electronics", tag: "North Bihar" },
-  { code: "112", name: "Government Polytechnic, Bhagalpur", city: "Bhagalpur", branches: "Civil · Mechanical · Electrical · CSE · Textile", tag: "Eastern Bihar" },
-  { code: "115", name: "Government Polytechnic, Gaya", city: "Gaya", branches: "Civil · Mechanical · Electrical · CSE · Textile", tag: "South Bihar" },
-  { code: "118", name: "Government Polytechnic, Patna-7", city: "Patna", branches: "Civil · Mechanical · Electrical · CSE · Printing", tag: "Central Bihar" },
-  { code: "119", name: "Government Polytechnic, Purnea", city: "Purnea", branches: "Civil · Mechanical · Electrical · CSE · Electronics", tag: "North-East Bihar" },
-  { code: "120", name: "Government Polytechnic, Saharsa", city: "Saharsa", branches: "Civil · Mechanical · Electrical · CSE · Automobile", tag: "Kosi region" }
-];
-const privateColleges = [
-  { name: "Badiuzzama Khan Polytechnic Institute", city: "Pupri, Sitamarhi", branches: "Civil · Mechanical · Electrical · CSE", tag: "Private demo" },
-  { name: "Maulana Azad College of Engineering & Technology", city: "Neora, Patna", branches: "Civil · Electrical · CSE", tag: "Private demo" },
-  { name: "MPS Polytechnic College", city: "Muzaffarpur", branches: "SBTE directory listing", tag: "Private demo" }
-];
 const campusFeatures = [
   { icon: Users, title: "Student & faculty space", desc: "Student profiles, faculty directories, class groups and role-specific access." },
   { icon: BookOpen, title: "Academic operations", desc: "Courses, branches, semesters, notices, assignments and learning resources." },
