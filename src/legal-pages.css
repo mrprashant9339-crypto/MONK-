@@ -25,3 +25,6 @@
 .legal-acceptance input{margin-top:3px;accent-color:#b85b86;flex:none}
 .legal-acceptance a{color:#a44772;font-weight:700}
 @media(max-width:620px){.cookie-notice{flex-direction:column}.cookie-actions{width:100%;justify-content:flex-start}.cookie-actions button{flex:1}.cookie-options{width:100%}}
+
+.footer-legal button{border:0;background:transparent;padding:0;color:#d8d0da;font:inherit;font-size:10px;cursor:pointer}
+.footer-legal button:hover{color:var(--mk-footer-accent)}
