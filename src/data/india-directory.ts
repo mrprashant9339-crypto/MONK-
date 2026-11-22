@@ -124,8 +124,12 @@ export const POLICY_ORGANIZATION_TYPES = [
   { id: "private_university", label: "Private University", policyKeys: ["platform", "privacy", "education", "private_entity", "student_data", "data_processing", "research_data"] },
   { id: "coaching_institute", label: "Coaching Institute", policyKeys: ["platform", "privacy", "coaching_services", "consumer_terms", "student_data"] },
   { id: "business", label: "Business", policyKeys: ["platform", "privacy", "business_services", "payments", "customer_data"] },
+  { id: "government_body", label: "Government Body", policyKeys: ["platform", "privacy", "government_entity", "data_processing"] },
+  { id: "trust_society", label: "Trust / Society", policyKeys: ["platform", "privacy", "private_entity", "data_processing"] },
   { id: "sole_proprietor", label: "Sole Proprietor", policyKeys: ["platform", "privacy", "business_services", "payments", "customer_data"] },
   { id: "company", label: "Company", policyKeys: ["platform", "privacy", "business_services", "payments", "customer_data", "data_processing"] },
+  { id: "partnership", label: "Partnership", policyKeys: ["platform", "privacy", "business_services", "payments", "customer_data"] },
+  { id: "other", label: "Other Organization", policyKeys: ["platform", "privacy"] },
 ] as const;
 
 export const INDIA_DIRECTORY_DEFAULTS = {
