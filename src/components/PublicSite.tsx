@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import "../public-site.css";
+import LegalPage, { CookieNotice } from "./LegalPages";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ArrowRight, ArrowUpRight, GraduationCap, Store, Users, BookOpen, ShieldCheck, BarChart3, CalendarDays, ClipboardList, Package, Receipt, Menu, X, CheckCircle2, MapPin, Search, Layers3, Workflow, ChevronRight, Mail, Github, Linkedin, Instagram } from "lucide-react";
 
@@ -96,7 +97,15 @@ function Footer() {
       </section>
     </div>
     <div className="footer-project-note"><ShieldCheck size={16}/><p><strong>Independent project in development.</strong> Features and product previews may change. Any sample figures or records shown publicly are illustrative, not live customer data.</p></div>
-    <div className="footer-legal"><a href="/privacy">Privacy policy <small>Coming soon</small></a><a href="/terms">Terms of service <small>Coming soon</small></a><a href="mailto:admin@monk.monster">Support</a></div>
+    <div className="footer-legal"><a href="/privacy" onClick={event=>{event.preventDefault();navigate("/privacy");}}>Privacy policy</a>
+      <a href="/terms" onClick={event=>{event.preventDefault();navigate("/terms");}}>Terms of service</a>
+      <a href="/cookies" onClick={event=>{event.preventDefault();navigate("/cookies");}}>Cookie policy</a>
+      <a href="/refunds" onClick={event=>{event.preventDefault();navigate("/refunds");}}>Refunds</a>
+      <a href="/disclaimer" onClick={event=>{event.preventDefault();navigate("/disclaimer");}}>Disclaimer</a>
+      <a href="/security" onClick={event=>{event.preventDefault();navigate("/security");}}>Security</a>
+      <a href="/accessibility" onClick={event=>{event.preventDefault();navigate("/accessibility");}}>Accessibility</a>
+      <a href="/data-rights" onClick={event=>{event.preventDefault();navigate("/data-rights");}}>Data rights</a>
+      <a href="mailto:admin@monk.monster">Support</a></div>
     <div className="footer-bottom"><span>© {new Date().getFullYear()} MONK. All rights reserved.</span><span className="footer-company-placeholder"><span className="footer-company-mark">M</span><span><small>FUTURE COMPANY IDENTITY</small><strong>Reserved for company logo / name</strong></span></span></div>
   </footer>;
 }
@@ -153,7 +162,8 @@ function BusinessPage() {
 export default function PublicSite() {
   const location = useLocation();
   useEffect(() => { window.scrollTo({ top: 0, behavior: "instant" }); }, [location.pathname]);
-  if (location.pathname === "/campus") return <CampusPage/>;
-  if (location.pathname === "/business") return <BusinessPage/>;
-  return <HomePage/>;
+  if (location.pathname === "/campus") return <><CampusPage/><CookieNotice/></>;
+  if (location.pathname === "/business") return <><BusinessPage/><CookieNotice/></>;
+  if (["/privacy","/terms","/cookies","/refunds","/disclaimer","/security","/accessibility","/data-rights"].includes(location.pathname)) return <><LegalPage/><CookieNotice/></>;
+  return <><HomePage/><CookieNotice/></>;
 }
