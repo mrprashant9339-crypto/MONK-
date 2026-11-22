@@ -135,6 +135,10 @@ function AboutPage() {
         <article><Workflow size={19}/><div><h3>Transparent development</h3><p>Features that are not connected or ready are labelled as planned, preview or in development rather than presented as live services.</p></div></article>
       </div>
     </section>
+    <section className="project-info-section about-creator">
+      <div className="project-info-heading"><span className="section-kicker">PROJECT CREATOR</span><h2>Built independently<br/><em>by Prashant Kumar.</em></h2></div>
+      <div className="about-creator-copy"><p>MONK is being designed and developed as an independent product project, with a focus on practical workflows, clear permissions and transparent product status.</p><a href="mailto:admin@monk.monster"><Mail size={15}/> Contact the project <ArrowUpRight size={14}/></a></div>
+    </section>
     <section className="project-info-section about-status">
       <div><span className="section-kicker">PROJECT STATUS</span><h2>Independently built.<br/><em>Still in development.</em></h2><p>MONK is not currently presented as an incorporated company, government portal, college authority or accredited institution. Public previews may change, and sample records are illustrative unless clearly identified otherwise.</p></div>
       <div className="about-status-card"><span className="status-dot"/> <strong>Development status</strong><b>Active development</b><small>Product scope, integrations and release readiness are being verified in stages.</small><a href="https://github.com/mrprashant9339-crypto/MONK-" target="_blank" rel="noreferrer"><Github size={15}/> View public code repository <ArrowUpRight size={14}/></a></div>
