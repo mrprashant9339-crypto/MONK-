@@ -23,6 +23,10 @@ The existing production schema was inspected before changes. Existing organizati
 - `unique_programme_approval_source_identity`
 - `approval_identity_index_upsert_compatibility`
 - `seed_tenant_flags_and_expand_module_policy_rules`
+- `add_vertical_policy_baselines`
+- `seed_tenant_flags_for_new_platform_features`
+- `revoke_public_execution_of_tenant_flag_triggers`
+- `harden_security_definer_search_paths`
 
 The schema now has 36 regions, 24 categories, 19 official-source registry rows, national institution/programme/approval/provenance tables, policy tables and source identity mappings. No institution data has been imported.
 
@@ -89,7 +93,8 @@ Before onboarding acceptance is activated:
 
 ## 7. Release verification
 
-- GitHub Actions passed on commit `d24849a`: frontend TypeScript/Vite build, Worker syntax, six Worker route regression tests and all four Deno checks.
+- GitHub Actions passed on commit `78c49f4`: frontend TypeScript/Vite build, Worker syntax, six Worker route regression tests and all four Deno checks.
+- All 28 existing authenticated SECURITY DEFINER RPCs have `public, extensions, pg_temp` search paths. Supabase Security Advisor still reports their authenticated execution for RBAC review and reports Auth leaked-password protection as disabled.
 - Worker syntax is checked in CI.
 - Migrations are applied and listed in Supabase migration history.
 - RLS is enabled for new directory/policy tables. Server-only tables explicitly deny client reads.
