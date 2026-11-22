@@ -218,9 +218,132 @@ async function handlePlaces(request, env, origin, url) {
   }
 }
 
+
+async function handleDirectorySearch(request, env, origin, url) {
+  if (request.method === "OPTIONS") {
+    if (!origin || !ALLOWED_ORIGINS.has(origin)) return new Response(null, { status: 403 });
+    return new Response(null, {
+      status: 204,
+      headers: {
+        "Access-Control-Allow-Origin": origin,
+        "Access-Control-Allow-Headers": "content-type",
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
+        "Access-Control-Max-Age": "600",
+        "Vary": "Origin",
+      },
+    });
+  }
+  if (request.method !== "GET") return responseJson({ error: "Method not allowed" }, 405, origin);
+  if (!origin || !ALLOWED_ORIGINS.has(origin)) return responseJson({ error: "Origin not allowed" }, 403, origin);
+
+  const clientIp = request.headers.get("CF-Connecting-IP");
+  if (!clientIp) return responseJson({ error: "Unable to identify request source" }, 400, origin);
+  const rate = await env.NEARBY_SEARCH_RATE_LIMIT.limit({ key: `directory:${clientIp}` });
+  if (!rate.success) return responseJson({ error: "Directory search limit reached. Try again shortly." }, 429, origin);
+
+  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) {
+    return responseJson({ error: "National directory service is not configured yet." }, 503, origin);
+  }
+
+  const query = (url.searchParams.get("query") ?? "")
+    .normalize("NFKC")
+    .replace(/[^\p{L}\p{N}\s.-]/gu, " ")
+    .trim()
+    .replace(/\s+/g, " ")
+    .slice(0, 80);
+  const stateCode = url.searchParams.get("state") ?? "";
+  const categoryKey = url.searchParams.get("category") ?? "";
+  const ownershipKey = url.searchParams.get("ownership") ?? "";
+  const page = Number.parseInt(url.searchParams.get("page") ?? "1", 10);
+  if (!Number.isInteger(page) || page < 1 || page > 10000) {
+    return responseJson({ error: "Invalid page number" }, 400, origin);
+  }
+  if (stateCode && !/^[A-Z]{2}$/.test(stateCode)) return responseJson({ error: "Invalid state filter" }, 400, origin);
+  if (categoryKey && !/^[a-z_]{2,40}$/.test(categoryKey)) return responseJson({ error: "Invalid category filter" }, 400, origin);
+  if (ownershipKey && !/^[a-z_]{2,40}$/.test(ownershipKey)) return responseJson({ error: "Invalid ownership filter" }, 400, origin);
+
+  const pageSize = 24;
+  const offset = (page - 1) * pageSize;
+  const endpoint = new URL("/rest/v1/monk_directory_institutions", env.SUPABASE_URL);
+  endpoint.searchParams.set("select", "id,canonical_name,institution_kind,category_key,ownership_key,state_code,district,city,locality,address,website_url,aishe_code,verification_state,verified_fields,last_verified_at,primary_source_id,primary_source_record_id");
+  endpoint.searchParams.set("published", "eq.true");
+  endpoint.searchParams.set("order", "canonical_name.asc");
+  endpoint.searchParams.set("limit", String(pageSize));
+  endpoint.searchParams.set("offset", String(offset));
+  if (stateCode) endpoint.searchParams.set("state_code", `eq.${stateCode}`);
+  if (categoryKey) endpoint.searchParams.set("category_key", `eq.${categoryKey}`);
+  if (ownershipKey) endpoint.searchParams.set("ownership_key", `eq.${ownershipKey}`);
+  if (query) {
+    const pattern = `*${query}*`;
+    endpoint.searchParams.set("or", `(canonical_name.ilike.${pattern},city.ilike.${pattern},district.ilike.${pattern},locality.ilike.${pattern})`);
+  }
+
+  try {
+    const upstream = await fetch(endpoint, {
+      headers: {
+        apikey: env.SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${env.SUPABASE_ANON_KEY}`,
+        Prefer: "count=exact",
+        "Cache-Control": "no-store",
+      },
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!upstream.ok) {
+      console.error(JSON.stringify({ event: "directory_query_failed", status: upstream.status }));
+      return responseJson({ error: "National directory search is temporarily unavailable." }, 502, origin);
+    }
+
+    const records = await upstream.json();
+    const sourceIds = [...new Set(records.map((record) => record.primary_source_id).filter(Boolean))];
+    let sourcesById = new Map();
+    if (sourceIds.length) {
+      const sourceEndpoint = new URL("/rest/v1/monk_directory_sources", env.SUPABASE_URL);
+      sourceEndpoint.searchParams.set("select", "id,authority_name,source_url,last_checked_at");
+      sourceEndpoint.searchParams.set("id", `in.(${sourceIds.join(",")})`);
+      const sourceResponse = await fetch(sourceEndpoint, {
+        headers: {
+          apikey: env.SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${env.SUPABASE_ANON_KEY}`,
+          "Cache-Control": "no-store",
+        },
+        signal: AbortSignal.timeout(8000),
+      });
+      if (sourceResponse.ok) {
+        const sourceRows = await sourceResponse.json();
+        sourcesById = new Map(sourceRows.map((source) => [source.id, source]));
+      }
+    }
+
+    const contentRange = upstream.headers.get("Content-Range") ?? "";
+    const totalMatch = contentRange.match(/\/(\d+|\*)$/);
+    const total = totalMatch && totalMatch[1] !== "*" ? Number(totalMatch[1]) : null;
+    const results = records.map((record) => ({
+      ...record,
+      source: record.primary_source_id ? sourcesById.get(record.primary_source_id) ?? null : null,
+    }));
+
+    return responseJson({
+      results,
+      page,
+      pageSize,
+      total,
+      totalPages: total === null ? null : Math.ceil(total / pageSize),
+    }, 200, origin);
+  } catch (error) {
+    console.error(JSON.stringify({
+      event: "directory_search_failed",
+      message: error instanceof Error ? error.message : "unknown",
+    }));
+    return responseJson({ error: "National directory search is temporarily unavailable." }, 502, origin);
+  }
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    if (url.pathname === "/api/directory/search") {
+      return handleDirectorySearch(request, env, request.headers.get("Origin"), url);
+    }
     if (url.pathname.startsWith("/api/businesses/")) {
       return handlePlaces(request, env, request.headers.get("Origin"), url);
     }
