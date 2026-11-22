@@ -418,7 +418,7 @@ export default function App() {
       <a className="brand" href="/"><span className="brand-mark">M</span> MONK<span className="brand-dot">.</span></a>
       <p className="eyebrow">ORGANIZATION POLICY REVIEW</p>
       <h1>Review the terms<br /><em>for this workspace.</em></h1>
-      <p className="muted">MONK selects applicable documents from the organization type, education category and enabled services. Each version is shown with its effective date and content hash.</p>
+      <p className="muted">MONK selects applicable documents from the organization type, education category and enabled services. Organization type is declared by an authorized workspace administrator and may be subject to verification. Each version is shown with its effective date and content hash.</p>
       {policyResolution?.classificationRequired && <p className="notice" role="alert">Organization classification is incomplete. An authorized workspace administrator must complete it before access can be activated.</p>}
       {(policyResolution?.missingPolicyKeys?.length ?? 0) > 0 && <div className="policy-blocked-notice" role="alert">
         <b>Required documents are not published yet.</b>
