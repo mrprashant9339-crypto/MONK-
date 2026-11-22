@@ -38,7 +38,7 @@ const businessFeatures = [
 function MonkMark({ large = false }: { large?: boolean }) {
   return <span className={large ? "monk-mark monk-mark-large" : "monk-mark"} aria-label="MONK logo">
     <svg viewBox="0 0 100 100" role="img" aria-hidden="true">
-      <path className="mark-letter" d="M19 77V23h12l19 27 19-27h12v54H66V43L50 65 34 43v34z" />
+      <path className="mark-letter" d="M19 76V24L50 57 81 24V76" />
       <path className="mark-spark" d="M80 8c2.2 9.8 4.2 11.8 14 14-9.8 2.2-11.8 4.2-14 14-2.2-9.8-4.2-11.8-14-14 9.8-2.2 11.8-4.2 14-14z" />
     </svg>
   </span>;
@@ -57,10 +57,30 @@ function Brand() { return <span className="public-brand"><MonkMark /> <span>MONK
 function Header({ active }: { active?: Portal }) {
   const navigate = useNavigate();
   const [menu, setMenu] = useState(false);
-  return <header className="public-header"><button className="brand-button" onClick={() => navigate("/")}><Brand /></button>
-    <nav className={menu ? "public-nav open" : "public-nav"}><button className={active === "campus" ? "nav-active" : ""} onClick={() => { navigate("/campus"); setMenu(false); }}>Campus</button><button className={active === "business" ? "nav-active" : ""} onClick={() => { navigate("/business"); setMenu(false); }}>Business</button><a href="/#how-it-works" onClick={() => setMenu(false)}>How it works</a><a href="/#about" onClick={() => setMenu(false)}>About MONK</a></nav>
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 24);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  useEffect(() => {
+    if (!menu) return;
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape") setMenu(false); };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [menu]);
+  return <header className={`public-header ${scrolled ? "is-scrolled" : ""}`}>
+    <button className="brand-button" onClick={() => { setMenu(false); navigate("/"); }} aria-label="MONK home"><Brand /></button>
+    <nav id="public-navigation" className={menu ? "public-nav open" : "public-nav"} aria-label="Main navigation">
+      <button className={active === "campus" ? "nav-active" : ""} onClick={() => { navigate("/campus"); setMenu(false); }}>Campus</button>
+      <button className={active === "business" ? "nav-active" : ""} onClick={() => { navigate("/business"); setMenu(false); }}>Business</button>
+      <a href="/#how-it-works" onClick={() => setMenu(false)}>How it works</a>
+      <a href="/#about" onClick={() => setMenu(false)}>About MONK</a>
+    </nav>
     <div className="header-actions"><button className="login-link" onClick={() => navigate("/login")}>Log in</button><button className="header-cta" onClick={() => navigate("/login?mode=signup")}>Get started <ArrowUpRight size={15}/></button></div>
-    <button className="mobile-menu" aria-label="Toggle navigation" onClick={() => setMenu(v => !v)}>{menu ? <X/> : <Menu/>}</button>
+    <button className="mobile-menu" aria-label={menu ? "Close navigation" : "Open navigation"} aria-expanded={menu} aria-controls="public-navigation" onClick={() => setMenu(v => !v)}>{menu ? <X/> : <Menu/>}</button>
+    {menu && <button className="nav-scrim" aria-label="Close navigation" onClick={() => setMenu(false)} />}
   </header>;
 }
 function Reveal({ children, className = "" }: { children: ReactNode; className?: string }) {
@@ -83,9 +103,36 @@ function PortalCard({ portal, title, desc, points, onClick }: { portal: Portal; 
 }
 function HomePage() {
   const navigate = useNavigate();
+  const chooseWorkspace = () => document.getElementById("choose-path")?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
   return <><Header/><main className="public-main">
-    <section className="home-hero"><div className="hero-copy"><span className="eyebrow-pill"><span/> TWO PURPOSES. ONE CONNECTED PLATFORM.</span><h1>Make room for<br/><em>what moves you.</em></h1><p className="hero-lede">Whether you run a college or grow a business, MONK brings your people, processes and progress into one clear workspace.</p><div className="hero-actions"><button className="button-dark" onClick={() => navigate("/campus")}>Explore MONK <ArrowRight size={17}/></button><a href="#choose-path">Choose your workspace <ChevronRight size={16}/></a></div><div className="hero-trust"><span><ShieldCheck size={15}/> Private by design</span><span><Layers3 size={15}/> Built around your work</span></div></div>
-      <div className="hero-art" aria-label="Animated MONK product preview"><div className="hero-orbit orbit-one"/><div className="hero-orbit orbit-two"/><div className="hero-glow"/><div className="hero-m"><MonkMark large/></div><div className="float-chip chip-campus"><GraduationCap size={17}/><span><b>Campus</b><small>People · Learning</small></span></div><div className="float-chip chip-business"><Store size={17}/><span><b>Business</b><small>Customers · Growth</small></span></div><div className="float-chip chip-secure"><ShieldCheck size={15}/> Secure workspaces</div><div className="hero-spark spark-a">✳</div><div className="hero-spark spark-b">✳</div></div>
+    <section className="home-hero">
+      <div className="hero-copy">
+        <span className="eyebrow-pill"><span/> TWO PURPOSES. ONE CONNECTED PLATFORM.</span>
+        <h1 className="hero-headline"><span className="headline-line">Run your work.</span><span className="headline-line headline-accent"><em>Move forward.</em></span></h1>
+        <p className="hero-lede">Run your college or your business — people, processes and progress in one workspace.</p>
+        <div className="hero-actions"><button className="button-dark hero-primary" onClick={chooseWorkspace}>Choose your workspace <ArrowRight size={17}/></button></div>
+        <div className="hero-trust"><span><ShieldCheck size={15}/> Private by design</span><span><Layers3 size={15}/> Built around your work</span></div>
+      </div>
+      <div className="hero-art" aria-label="MONK workspace product preview">
+        <div className="hero-orbit orbit-one"/><div className="hero-orbit orbit-two"/><div className="hero-glow"/>
+        <div className="hero-product-window">
+          <div className="product-window-top"><span className="window-dots"><i/><i/><i/></span><span>MONK WORKSPACE</span><span className="window-status"><i/> LIVE PREVIEW</span></div>
+          <div className="product-window-body">
+            <aside className="product-mini-sidebar"><MonkMark/><span className="mini-nav active"/><span className="mini-nav"/><span className="mini-nav"/><span className="mini-nav"/></aside>
+            <div className="product-mini-content">
+              <div className="mini-welcome"><small>YOUR WORKSPACE</small><b>Good work starts here.</b></div>
+              <div className="mini-metrics"><div><small>Projects</small><b>08</b><i className="metric-line pink-line"/></div><div><small>People</small><b>24</b><i className="metric-line gold-line"/></div></div>
+              <div className="mini-task-head"><b>Today’s focus</b><small>VIEW ALL ↗</small></div>
+              <div className="mini-task"><i className="task-check"/> <span><b>Plan the next milestone</b><small>Workspace task · In progress</small></span></div>
+              <div className="mini-task"><i className="task-check checked"/> <span><b>Bring the team together</b><small>People · Completed</small></span></div>
+            </div>
+          </div>
+          <div className="product-window-footer"><span><GraduationCap size={14}/> Campus</span><span><Store size={14}/> Business</span><span><ShieldCheck size={14}/> Private by design</span></div>
+        </div>
+        <div className="hero-orbit-label campus-orbit-label"><GraduationCap size={15}/> Campus</div>
+        <div className="hero-orbit-label business-orbit-label"><Store size={15}/> Business</div>
+        <div className="hero-spark spark-a">✦</div><div className="hero-spark spark-b">✦</div>
+      </div>
     </section>
     <section className="choose-section" id="choose-path"><Reveal><div className="section-intro"><span className="section-kicker">START WITH YOUR PURPOSE</span><h2>One first choice.<br/><em>Your own MONK experience.</em></h2><p>No account needed to explore. Choose the space that matches what you want to do.</p></div></Reveal><div className="portal-grid"><Reveal><PortalCard portal="campus" title="MONK Campus" desc="A connected digital space for colleges, polytechnics, students and faculty." points={["Institution directory & demos","Academic and campus workflows","Role-based college workspace"]} onClick={() => navigate("/campus")}/></Reveal><Reveal><PortalCard portal="business" title="MONK Business" desc="A practical operating space for local shops, service teams and growing startups." points={["Customer & sales management","Inventory, orders and invoices","Team and workflow management"]} onClick={() => navigate("/business")}/></Reveal></div></section>
     <section className="manifesto" id="about"><Reveal><div className="manifesto-mark"><MonkMark large/></div><div><span className="section-kicker">THE MONK IDEA</span><h2>Less scattered work.<br/><em>More meaningful progress.</em></h2><p>MONK is designed as two focused experiences sharing one dependable foundation. Your college sees academic operations. Your business sees customers and execution. Each workspace stays relevant to its purpose.</p></div></Reveal></section>
