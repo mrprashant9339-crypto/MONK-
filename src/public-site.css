@@ -101,3 +101,7 @@
 .project-info-page{width:100%;max-width:100%;min-width:0;overflow-x:clip}
 .project-info-page *{min-width:0;overflow-wrap:anywhere}
 .project-info-page img,.project-info-page svg{max-width:100%}
+
+
+/* Prevent page-level horizontal scrolling on narrow screens; individual sections retain their own responsive layouts. */
+html,body,#root{width:100%;max-width:100%;overflow-x:clip}
