@@ -127,3 +127,36 @@ test("unknown routes are served by the static asset binding", async () => {
   assert.equal(response.status, 200);
   assert.equal(await response.text(), "static asset");
 });
+
+test("public policy endpoint returns only published effective documents", async () => {
+  let requestedUrl;
+  globalThis.fetch = async (input) => {
+    requestedUrl = new URL(input);
+    return new Response(JSON.stringify([{
+      id: "018f2f5a-7b3c-7a11-8a22-123456789abc",
+      policy_key: "platform",
+      version: "1.0",
+      title: "MONK Terms",
+      effective_at: "2026-11-01T00:00:00.000Z",
+      content_markdown: "Published policy",
+    }]), { status: 200 });
+  };
+
+  try {
+    const response = await worker.fetch(
+      new Request("https://monk.monster/api/policies/public?key=platform", {
+        headers: { "CF-Connecting-IP": "203.0.113.10" },
+      }),
+      createEnv(),
+    );
+    assert.equal(response.status, 200);
+    const payload = await response.json();
+    assert.equal(payload.published, true);
+    assert.equal(payload.documents[0].policy_key, "platform");
+    assert.equal(requestedUrl.searchParams.get("publication_state"), "eq.published");
+    assert.match(requestedUrl.searchParams.get("effective_at"), /^lte\\./);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
