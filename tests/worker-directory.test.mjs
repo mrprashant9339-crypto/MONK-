@@ -162,3 +162,36 @@ test("public policy endpoint returns only published effective documents", async 
   }
 });
 
+test("system readiness returns only safe aggregate status and lists activation blockers", async () => {
+  const requested = [];
+  globalThis.fetch = async (input) => {
+    const url = new URL(input);
+    requested.push(url);
+    const count = url.pathname.endsWith("monk_directory_institutions") ? 0
+      : url.pathname.endsWith("monk_directory_sources") ? 0 : 0;
+    return new Response("[]", {
+      status: 200,
+      headers: { "Content-Range": `0-0/${count}` },
+    });
+  };
+  try {
+    const response = await worker.fetch(
+      new Request("https://monk.monster/api/system/readiness", {
+        headers: { "CF-Connecting-IP": "203.0.113.10" },
+      }),
+      createEnv({ GOOGLE_MAPS_API_KEY: undefined }),
+    );
+    assert.equal(response.status, 200);
+    const payload = await response.json();
+    assert.equal(payload.status, "blocked");
+    assert.equal(payload.checks.googlePlacesConfigured, false);
+    assert.equal(payload.checks.publishedInstitutions, 0);
+    assert.equal(payload.checks.approvedImportSources, 0);
+    assert.equal(payload.checks.publishedEffectivePolicies, 0);
+    assert.equal(payload.blockers.length, 4);
+    assert.equal(requested.length, 3);
+    assert.equal(JSON.stringify(payload).includes("sb_publishable_test"), false);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
