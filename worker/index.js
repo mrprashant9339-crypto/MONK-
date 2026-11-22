@@ -228,6 +228,71 @@ async function handlePlaces(request, env, origin, url) {
 
 
 
+
+async function handlePublicPolicies(request, env, origin, url) {
+  if (request.method === "OPTIONS") {
+    if (!origin || !ALLOWED_ORIGINS.has(origin)) return new Response(null, { status: 403 });
+    return new Response(null, {
+      status: 204,
+      headers: {
+        "Access-Control-Allow-Origin": origin,
+        "Access-Control-Allow-Headers": "content-type",
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
+        "Access-Control-Max-Age": "600",
+        "Vary": "Origin",
+      },
+    });
+  }
+  if (request.method !== "GET") return responseJson({ error: "Method not allowed" }, 405, origin);
+  if (origin && !ALLOWED_ORIGINS.has(origin)) return responseJson({ error: "Origin not allowed" }, 403, origin);
+
+  const clientIp = request.headers.get("CF-Connecting-IP");
+  if (!clientIp) return responseJson({ error: "Unable to identify request source" }, 400, origin);
+  const rate = await env.NEARBY_SEARCH_RATE_LIMIT.limit({ key: `public-policy:${clientIp}` });
+  if (!rate.success) return responseJson({ error: "Policy document limit reached. Try again shortly." }, 429, origin);
+
+  if (!env.SUPABASE_URL || !env.SUPABASE_PUBLISHABLE_KEY) {
+    return responseJson({ error: "Policy documents are temporarily unavailable." }, 503, origin);
+  }
+
+  const policyKey = url.searchParams.get("key") ?? "platform";
+  if (!["platform", "privacy"].includes(policyKey)) {
+    return responseJson({ error: "Unsupported public policy key" }, 400, origin);
+  }
+
+  try {
+    const endpoint = new URL("/rest/v1/monk_policy_documents", env.SUPABASE_URL);
+    endpoint.searchParams.set("select", "id,policy_key,version,title,jurisdiction,effective_at,content_markdown,content_sha256");
+    endpoint.searchParams.set("policy_key", `eq.${policyKey}`);
+    endpoint.searchParams.set("publication_state", "eq.published");
+    endpoint.searchParams.set("effective_at", `lte.${new Date().toISOString()}`);
+    endpoint.searchParams.set("order", "effective_at.desc");
+    endpoint.searchParams.set("limit", "20");
+
+    const upstream = await fetch(endpoint, {
+      headers: { apikey: env.SUPABASE_PUBLISHABLE_KEY, "Cache-Control": "no-store" },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!upstream.ok) return responseJson({ error: "Policy documents are temporarily unavailable." }, 502, origin);
+    const documents = await upstream.json();
+    const latest = [];
+    const seen = new Set();
+    for (const document of documents) {
+      if (!seen.has(document.policy_key)) {
+        seen.add(document.policy_key);
+        latest.push(document);
+      }
+    }
+    return responseJson({ documents: latest, published: latest.length > 0 }, 200, origin);
+  } catch (error) {
+    console.error(JSON.stringify({
+      event: "public_policy_fetch_failed",
+      message: error instanceof Error ? error.message : "unknown",
+    }));
+    return responseJson({ error: "Policy documents are temporarily unavailable." }, 502, origin);
+  }
+}
+
 async function handleDirectoryInstitution(request, env, origin, url) {
   if (request.method === "OPTIONS") {
     if (!origin || !ALLOWED_ORIGINS.has(origin)) return new Response(null, { status: 403 });
@@ -469,6 +534,9 @@ async function handleDirectorySearch(request, env, origin, url) {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    if (url.pathname === "/api/policies/public") {
+      return handlePublicPolicies(request, env, request.headers.get("Origin"), url);
+    }
     if (url.pathname.startsWith("/api/directory/institutions/")) {
       return handleDirectoryInstitution(request, env, request.headers.get("Origin"), url);
     }
