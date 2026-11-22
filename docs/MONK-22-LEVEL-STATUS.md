@@ -4,6 +4,8 @@ Updated: 2026-11-22
 
 This tracker separates code, backend activation and production release. A feature is not complete merely because source code exists.
 
+Brand implementation: the selected black rounded-square MONK M/spark mark is now used in the public brand header, hero/manifesto mark, authenticated app brand badge and SVG favicon. Campus uses the pink M with an academic cap; Business uses the pink M with gold growth bars in the portal selection cards. These are clean vector implementations of the supplied visual direction; uploaded raster mockups are not embedded as oversized screenshots.
+
 | Level | Workstream | Current status | Remaining gate |
 |---:|---|---|---|
 | 1 | Codebase/deployment audit | Complete for inspected repository, Supabase project and Worker configuration | Full browser smoke test |
