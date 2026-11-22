@@ -96,3 +96,8 @@
 .about-creator-copy p{font-size:13px;line-height:1.85;color:#756c77}
 .about-creator-copy a{display:inline-flex;align-items:center;gap:8px;margin-top:10px;color:#a94775;text-decoration:none;font-size:11px;font-weight:750}
 .about-creator-copy a:hover{text-decoration:underline}
+
+/* Keep the public project pages within narrow mobile viewports. */
+.project-info-page{width:100%;max-width:100%;min-width:0;overflow-x:clip}
+.project-info-page *{min-width:0;overflow-wrap:anywhere}
+.project-info-page img,.project-info-page svg{max-width:100%}
