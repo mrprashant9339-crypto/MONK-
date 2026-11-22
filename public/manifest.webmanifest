@@ -5,11 +5,11 @@
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#0B0F0D",
-  "theme_color": "#0B0F0D",
+  "background_color": "#17151A",
+  "theme_color": "#17151A",
   "icons": [
     {
-      "src": "/favicon.svg",
+      "src": "/brand/monk-icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
