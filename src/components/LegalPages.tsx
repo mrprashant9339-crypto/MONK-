@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { ArrowLeft, ArrowUpRight, ShieldCheck } from "lucide-react";
-import "./legal-pages.css";
+import "../legal-pages.css";
 
 type Section = { title: string; body: string[] };
 
