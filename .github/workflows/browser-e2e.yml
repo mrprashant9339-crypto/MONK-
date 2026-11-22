@@ -1,6 +1,8 @@
 name: MONK Browser E2E
 
 on:
+  push:
+    branches: [feat/india-wide-discovery-and-policy-engine]
   pull_request:
     branches: [main]
   workflow_dispatch:
