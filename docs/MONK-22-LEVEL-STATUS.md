@@ -43,7 +43,7 @@ This tracker separates code, backend activation and production release. A featur
 - Supabase Security Advisor also reports Auth leaked-password protection disabled. No authenticated users or production auth settings were modified during this audit.
 - Performance advisor reports unindexed foreign keys and multiple permissive RLS policies; these need table-by-table query-plan and policy review rather than blind index/policy changes.
 - A read-only repeatable database audit is available at `scripts/audit-monk-security.sql`.
-- A safe aggregate readiness endpoint is implemented at `GET /api/system/readiness`; it reports provider-key presence as a boolean and aggregate published-data/policy counts without returning secrets or user data. It is branch-only until Worker deployment.
+- A safe aggregate readiness endpoint is implemented at `GET /api/system/readiness`; it reports provider-key presence as a boolean and aggregate published-data/policy counts without returning secrets or user data. It is branch-only until Worker deployment.\n- Playwright public-site E2E tests are defined in `tests/public-site.e2e.test.mjs`; `.github/workflows/browser-e2e.yml` installs a pinned Playwright version and Chromium and runs the smoke suite on pull requests or manual dispatch. This workflow has not yet been observed passing.
 - Worker production deployment is still the previous version. PR #20 is not merged or deployed.
 
 ## Branch and pull request
