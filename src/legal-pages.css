@@ -12,3 +12,16 @@
 .cookie-notice{position:fixed;z-index:1000;left:20px;right:20px;bottom:18px;max-width:760px;margin:0 auto;padding:15px 17px;border:1px solid #454b42;border-radius:13px;background:#1f2a1f;color:#f6f2e9;box-shadow:0 18px 50px #10150f44;display:flex;align-items:center;justify-content:space-between;gap:20px}.cookie-notice strong{font-size:12px}.cookie-notice p{font-size:11px;line-height:1.65;color:#d1d7ca;margin:5px 0 0}.cookie-notice a{color:#e1c99c}.cookie-notice button{border:0;border-radius:8px;background:#d9c7a3;color:#1f2a1f;font-size:11px;font-weight:800;padding:10px 15px;cursor:pointer;white-space:nowrap}
 @media(max-width:620px){.legal-heading{margin:48px auto 26px}.legal-heading>p{font-size:14px}.legal-nav{gap:4px}.legal-nav a{font-size:10px;padding:7px 8px}.legal-content h2{font-size:15px}.legal-content p{font-size:12px}.legal-contact{align-items:flex-start;flex-direction:column}.legal-footer{flex-direction:column}.cookie-notice{left:10px;right:10px;bottom:10px;align-items:flex-start}.cookie-notice button{padding:9px 11px}}
 @media(prefers-reduced-motion:reduce){.legal-page *{scroll-behavior:auto!important}}
+
+.cookie-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:none}
+.cookie-notice button.cookie-secondary{background:transparent;color:#f6f2e9;border:1px solid #65705f}
+.cookie-copy{min-width:0}
+.cookie-options{display:grid;gap:10px;margin-top:12px;padding-top:11px;border-top:1px solid #4c5749}
+.cookie-options label{display:flex;align-items:flex-start;gap:9px;font-size:11px;color:#f6f2e9}
+.cookie-options input{margin-top:2px;accent-color:#d9c7a3}
+.cookie-options b,.cookie-options small{display:block}
+.cookie-options small{margin-top:3px;color:#c4cbbd;font-size:10px;line-height:1.5}
+.legal-acceptance{display:flex;align-items:flex-start;gap:9px;margin:4px 0 13px;font-size:11px;line-height:1.6;color:#68636c}
+.legal-acceptance input{margin-top:3px;accent-color:#b85b86;flex:none}
+.legal-acceptance a{color:#a44772;font-weight:700}
+@media(max-width:620px){.cookie-notice{flex-direction:column}.cookie-actions{width:100%;justify-content:flex-start}.cookie-actions button{flex:1}.cookie-options{width:100%}}
