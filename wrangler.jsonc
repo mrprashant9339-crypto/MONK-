@@ -6,7 +6,7 @@
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
-    "run_worker_first": ["/api/businesses/*"],
+    "run_worker_first": ["/api/businesses/*", "/api/directory/*"],
     "not_found_handling": "single-page-application"
   },
   "ratelimits": [
