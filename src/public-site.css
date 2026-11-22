@@ -34,3 +34,5 @@
 .local-finder-foot{max-width:1050px;margin:18px auto 0;display:flex;justify-content:space-between;gap:12px;color:#8b817c;font-size:8px}
 @media(max-width:900px){.local-finder{padding-left:32px;padding-right:32px}.nearby-place-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:640px){.local-finder{padding:58px 20px}.local-finder-controls{padding:14px}.local-finder-filters{display:grid;grid-template-columns:1fr 1fr}.local-finder-filters .button-dark{grid-column:1/-1;width:100%}.local-manual-search{flex-direction:column}.local-manual-search .button-light{width:100%}.nearby-place-grid{grid-template-columns:1fr}.local-finder-foot{flex-direction:column}}
+
+.google-maps-attribution{font-family:Roboto,Arial,sans-serif;font-size:12px;font-style:normal;font-weight:400;letter-spacing:normal;white-space:nowrap;color:#5e5e5e;}
