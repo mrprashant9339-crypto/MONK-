@@ -215,3 +215,6 @@
 
 .public-footer .public-brand{color:#fff!important}
 .public-footer .footer-bottom>span:first-child{color:#c3bac5!important}
+
+.public-footer .public-brand>span:not(.brand-period){color:#fff!important}
+.public-footer .public-brand .brand-period{color:#f0a5c7!important}
