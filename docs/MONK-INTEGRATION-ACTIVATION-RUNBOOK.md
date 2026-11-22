@@ -46,7 +46,7 @@ Each record requires a stable `sourceRecordId`, canonical name, institution kind
 
 ## 3. National directory API
 
-The Worker exposes public, read-only `GET /api/directory/search`. It returns only `published=true` records and public source provenance. It uses the Supabase publishable key, not a service-role key. The Worker branch code is implemented but has not yet been deployed to production.
+The Worker exposes public, read-only `GET /api/directory/search` and `GET /api/directory/institutions/:id`. The detail endpoint returns only published institutions plus their published programme and approval records with source provenance. Same-origin GET requests are supported even when the browser omits the `Origin` header; cross-origin requests remain allowlisted. It uses the Supabase publishable key, not a service-role key. The Worker branch code is implemented but has not yet been deployed to production.
 
 ## 4. Google Places API
 
