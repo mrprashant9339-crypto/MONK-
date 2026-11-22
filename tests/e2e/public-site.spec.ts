@@ -18,7 +18,8 @@ const publicRoutes = [
   "/data-rights",
   "/features", "/solutions", "/pricing", "/compare-plans", "/integrations", "/resources",
   "/blog", "/blog/building-with-clarity", "/case-studies", "/case-studies/local-business-example",
-  "/roadmap", "/careers", "/partners", "/403", "/500", "/session-expired"
+  "/roadmap", "/careers", "/partners", "/403", "/500", "/session-expired",
+  "/forgot-password", "/reset-password", "/verify-email", "/account-recovery", "/mfa", "/invite"
 ];
 
 test("public routes render the application without a blank screen", async ({ page }) => {
@@ -161,4 +162,39 @@ test("new public sections are discoverable from the primary website navigation",
   await expect(page.getByRole("heading", { name: /one foundation for focused work/i })).toBeVisible();
   await page.getByRole("banner").getByRole("link", { name: "Pricing", exact: true }).click();
   await expect(page).toHaveURL(/\/pricing$/);
+});
+
+test("account recovery and verification pages provide safe, usable forms", async ({ page }) => {
+  await page.goto("/forgot-password");
+  await expect(page.getByRole("heading", { name: /reset your password/i })).toBeVisible();
+  await expect(page.getByRole("button", { name: /send recovery email/i })).toBeDisabled();
+  await page.getByRole("textbox", { name: /email address/i }).fill("person@example.com");
+  await expect(page.getByRole("button", { name: /send recovery email/i })).toBeEnabled();
+
+  await page.goto("/reset-password");
+  await page.getByLabel("New password").fill("StrongPassword123");
+  await page.getByLabel("Confirm new password").fill("DifferentPassword123");
+  await expect(page.getByRole("button", { name: /update password/i })).toBeDisabled();
+  await page.getByLabel("Confirm new password").fill("StrongPassword123");
+  await expect(page.getByRole("button", { name: /update password/i })).toBeEnabled();
+
+  await page.goto("/verify-email");
+  await expect(page.getByRole("heading", { name: /verify your email address/i })).toBeVisible();
+  await expect(page.getByRole("button", { name: /resend confirmation email/i })).toBeDisabled();
+});
+
+test("MFA settings require authentication and invite route explains next step", async ({ page }) => {
+  await page.goto("/mfa");
+  await expect(page.getByRole("heading", { name: /multi-factor authentication/i })).toBeVisible();
+  await expect(page.getByText(/sign in before managing multi-factor authentication/i)).toBeVisible();
+  await page.goto("/invite");
+  await expect(page.getByRole("heading", { name: /workspace invitation/i })).toBeVisible();
+  await expect(page.getByRole("link", { name: /continue to sign in/i })).toBeVisible();
+});
+
+test("login exposes password recovery and email verification routes", async ({ page }) => {
+  await page.goto("/login");
+  await expect(page.getByRole("link", { name: /forgot password/i })).toBeVisible();
+  await expect(page.getByRole("link", { name: /resend email verification/i })).toBeVisible();
+  await expect(page.getByRole("link", { name: /account security \/ mfa/i })).toBeVisible();
 });
