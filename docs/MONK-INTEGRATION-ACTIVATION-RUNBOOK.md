@@ -20,6 +20,9 @@ The existing production schema was inspected before changes. Existing organizati
 - `restrict_classification_to_admins_and_deny_server_tables`
 - `record_aishe_reuse_permission_gate`
 - `derive_policy_modules_from_server_flags`
+- `unique_programme_approval_source_identity`
+- `approval_identity_index_upsert_compatibility`
+- `seed_tenant_flags_and_expand_module_policy_rules`
 
 The schema now has 36 regions, 24 categories, 19 official-source registry rows, national institution/programme/approval/provenance tables, policy tables and source identity mappings. No institution data has been imported.
 
@@ -44,11 +47,15 @@ POST `/functions/v1/directory-import` with:
 
 Each record requires a stable `sourceRecordId`, canonical name, institution kind, category key and ownership key. Batches contain 1–200 records, with a 2 MB request cap. New records remain `unverified` and `published=false` until field-level review.
 
-## 3. National directory API
+## 3. Tenant feature flags and policy schedules
+
+New organizations inherit all platform feature flags into `tenant_flags`. At present CRM, documents and projects are enabled by default; payments, location and marketplace are disabled until their provider, consent and compliance controls are ready. The `tenant_flags` trigger synchronizes enabled keys into `organizations.enabled_modules`, which the policy resolver uses. Browser roles have no direct access to `tenant_flags`. Policy rules cover CRM/customer data, documents/data processing, AI Copilot and imports, in addition to entity-type and payments/location/marketplace schedules.
+
+## 4. National directory API
 
 The Worker exposes public, read-only `GET /api/directory/search`, `GET /api/directory/institutions/:id` and `GET /api/policies/public?key=platform|privacy`. The detail endpoint returns only published institutions plus their published programme and approval records with source provenance. Same-origin GET requests are supported even when the browser omits the `Origin` header; cross-origin requests remain allowlisted. It uses the Supabase publishable key, not a service-role key. The Worker branch code is implemented but has not yet been deployed to production. Public `/terms` and `/privacy` pages display only currently published/effective documents; both currently show no published version.
 
-## 4. Google Places API
+## 5. Google Places API
 
 Worker routes:
 - `POST /api/businesses/nearby`
@@ -67,7 +74,7 @@ Google Cloud setup:
 
 The Worker rate limit is 10 calls/minute per IP per Cloudflare location. It is approximate, not a strict global quota.
 
-## 5. Policy documents
+## 6. Policy documents
 
 Policy rules and resolver/acceptance functions are live, but there are no published policy documents. The resolver correctly reports missing policy keys. Do not publish generic or invented legal text as approved.
 
@@ -80,7 +87,7 @@ Before onboarding acceptance is activated:
 6. Test policy resolution for government/private college, university, coaching and business classifications.
 7. Test explicit acceptance and renewal after a new version.
 
-## 6. Release verification
+## 7. Release verification
 
 - GitHub Actions passed on commit `d24849a`: frontend TypeScript/Vite build, Worker syntax, six Worker route regression tests and all four Deno checks.
 - Worker syntax is checked in CI.
