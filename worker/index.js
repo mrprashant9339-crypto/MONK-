@@ -8,7 +8,7 @@ const PLACE_TYPES = new Set([
   "accounting", "atm", "bank", "bar", "beauty_salon", "bicycle_store",
   "book_store", "cafe", "car_dealer", "car_repair", "clothing_store",
   "dentist", "doctor", "electronics_store", "establishment", "florist",
-  "food", "gas_station", "grocery_store", "gym", "hardware_store",
+  "gas_station", "grocery_store", "gym", "hardware_store",
   "hospital", "jewelry_store", "lawyer", "library", "lodging",
   "meal_takeaway", "movie_theater", "pharmacy", "physiotherapist",
   "restaurant", "school", "shoe_store", "shopping_mall", "spa",
@@ -126,11 +126,11 @@ async function handlePlaces(request, env, origin, url) {
     if (!Number.isInteger(radiusMeters) || radiusMeters < 500 || radiusMeters > 25000) {
       return responseJson({ error: "Radius must be between 500 and 25000 metres" }, 400, origin);
     }
-    if (typeof placeType !== "string" || !PLACE_TYPES.has(placeType)) {
+    if (typeof placeType !== "string" || (placeType !== "all" && !PLACE_TYPES.has(placeType))) {
       return responseJson({ error: "Unsupported business category" }, 400, origin);
     }
     searchOrigin = { latitude, longitude };
-    requestBody.includedTypes = [placeType];
+    if (placeType !== "all") requestBody.includedTypes = [placeType];
     requestBody.locationRestriction = {
       circle: {
         center: { latitude, longitude },
