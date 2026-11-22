@@ -1,0 +1,20 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Playfair+Display:ital,wght@0,500;1,500;1,600&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+:root{
+  --mk-pink:#ef78ad;
+  --mk-pink-deep:#df5e98;
+  --mk-yellow:#f6d66f;
+  --mk-ink:#101014;
+  --mk-muted:#716c74;
+  --mk-paper:#faf9f7;
+  --mk-cream:#fff7e6;
+  --mk-line:#eee8e9;
+  --mk-font-display:'Space Grotesk','DM Sans',sans-serif;
+  --mk-font-body:'DM Sans',sans-serif;
+  --mk-font-serif:'Playfair Display',serif;
+  --mk-font-mono:'JetBrains Mono','DM Mono',monospace;
+  --mk-container:1200px;
+  --mk-radius-card:24px;
+  --mk-radius-pill:999px;
+  --mk-space:8px;
+  color-scheme:light;
+}
