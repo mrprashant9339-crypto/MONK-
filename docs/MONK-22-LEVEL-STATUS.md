@@ -25,8 +25,8 @@ This tracker separates code, backend activation and production release. A featur
 | 17 | Authentication/onboarding | Existing Supabase Auth retained; classification fields integrated in code | End-to-end signup and email verification |
 | 18 | Role-based permissions | Organization RPCs check active membership/roles; search paths hardened; education roles and parent/student tenant-link policies corrected | Complete per-role matrix and two-tenant adversarial tests; Auth leaked-password protection is disabled; 29 public SECURITY DEFINER functions are executable by authenticated role and require per-function review |
 | 19 | RLS and tenant isolation | Directory/policy RLS applied; server-only tables explicitly deny client reads | Run two-tenant adversarial tests |
-| 20 | Integrations/operations | Worker config has logs/traces and rate-limit binding; Cloudflare preview builds disabled to avoid failed preview deployment | Deploy production Worker; configure API secrets/quotas |
-| 21 | QA/security | GitHub Actions run #515 passed on `daa0e19557744d194db7ee189ae3c47f2a3f5472`: frontend build, Worker syntax, 6 Worker route tests and all Deno checks | Browser E2E, authenticated onboarding tests and cross-tenant security review |
+| 20 | Integrations/operations | Worker config has logs/traces and rate-limit binding; safe aggregate readiness endpoint implemented at GET /api/system/readiness | Deploy production Worker; configure API secrets/quotas |
+| 21 | QA/security | GitHub Actions run #524 passed on `8e206dd1bbb57d65c5a48e0d7c556515a5a06113`: frontend build, Worker syntax, 7 Worker route tests and all Deno checks | Browser E2E, authenticated onboarding tests and cross-tenant security review |
 | 22 | Production release | Not released | Worker deploy, live data, legal docs, secrets, E2E and rollback verification |
 
 ## Production state
@@ -43,6 +43,7 @@ This tracker separates code, backend activation and production release. A featur
 - Supabase Security Advisor also reports Auth leaked-password protection disabled. No authenticated users or production auth settings were modified during this audit.
 - Performance advisor reports unindexed foreign keys and multiple permissive RLS policies; these need table-by-table query-plan and policy review rather than blind index/policy changes.
 - A read-only repeatable database audit is available at `scripts/audit-monk-security.sql`.
+- A safe aggregate readiness endpoint is implemented at `GET /api/system/readiness`; it reports provider-key presence as a boolean and aggregate published-data/policy counts without returning secrets or user data. It is branch-only until Worker deployment.
 - Worker production deployment is still the previous version. PR #20 is not merged or deployed.
 
 ## Branch and pull request
