@@ -50,7 +50,7 @@ function Reveal({ children, className = "" }: { children: ReactNode; className?:
 }
 function Footer() {
   const navigate = useNavigate();
-  return <footer className="public-footer"><div className="footer-top"><div><Brand/><p>One platform. Two ways to move forward.</p></div><div className="footer-links"><button onClick={() => navigate("/campus")}>MONK Campus</button><button onClick={() => navigate("/business")}>MONK Business</button><a href="https://sbte.bihar.gov.in/" target="_blank" rel="noreferrer">SBTE Bihar</a></div></div><div className="footer-bottom"><span>© {new Date().getFullYear()} MONK. All rights reserved.</span><span>Designed for people building what matters.</span></div></footer>;
+  return <footer className="public-footer"><div className="footer-top"><div><Brand/><p>One platform. Two ways to move forward.</p></div><div className="footer-links"><button onClick={() => navigate("/campus")}>MONK Campus</button><button onClick={() => navigate("/business")}>MONK Business</button><a href="https://dashboard.aishe.gov.in/" target="_blank" rel="noreferrer">AISHE India</a><a href="https://www.ugc.gov.in/" target="_blank" rel="noreferrer">UGC</a></div></div><div className="footer-bottom"><span>© {new Date().getFullYear()} MONK. All rights reserved.</span><span>Designed for people building what matters.</span></div></footer>;
 }
 function PortalCard({ portal, title, desc, points, onClick }: { portal: Portal; title: string; desc: string; points: string[]; onClick: () => void }) {
   const Icon = portal === "campus" ? GraduationCap : Store;
