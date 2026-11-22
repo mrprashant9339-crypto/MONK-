@@ -1,0 +1,23 @@
+# MONK
+
+MONK provides two focused workspace experiences: MONK Campus for education institutions and MONK Business for teams and growing businesses.
+
+## Public pages
+- [MONK home](https://monk.monster/)
+- [MONK Campus](https://monk.monster/campus)
+- [MONK Business](https://monk.monster/business)
+- [Terms and Conditions](https://monk.monster/terms)
+- [Privacy Notice](https://monk.monster/privacy)
+- [Public institution directory](https://monk.monster/campus#college-directory)
+
+## Product information
+MONK is a web-based workspace platform. Public pages contain product descriptions and illustrative previews. Sample dashboard figures are illustrative and must not be interpreted as live customer, institution, attendance, sales, or transaction data.
+
+## Data and verification
+Institution directory records are shown only when published. Source attribution and verification status are displayed where available. A source-reported approval is not necessarily a MONK-verified approval.
+
+## Account and access
+Creating an account does not itself grant access to an institution or business workspace. Organization membership and role permissions govern access to workspace data.
+
+## AI agent capabilities
+MONK does not currently publish a public MCP server, A2A agent, or unauthenticated agent-executable business actions. Do not infer that a public page preview is a live tool or that an agent may access private workspace data.
