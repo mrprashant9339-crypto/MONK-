@@ -215,7 +215,7 @@ function LocalBusinessFinder() {
     {loading && <p className="local-finder-message" aria-live="polite">Finding current business listings…</p>}
     {!loading && searched && !error && places.length === 0 && <p className="local-finder-message">No matching places were returned for this search. Try a wider radius or another category.</p>}
     {places.length > 0 && <div className="nearby-place-grid">{places.map(place => <article className="nearby-place" key={place.providerPlaceId}>
-      <div><span className="nearby-place-category">{(place.category ?? "local business").replaceAll("_", " ")}</span><h3>{place.name}</h3><p><MapPin size={13}/>{place.address ?? "Address unavailable"}</p></div>
+      <div><span className="nearby-place-category">{(place.category ?? "local business").replace(/_/g, " ")}</span><h3>{place.name}</h3><p><MapPin size={13}/>{place.address ?? "Address unavailable"}</p></div>
       <div className="nearby-place-bottom"><span>{place.distanceMeters !== null ? `${(place.distanceMeters / 1000).toFixed(1)} km away` : place.businessStatus ?? "Listed place"}</span>{place.mapsUrl && <a href={place.mapsUrl} target="_blank" rel="noreferrer">Open in Google Maps <ArrowUpRight size={13}/></a>}</div>
     </article>)}</div>}
     <div className="local-finder-foot"><span>Location is requested only after you select “Use my location”.</span><span>Place information provided by Google Maps.</span></div>
