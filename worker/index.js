@@ -470,7 +470,7 @@ async function handleDirectorySearch(request, env, origin, url) {
   if (ownershipKey) endpoint.searchParams.set("ownership_key", `eq.${ownershipKey}`);
   if (query) {
     const pattern = `*${query}*`;
-    endpoint.searchParams.set("or", `(canonical_name.ilike.${pattern},city.ilike.${pattern},district.ilike.${pattern},locality.ilike.${pattern})`);
+    endpoint.searchParams.set("or", `(canonical_name.ilike.${pattern},city.ilike.${pattern},district.ilike.${pattern},locality.ilike.${pattern},postal_code.ilike.${pattern},address.ilike.${pattern},aishe_code.ilike.${pattern})`);
   }
 
   try {
