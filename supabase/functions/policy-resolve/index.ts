@@ -54,7 +54,7 @@ Deno.serve(async (request) => {
 
     if (documentsError) throw new Error("Unable to load published policy documents");
 
-    const latestByKey = new Map<string, typeof documents[number]>();
+    const latestByKey = new Map<string, Record<string, unknown>>();
     for (const document of documents ?? []) {
       if (!latestByKey.has(document.policy_key)) latestByKey.set(document.policy_key, document);
     }
