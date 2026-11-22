@@ -10,8 +10,9 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  build-and-browser-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -19,9 +20,24 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
       - name: Install dependencies
         run: npm install --no-audit --no-fund
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
       - name: Type-check and production build
         run: npm run build
       - name: Release smoke tests
         run: npm run test:release
+      - name: Browser end-to-end tests
+        run: npm run test:e2e
+      - name: Upload browser screenshots and reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: monk-browser-test-results
+          path: |
+            test-results/
+            playwright-report/
+          if-no-files-found: ignore
+          retention-days: 7
