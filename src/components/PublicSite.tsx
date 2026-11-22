@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import "../public-site.css";
+import { INDIA_STATES_AND_UTS, INSTITUTION_CATEGORIES, INSTITUTION_OWNERSHIP } from "../data/india-directory";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ArrowRight, ArrowUpRight, GraduationCap, Store, Users, BookOpen, ShieldCheck, BarChart3, CalendarDays, ClipboardList, Package, Receipt, Menu, X, CheckCircle2, MapPin, Search, Layers3, Workflow, ChevronRight } from "lucide-react";
 
@@ -80,18 +81,117 @@ function HomePage() {
     <section className="closing-cta"><Reveal><span className="section-kicker">YOUR WORK. YOUR WAY.</span><h2>Start with the work<br/>you want to improve.</h2><div><button className="button-dark" onClick={() => navigate("/campus")}>Explore Campus <ArrowUpRight size={16}/></button><button className="button-light" onClick={() => navigate("/business")}>Explore Business <ArrowUpRight size={16}/></button></div></Reveal></section>
   </main><Footer/></>;
 }
-function DirectoryDemo() {
-  const [type, setType] = useState<"government" | "private">("government");
+
+type InstitutionResult = {
+  id: string;
+  canonical_name: string;
+  institution_kind: string;
+  category_key: string;
+  ownership_key: string;
+  state_code: string | null;
+  district: string | null;
+  city: string | null;
+  locality: string | null;
+  address: string | null;
+  website_url: string | null;
+  aishe_code: string | null;
+  verification_state: "verified" | "partially_verified" | "unverified" | "stale" | "disputed" | "closed";
+  verified_fields: string[];
+  last_verified_at: string | null;
+  primary_source_record_id: string | null;
+  source: { authority_name: string; source_url: string; last_checked_at: string | null } | null;
+};
+
+function NationalInstitutionFinder() {
   const [query, setQuery] = useState("");
-  const items = type === "government" ? governmentColleges : privateColleges;
-  const filtered = useMemo(() => items.filter(c => (c.name + c.city + c.branches).toLowerCase().includes(query.toLowerCase())), [items, query]);
-  return <section className="directory-demo" id="college-directory"><div className="directory-head"><div><span className="section-kicker">BIHAR POLYTECHNIC EXPLORER</span><h2>Find your college.<br/><em>Know your options.</em></h2><p>Preview of the college discovery experience. Official affiliation and course details should be verified against SBTE Bihar.</p></div><div className="directory-count"><strong>46</strong><span>Government<br/>polytechnic institutes</span></div></div>
-    <div className="directory-toolbar"><div className="directory-tabs"><button className={type === "government" ? "selected" : ""} onClick={() => setType("government")}>Government</button><button className={type === "private" ? "selected" : ""} onClick={() => setType("private")}>Private</button></div><label className="directory-search"><Search size={16}/><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search college or city"/></label></div>
-    <div className="college-grid">{filtered.map((college: any, i) => <article className="college-card" key={college.code ?? college.name} style={{animationDelay:`${i * 70}ms`}}><div className="college-card-top"><span>{college.tag}</span><span>{college.code ? `SBTE · ${college.code}` : "Directory preview"}</span></div><h3>{college.name}</h3><p><MapPin size={13}/>{college.city}</p><small>{college.branches}</small></article>)}</div>
-    {!filtered.length && <p className="no-results">No matching demo entry. Try another college or city.</p>}
-    <div className="directory-foot"><span>Sample preview · Not a complete live admission directory</span><a href={type === "government" ? "https://sbte.bihar.gov.in/government-institute" : "https://sbte.bihar.gov.in/private-institutes"} target="_blank" rel="noreferrer">Open official SBTE directory <ArrowUpRight size={15}/></a></div>
+  const [stateCode, setStateCode] = useState("");
+  const [categoryKey, setCategoryKey] = useState("");
+  const [ownershipKey, setOwnershipKey] = useState("");
+  const [results, setResults] = useState<InstitutionResult[]>([]);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState<number | null>(null);
+  const [totalPages, setTotalPages] = useState<number | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [searched, setSearched] = useState(false);
+
+  async function runSearch(nextPage = 1) {
+    setLoading(true); setError(""); setSearched(true);
+    const params = new URLSearchParams({ page: String(nextPage) });
+    if (query.trim()) params.set("query", query.trim());
+    if (stateCode) params.set("state", stateCode);
+    if (categoryKey) params.set("category", categoryKey);
+    if (ownershipKey) params.set("ownership", ownershipKey);
+    try {
+      const response = await fetch(`/api/directory/search?${params.toString()}`);
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "Institution directory is temporarily unavailable.");
+      setResults(payload.results ?? []);
+      setPage(payload.page ?? nextPage);
+      setTotal(payload.total ?? null);
+      setTotalPages(payload.totalPages ?? null);
+    } catch (reason) {
+      setResults([]); setTotal(null); setTotalPages(null);
+      setError(reason instanceof Error ? reason.message : "Institution directory is temporarily unavailable.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function submitSearch(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    void runSearch(1);
+  }
+
+  const stateName = (code: string | null) => INDIA_STATES_AND_UTS.find(region => region.code === code)?.name ?? code ?? "";
+  const categoryName = (key: string) => INSTITUTION_CATEGORIES.find(category => category.id === key)?.label ?? key.replace(/_/g, " ");
+  const ownershipName = (key: string) => INSTITUTION_OWNERSHIP.find(item => item.id === key)?.label ?? key.replace(/_/g, " ");
+  const verificationLabel = (state: InstitutionResult["verification_state"]) => ({
+    verified: "Verified fields",
+    partially_verified: "Partially verified",
+    unverified: "Awaiting verification",
+    stale: "Needs re-check",
+    disputed: "Under review",
+    closed: "Closed"
+  }[state]);
+
+  return <section className="directory-demo national-directory" id="college-directory">
+    <div className="directory-head"><div><span className="section-kicker">INDIA-WIDE INSTITUTION DIRECTORY</span><h2>Explore institutions<br/><em>across every state.</em></h2><p>Search universities, colleges, professional institutes, polytechnics and coaching providers across India. Each published record carries its source and verification status.</p></div><div className="directory-count"><strong>36</strong><span>States &amp; Union<br/>Territories</span></div></div>
+    <form className="national-directory-filters" onSubmit={submitSearch}>
+      <label className="directory-search national-search"><Search size={16}/><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Search institution, city, district or PIN code"/></label>
+      <label>State / UT<select value={stateCode} onChange={event => setStateCode(event.target.value)}><option value="">All India</option>{INDIA_STATES_AND_UTS.map(region => <option key={region.code} value={region.code}>{region.name}</option>)}</select></label>
+      <label>Institution category<select value={categoryKey} onChange={event => setCategoryKey(event.target.value)}><option value="">All categories</option>{INSTITUTION_CATEGORIES.map(category => <option key={category.id} value={category.id}>{category.label}</option>)}</select></label>
+      <label>Ownership<select value={ownershipKey} onChange={event => setOwnershipKey(event.target.value)}><option value="">All ownership types</option>{INSTITUTION_OWNERSHIP.map(item => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
+      <button className="button-dark" type="submit" disabled={loading}>{loading ? "Searching…" : "Search India"} <ArrowRight size={15}/></button>
+    </form>
+    {error && <p className="no-results" role="alert">{error}</p>}
+    {loading && <p className="no-results" aria-live="polite">Searching published institution records…</p>}
+    {!loading && searched && !error && results.length === 0 && <p className="no-results">No published institution records match these filters yet. Try a broader search or another state.</p>}
+    {results.length > 0 && <>
+      <div className="national-directory-summary"><span>{total === null ? `${results.length} results` : `${total.toLocaleString("en-IN")} institutions found`}</span><span>Page {page}{totalPages ? ` of ${totalPages}` : ""}</span></div>
+      <div className="college-grid">{results.map(institution => {
+        const place = [institution.locality, institution.city, institution.district, stateName(institution.state_code)].filter(Boolean).join(", ");
+        return <article className="college-card national-college-card" key={institution.id}>
+          <div className="college-card-top"><span>{categoryName(institution.category_key)}</span><span>{ownershipName(institution.ownership_key)}</span></div>
+          <h3>{institution.canonical_name}</h3>
+          <p><MapPin size={13}/>{place || institution.address || "Address not published"}</p>
+          <div className={`verification-state state-${institution.verification_state}`}>{verificationLabel(institution.verification_state)}</div>
+          <div className="institution-provenance">
+            {institution.source && <a href={institution.source.source_url} target="_blank" rel="noreferrer">Source: {institution.source.authority_name} <ArrowUpRight size={12}/></a>}
+            {institution.last_verified_at && <small>Verified: {new Date(institution.last_verified_at).toLocaleDateString("en-IN")}</small>}
+            {institution.aishe_code && <small>AISHE ID: {institution.aishe_code}</small>}
+          </div>
+        </article>;
+      })}</div>
+      <div className="national-directory-pagination">
+        <button type="button" className="button-light" disabled={loading || page <= 1} onClick={() => void runSearch(page - 1)}>Previous</button>
+        <button type="button" className="button-light" disabled={loading || (totalPages !== null && page >= totalPages) || results.length < 24} onClick={() => void runSearch(page + 1)}>Next</button>
+      </div>
+    </>}
+    <div className="directory-foot"><span>Approval and affiliation must be checked for the specific programme and academic year.</span><a href="https://dashboard.aishe.gov.in/" target="_blank" rel="noreferrer">Open official AISHE directory <ArrowUpRight size={15}/></a></div>
   </section>;
 }
+
 function FeatureGrid({ items }: { items: Array<{ icon: LucideIcon; title: string; desc: string }> }) {
   return <div className="feature-grid">{items.map((item, i) => <Reveal key={item.title}><article className="feature-card" style={{transitionDelay:`${i * 45}ms`}}><span><item.icon size={19}/></span><h3>{item.title}</h3><p>{item.desc}</p></article></Reveal>)}</div>;
 }
@@ -99,7 +199,7 @@ function CampusPage() {
   const navigate = useNavigate();
   return <><Header active="campus"/><main className="portal-page campus-page"><section className="portal-hero"><div className="portal-hero-copy"><span className="eyebrow-pill"><GraduationCap size={14}/> MONK CAMPUS</span><h1>One campus.<br/><em>Every connection.</em></h1><p>Bring students, faculty, departments and college operations into one organized digital space—built for institutions and the people who make them work.</p><div className="hero-actions"><button className="button-dark" onClick={() => navigate("/login?vertical=education&mode=signup")}>Create a college workspace <ArrowRight size={17}/></button><a href="#college-directory">Explore colleges <ChevronRight size={16}/></a></div><div className="demo-label"><span className="demo-pulse"/> Public preview · No login required</div></div><div className="campus-preview"><div className="preview-top"><span><MonkMark/> CAMPUS OVERVIEW</span><span className="preview-status">DEMO</span></div><div className="preview-welcome">Good morning, <b>Campus team</b><small>Your institution at a glance</small></div><div className="preview-metrics"><div><strong>2,480</strong><small>Students</small></div><div><strong>86</strong><small>Faculty</small></div><div><strong>94%</strong><small>Attendance</small></div></div><div className="preview-schedule"><span>UPCOMING</span><div><b>Mechanical Engineering · 3rd Sem</b><small>Workshop practice · 10:30 AM</small></div><CalendarDays size={18}/></div><div className="preview-notice"><span><BookOpen size={15}/> Academic notice</span><b>Internal assessment schedule published</b></div><small className="preview-disclaimer">Illustrative demo data — not a live college record</small></div></section>
     <section className="portal-benefits"><div className="section-intro"><span className="section-kicker">BUILT FOR INSTITUTIONS</span><h2>Campus life, connected<br/><em>from one place.</em></h2><p>Keep everyday academic work structured, visible and permission-aware.</p></div><FeatureGrid items={campusFeatures}/></section>
-    <DirectoryDemo/>
+    <NationalInstitutionFinder/>
     <section className="roles-section"><span className="section-kicker">ONE INSTITUTION. CLEAR RESPONSIBILITIES.</span><h2>Every role gets<br/><em>the right view.</em></h2><div className="role-chips">{["Principal / Admin","HOD","Faculty","Student","Office staff","Parent / Guardian"].map(role=><span key={role}><CheckCircle2 size={15}/>{role}</span>)}</div><p>Role access is configured by the institution. A role name in this preview does not grant access to real student records.</p></section>
     <section className="portal-bottom-cta"><div><span className="section-kicker">FOR YOUR INSTITUTION</span><h2>Give your campus<br/>one clear workspace.</h2><p>Start with a secure institution account, then invite the people who need access.</p></div><button className="button-dark" onClick={() => navigate("/login?vertical=education&mode=signup")}>Set up MONK Campus <ArrowUpRight size={17}/></button></section>
   </main><Footer/></>;
