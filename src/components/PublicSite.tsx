@@ -7,6 +7,17 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { ArrowRight, ArrowUpRight, GraduationCap, Store, Users, BookOpen, ShieldCheck, BarChart3, CalendarDays, ClipboardList, Package, Receipt, Menu, X, CheckCircle2, MapPin, Search, Layers3, Workflow, ChevronRight } from "lucide-react";
 
 type Portal = "campus" | "business";
+
+function safeExternalUrl(value: string | null | undefined): string | null {
+  if (!value) return null;
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === "https:" || parsed.protocol === "http:" ? parsed.href : null;
+  } catch {
+    return null;
+  }
+}
+
 const campusFeatures = [
   { icon: Users, title: "Student & faculty space", desc: "Student profiles, faculty directories, class groups and role-specific access." },
   { icon: BookOpen, title: "Academic operations", desc: "Courses, branches, semesters, notices, assignments and learning resources." },
@@ -227,7 +238,7 @@ function NationalInstitutionFinder() {
           {detail.institution.aishe_code && <span>AISHE ID: {detail.institution.aishe_code}</span>}
         </div>
         <div className="institution-detail-sources">
-          {detail.institution.source && <a href={detail.institution.source.source_url} target="_blank" rel="noreferrer">Primary source: {detail.institution.source.authority_name} <ArrowUpRight size={12}/></a>}
+          {safeExternalUrl(detail.institution.source?.source_url) && <a href={safeExternalUrl(detail.institution.source?.source_url)!} target="_blank" rel="noreferrer">Primary source: {detail.institution.source?.authority_name} <ArrowUpRight size={12}/></a>}
           {detail.institution.last_verified_at && <small>Last verified: {new Date(detail.institution.last_verified_at).toLocaleDateString("en-IN")}</small>}
           {detail.institution.next_review_at && <small>Next review: {new Date(detail.institution.next_review_at).toLocaleDateString("en-IN")}</small>}
           {detail.institution.phone_public && <small>Public phone: {detail.institution.phone_public}</small>}
@@ -242,7 +253,7 @@ function NationalInstitutionFinder() {
                 <small>{programme.academic_year ? `Academic year: ${programme.academic_year}` : "Academic year not stated"}{programme.intake !== null ? ` · Intake: ${programme.intake}` : ""}{programme.duration_months ? ` · ${programme.duration_months} months` : ""}</small>
                 {programme.eligibility && <small>Eligibility: {programme.eligibility}</small>}
                 {programme.awarding_body && <small>Awarding body: {programme.awarding_body}</small>}
-                {programme.source && <a href={programme.source.source_url} target="_blank" rel="noreferrer">Programme source: {programme.source.authority_name} <ArrowUpRight size={11}/></a>}
+                {safeExternalUrl(programme.source?.source_url) && <a href={safeExternalUrl(programme.source?.source_url)!} target="_blank" rel="noreferrer">Programme source: {programme.source?.authority_name} <ArrowUpRight size={11}/></a>}
                 <span className={`verification-state state-${programme.verification_state}`}>{verificationLabel(programme.verification_state)}</span>
               </article>)
             }
@@ -255,7 +266,7 @@ function NationalInstitutionFinder() {
                 {approval.approved_intake !== null && <small>Approved intake: {approval.approved_intake}</small>}
                 {(approval.valid_from || approval.valid_until) && <small>Validity: {approval.valid_from ?? "Not stated"} – {approval.valid_until ?? "Open-ended"}</small>}
                 {approval.regulator && <small>Regulator: {approval.regulator.authority_name}</small>}
-                <a href={approval.source_url} target="_blank" rel="noreferrer">Approval evidence <ArrowUpRight size={11}/></a>
+                {safeExternalUrl(approval.source_url) && <a href={safeExternalUrl(approval.source_url)!} target="_blank" rel="noreferrer">Approval evidence <ArrowUpRight size={11}/></a>}
                 {approval.verified_at && <small>Evidence checked: {new Date(approval.verified_at).toLocaleDateString("en-IN")}</small>}
               </article>)
             }
@@ -277,12 +288,12 @@ function NationalInstitutionFinder() {
           <p><MapPin size={13}/>{place || institution.address || "Address not published"}</p>
           <div className={`verification-state state-${institution.verification_state}`}>{verificationLabel(institution.verification_state)}</div>
           <div className="institution-provenance">
-            {institution.source && <a href={institution.source.source_url} target="_blank" rel="noreferrer">Source: {institution.source.authority_name} <ArrowUpRight size={12}/></a>}
+            {safeExternalUrl(institution.source?.source_url) && <a href={safeExternalUrl(institution.source?.source_url)!} target="_blank" rel="noreferrer">Source: {institution.source?.authority_name} <ArrowUpRight size={12}/></a>}
             {institution.last_verified_at && <small>Verified: {new Date(institution.last_verified_at).toLocaleDateString("en-IN")}</small>}
             {institution.source?.last_checked_at && <small>Source checked: {new Date(institution.source.last_checked_at).toLocaleDateString("en-IN")}</small>}
             {institution.verified_fields?.length > 0 && <small>Verified fields: {institution.verified_fields.join(", ").replace(/_/g, " ")}</small>}
             {institution.aishe_code && <small>AISHE ID: {institution.aishe_code}</small>}
-            {institution.website_url && <a href={institution.website_url} target="_blank" rel="noreferrer">Institution website <ArrowUpRight size={12}/></a>}
+            {safeExternalUrl(institution.website_url) && <a href={safeExternalUrl(institution.website_url)!} target="_blank" rel="noreferrer">Institution website <ArrowUpRight size={12}/></a>}
           </div>
           <button type="button" className="institution-details-button" onClick={() => void openDetails(institution.id)}>View programmes &amp; approvals <ArrowRight size={14}/></button>
         </article>;
