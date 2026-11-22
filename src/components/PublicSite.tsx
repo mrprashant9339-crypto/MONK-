@@ -262,7 +262,8 @@ function NationalInstitutionFinder() {
             {detail.approvals.length === 0 ? <p className="detail-empty">No regulator approval records have been published. This does not mean approval is absent; verify the specific programme, campus and academic year directly with its regulator.</p> :
               detail.approvals.map(approval => <article className="institution-detail-record" key={approval.id}>
                 <b>{approval.approval_type.replace(/_/g, " ")}</b>
-                <small>Academic year: {approval.academic_year} · Status: {approval.approval_status.replace(/_/g, " ")}</small>
+                <small>Academic year: {approval.academic_year} · Source-reported status: {approval.approval_status.replace(/_/g, " ")}</small>
+                {!approval.verified_at && <small>Not independently verified by MONK</small>}
                 {approval.approved_intake !== null && <small>Approved intake: {approval.approved_intake}</small>}
                 {(approval.valid_from || approval.valid_until) && <small>Validity: {approval.valid_from ?? "Not stated"} – {approval.valid_until ?? "Open-ended"}</small>}
                 {approval.regulator && <small>Regulator: {approval.regulator.authority_name}</small>}
