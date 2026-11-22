@@ -18,6 +18,8 @@ The existing production schema was inspected before changes. Existing organizati
 - `unique_source_identity`
 - `expand_india_regulator_registry`
 - `restrict_classification_to_admins_and_deny_server_tables`
+- `record_aishe_reuse_permission_gate`
+- `derive_policy_modules_from_server_flags`
 
 The schema now has 36 regions, 24 categories, 19 official-source registry rows, national institution/programme/approval/provenance tables, policy tables and source identity mappings. No institution data has been imported.
 
