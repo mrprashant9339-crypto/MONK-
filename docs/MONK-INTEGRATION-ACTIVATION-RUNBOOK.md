@@ -4,35 +4,11 @@ This runbook records the live production state and remaining activation steps. N
 
 ## 1. Supabase production
 
-Primary project `yucwackrbekwaxiyuobt` is restored and reports `ACTIVE_HEALTHY`. The staging project remains inactive and is not used for production.
+Primary project `yucwackrbekwaxiyuobt` is restored and reports `ACTIVE_HEALTHY` (PostgreSQL 17). The staging project remains inactive and is not used for production.
 
-The existing production schema was inspected before changes. Existing organization membership, role and RLS structures were preserved. The following migrations have been applied to the primary project in order:
+The existing production schema was inspected before changes. Existing organization membership, role and RLS structures were preserved. Directory, policy, source-provenance and tenant-flag migrations are present in the primary project's migration history. The current migration history is the source of truth; do not recreate duplicate timestamped migration files.
 
-- `india_directory_discovery_policy`
-- `directory_provenance_read_policies`
-- `directory_source_identity_map`
-- `organization_classification_policy_rules`
-- `policy_and_verification_immutability`
-- `validate_organization_classification`
-- `institution_primary_source`
-- `unique_source_identity`
-- `expand_india_regulator_registry`
-- `restrict_classification_to_admins_and_deny_server_tables`
-- `record_aishe_reuse_permission_gate`
-- `derive_policy_modules_from_server_flags`
-- `unique_programme_approval_source_identity`
-- `approval_identity_index_upsert_compatibility`
-- `seed_tenant_flags_and_expand_module_policy_rules`
-- `add_vertical_policy_baselines`
-- `seed_tenant_flags_for_new_platform_features`
-- `revoke_public_execution_of_tenant_flag_triggers`
-- `harden_security_definer_search_paths`
-- `fix_education_membership_and_guardian_rls`
-- `scope_teacher_hod_attendance_results_to_students`
-- `require_verified_email_for_student_guardian_claims`
-- `prevent_stale_invitation_role_downgrade`
-
-The schema now has 36 regions, 24 categories, 19 official-source registry rows, national institution/programme/approval/provenance tables, policy tables and source identity mappings. No institution data has been imported.
+The schema has 36 regions, 24 categories, 19 official-source registry rows, national institution/programme/approval/provenance tables, policy tables and source identity mappings. No institution data has been imported.
 
 ## 2. Supabase Edge Functions
 
@@ -42,7 +18,7 @@ Deployed and active:
 - `policy-accept`: records explicit acceptance of the exact effective policy version and SHA-256 hash. The app presents each applicable document with an explicit checkbox and blocks workspace access while required documents are missing or unaccepted.
 - Existing `send-education-invitation` remains active.
 
-Supabase provides standard runtime values `SUPABASE_URL`, `SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY`. Set a high-entropy `DIRECTORY_IMPORT_TOKEN` in Edge Function secrets. Never place it in frontend variables or source control.
+Set a high-entropy `DIRECTORY_IMPORT_TOKEN` in Edge Function secrets. Never place it in frontend variables or source control.
 
 The source registry intentionally has `terms_review_status='pending'` and `import_enabled=false`. Enable a source only after its licence, terms, allowed purpose, attribution, storage rules and update cadence are confirmed.
 
@@ -97,8 +73,11 @@ Before onboarding acceptance is activated:
 
 ## 7. Release verification
 
-- GitHub Actions passed on commit `78c49f4`: frontend TypeScript/Vite build, Worker syntax, six Worker route regression tests and all four Deno checks.
-- All 28 existing authenticated SECURITY DEFINER RPCs have `public, extensions, pg_temp` search paths. `is_org_member` includes principal, HOD, teacher, student and parent roles so education users can switch workspaces. Parent/student link RLS predicates compare the relationship and tenant organization IDs; two tautological comparisons were removed. Teacher attendance/results writes are constrained to the teacher's assigned batch; HOD attendance/results access is constrained to students in the HOD's department and batch. Student and guardian account-claim RLS now also requires `auth.users.email_confirmed_at` to be non-null. Invitation acceptance serializes membership changes, rejects already-active members and preserves an existing owner role. Supabase Security Advisor still reports authenticated RPC execution for RBAC review and Auth leaked-password protection as disabled.
+- GitHub Actions run #505 passed on commit `90484c8fd66b10534381ac0bd17c7fab31a81e68`: frontend TypeScript/Vite build, Worker syntax, six Worker route regression tests and all Deno checks.
+- Latest database catalog check: 34 public SECURITY DEFINER functions, of which 29 grant EXECUTE to `authenticated`, 0 to `anon`, and 5 are service/owner-only. The 29 authenticated-callable functions are not automatically vulnerabilities: many are application RPCs with membership/role checks, while helper functions expose limited boolean authorization results. Still, each function needs a documented caller/authorization contract and two-tenant adversarial test before release. All inspected SECURITY DEFINER functions use a fixed `public, extensions, pg_temp` search path.
+- Supabase Security Advisor flags authenticated execution of SECURITY DEFINER functions for review and Auth leaked-password protection as disabled. Leaked-password protection is an Auth dashboard setting and was not changed by this work session.
+- Performance Advisor reports unindexed foreign keys and multiple permissive RLS policies. Do not apply bulk indexes or merge policies without checking actual query patterns and preserving role-specific predicates.
+- `anon` has no EXECUTE privilege on the inspected public SECURITY DEFINER functions. Tenant flags are not readable or writable by `anon` or `authenticated`.
 - Worker syntax is checked in CI.
 - Migrations are applied and listed in Supabase migration history.
 - RLS is enabled for new directory/policy tables. Server-only tables explicitly deny client reads.
