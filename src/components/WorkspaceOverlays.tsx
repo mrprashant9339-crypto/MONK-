@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { Activity, Bell, CalendarDays, CheckSquare, Command, FileText, FolderKanban, Search, Settings, ShieldCheck, X, Zap } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Activity, Bell, CheckSquare, Command, FolderKanban, Search, ShieldCheck, X, Zap } from "lucide-react";
 import "../workspace-overlays.css";
 
 type Project={id:string;name:string;code:string};
