@@ -60,6 +60,23 @@ Deno.serve(async (request) => {
     }
     const availablePolicies = [...latestByKey.values()];
     const availableKeys = new Set(availablePolicies.map((document) => document.policy_key));
+    const policyIds = availablePolicies.map((document) => String(document.id));
+    let acceptedKeys = new Set<string>();
+    if (policyIds.length) {
+      const { data: acceptances, error: acceptanceError } = await serviceClient
+        .from("monk_policy_acceptances")
+        .select("policy_document_id,accepted_sha256")
+        .eq("user_id", userResult.user.id)
+        .eq("organization_id", organization.id)
+        .in("policy_document_id", policyIds);
+      if (acceptanceError) throw new Error("Unable to load policy acceptance history");
+      acceptedKeys = new Set((acceptances ?? []).map((acceptance) =>
+        `${acceptance.policy_document_id}:${acceptance.accepted_sha256}`
+      ));
+    }
+    const pendingPolicies = availablePolicies.filter((document) =>
+      !acceptedKeys.has(`${document.id}:${document.content_sha256}`)
+    );
 
     return json({
       organization: {
@@ -73,6 +90,7 @@ Deno.serve(async (request) => {
       classificationRequired: !organization.entity_type,
       requiredPolicyKeys,
       availablePolicies,
+      pendingPolicies,
       missingPolicyKeys: requiredPolicyKeys.filter((key) => !availableKeys.has(key)),
       resolvedAt: now,
       message: "Only published, effective policy versions are returned. Missing documents must be legally reviewed and published before onboarding can require acceptance.",
