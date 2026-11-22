@@ -12,6 +12,25 @@ import CRMManagement from "./components/CRMManagement";
 type Project = { id: string; name: string; code: string; description?: string | null; due_date?: string | null; visibility?: "internal" | "client_visible"; status?: "draft" | "active" | "at_risk" | "in_review" | "completed" };
 type Task = { id: string; title: string; status: "todo" | "in_progress" | "blocked" | "review" | "done"; priority: "low" | "medium" | "high" | "urgent"; due_date: string | null; project_id: string };
 type OrganizationEntityType = "government_college" | "private_college" | "government_university" | "private_university" | "coaching_institute" | "government_body" | "trust_society" | "business" | "sole_proprietor" | "company" | "partnership" | "other";
+type PolicyDocument = {
+  id: string;
+  policy_key: string;
+  version: string;
+  title: string;
+  jurisdiction: string;
+  effective_at: string;
+  content_markdown: string;
+  content_sha256: string;
+};
+type PolicyResolution = {
+  organization: { id: string; vertical: string; entityType: string | null; institutionCategory: string | null; jurisdiction: string; stateCode: string | null };
+  classificationRequired: boolean;
+  requiredPolicyKeys: string[];
+  availablePolicies: PolicyDocument[];
+  pendingPolicies: PolicyDocument[];
+  missingPolicyKeys: string[];
+  resolvedAt: string;
+};
 const demoTasks: Task[] = [
   { id: "demo-1", title: "Define the next milestone", status: "todo", priority: "high", due_date: null, project_id: "demo" },
   { id: "demo-2", title: "Review product requirements", status: "done", priority: "medium", due_date: null, project_id: "demo" },
@@ -44,6 +63,11 @@ export default function App() {
   const [saving, setSaving] = useState(false);
   const [workspaceError, setWorkspaceError] = useState("");
   const [workspaceReady, setWorkspaceReady] = useState(false);
+  const [policyResolution, setPolicyResolution] = useState<PolicyResolution | null>(null);
+  const [policyGateRequired, setPolicyGateRequired] = useState(false);
+  const [policyChecks, setPolicyChecks] = useState<Record<string, boolean>>({});
+  const [policyBusy, setPolicyBusy] = useState(false);
+  const [policyError, setPolicyError] = useState("");
   const [focusSeconds, setFocusSeconds] = useState(25 * 60);
   const [focusRunning, setFocusRunning] = useState(false);
 
@@ -61,6 +85,8 @@ export default function App() {
         setProjects([]);
         setTasks([]);
         setProjectId("");
+        setPolicyResolution(null);
+        setPolicyGateRequired(false);
         setWorkspaceReady(true);
         return;
       }
@@ -72,6 +98,27 @@ export default function App() {
       if (organizationResult.data.entity_type) setOrganizationEntityType(organizationResult.data.entity_type as OrganizationEntityType);
       setOrganizationInstitutionCategory(organizationResult.data.institution_category ?? "");
       setOrganizationStateCode(organizationResult.data.state_code ?? "");
+
+      const policyResult = await supabase.functions.invoke("policy-resolve");
+      if (policyResult.error) throw new Error("Unable to resolve the policies for this organization. Workspace access remains paused until policy status can be checked.");
+      const resolvedPolicies = policyResult.data as PolicyResolution;
+      setPolicyResolution(resolvedPolicies);
+      setPolicyChecks({});
+      setPolicyError("");
+      const requiresPolicyGate = Boolean(
+        resolvedPolicies.classificationRequired ||
+        resolvedPolicies.missingPolicyKeys?.length ||
+        resolvedPolicies.pendingPolicies?.length
+      );
+      setPolicyGateRequired(requiresPolicyGate);
+      if (requiresPolicyGate) {
+        setProjects([]);
+        setTasks([]);
+        setProjectId("");
+        setWorkspaceReady(true);
+        return;
+      }
+
       const projectResult = await supabase.from("projects")
         .select("id,name,code,description,due_date,visibility,status")
         .eq("organization_id", orgId)
@@ -202,6 +249,57 @@ export default function App() {
     await loadWorkspace();
   }
 
+  async function acceptPendingPolicies(e: FormEvent) {
+    e.preventDefault();
+    if (!supabase || !session || !policyResolution) return;
+    const missingKeys = policyResolution.missingPolicyKeys ?? [];
+    const pending = policyResolution.pendingPolicies ?? [];
+    if (missingKeys.length) {
+      setPolicyError("Required policy documents have not been published yet. Workspace access stays paused until the applicable documents are approved and published.");
+      return;
+    }
+    if (!pending.length) {
+      setPolicyGateRequired(false);
+      await loadWorkspace();
+      return;
+    }
+    if (pending.some(document => !policyChecks[document.id])) {
+      setPolicyError("Review and explicitly accept every applicable policy document before continuing.");
+      return;
+    }
+
+    setPolicyBusy(true);
+    setPolicyError("");
+    try {
+      for (const document of pending) {
+        const { data, error } = await supabase.functions.invoke("policy-accept", {
+          body: {
+            policyDocumentId: document.id,
+            acceptedSha256: document.content_sha256,
+            method: "explicit_checkbox",
+            locale: "en-IN",
+            consentEvidence: {
+              source: "workspace_onboarding",
+              policyKey: document.policy_key,
+              version: document.version,
+            },
+          },
+        });
+        if (error || data?.accepted !== true) {
+          throw new Error(error?.message ?? "A policy acceptance could not be confirmed.");
+        }
+      }
+      setPolicyGateRequired(false);
+      setPolicyResolution(null);
+      setPolicyChecks({});
+      await loadWorkspace();
+    } catch (error) {
+      setPolicyError(error instanceof Error ? error.message : "Policy acceptance failed. Please retry.");
+    } finally {
+      setPolicyBusy(false);
+    }
+  }
+
   async function createProject(e: FormEvent) {
     e.preventDefault();
     if (!supabase || !projectName.trim() || !projectCode.trim()) return;
@@ -312,6 +410,34 @@ export default function App() {
       <button className="primary full" disabled={loading} onClick={() => void loadWorkspace()}>{loading ? "Please wait…" : "Retry workspace loading"} <ArrowUpRight size={17} /></button>
       <button className="text-button full" onClick={async () => { await supabase?.auth.signOut(); setSession(null); setWorkspaceReady(false); setOrganizationId(null); }}>Sign out</button>
     </section></main>
+  );
+
+  if (isSupabaseConfigured && session && workspaceReady && organizationId && policyGateRequired) return (
+    <main className="auth-page policy-gate-page"><form className="auth-card policy-gate-card" onSubmit={acceptPendingPolicies}>
+      <a className="brand" href="/"><span className="brand-mark">M</span> MONK<span className="brand-dot">.</span></a>
+      <p className="eyebrow">ORGANIZATION POLICY REVIEW</p>
+      <h1>Review the terms<br /><em>for this workspace.</em></h1>
+      <p className="muted">MONK selects applicable documents from the organization type, education category and enabled services. Each version is shown with its effective date and content hash.</p>
+      {policyResolution?.classificationRequired && <p className="notice" role="alert">Organization classification is incomplete. An authorized workspace administrator must complete it before access can be activated.</p>}
+      {(policyResolution?.missingPolicyKeys?.length ?? 0) > 0 && <div className="policy-blocked-notice" role="alert">
+        <b>Required documents are not published yet.</b>
+        <p>Workspace access remains paused. The following policy documents are required for this organization: {policyResolution?.missingPolicyKeys.join(", ")}.</p>
+        <small>MONK will not ask you to accept missing, draft or legally unreviewed documents.</small>
+      </div>}
+      {(policyResolution?.pendingPolicies ?? []).map(document => <article className="policy-document-card" key={document.id}>
+        <div className="policy-document-meta"><span>{document.policy_key.replace(/_/g, " ")}</span><span>Version {document.version}</span></div>
+        <h2>{document.title}</h2>
+        <small>Jurisdiction: {document.jurisdiction} · Effective: {new Date(document.effective_at).toLocaleDateString("en-IN")}</small>
+        <pre>{document.content_markdown}</pre>
+        <label className="policy-accept-check">
+          <input type="checkbox" checked={Boolean(policyChecks[document.id])} onChange={event => setPolicyChecks(current => ({ ...current, [document.id]: event.target.checked }))} />
+          <span>I have read and agree to this version of {document.title}.</span>
+        </label>
+      </article>)}
+      {policyError && <p className="notice" role="alert">{policyError}</p>}
+      {(policyResolution?.missingPolicyKeys?.length ?? 0) === 0 && (policyResolution?.pendingPolicies?.length ?? 0) > 0 && <button className="primary full" disabled={policyBusy || policyResolution.pendingPolicies.some(document => !policyChecks[document.id])}>{policyBusy ? "Saving acceptance…" : "Accept policies and continue"} <ArrowUpRight size={17} /></button>}
+      <button type="button" className="text-button full" onClick={async () => { await supabase?.auth.signOut(); setSession(null); setWorkspaceReady(false); setOrganizationId(null); setPolicyGateRequired(false); setPolicyResolution(null); }}><LogOut size={14} /> Sign out</button>
+    </form></main>
   );
 
   if (isSupabaseConfigured && session && workspaceReady && !organizationId) return (
