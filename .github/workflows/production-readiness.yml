@@ -1,0 +1,53 @@
+name: MONK Production Readiness
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "MONK production or staging base URL"
+        required: false
+        default: "https://monk.monster"
+        type: string
+  workflow_run:
+    workflows: ["Deploy MONK to Cloudflare Workers"]
+    types: [completed]
+
+permissions:
+  contents: read
+
+jobs:
+  readiness:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Select target
+        id: target
+        env:
+          INPUT_BASE_URL: ${{ inputs.base_url }}
+        run: |
+          if [ -n "$INPUT_BASE_URL" ]; then
+            echo "url=$INPUT_BASE_URL" >> "$GITHUB_OUTPUT"
+          else
+            echo "url=https://monk.monster" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Wait for deployment propagation
+        run: sleep 15
+
+      - name: Check production readiness
+        env:
+          BASE_URL: ${{ steps.target.outputs.url }}
+        run: |
+          set -euo pipefail
+          response="$(curl --fail --silent --show-error --max-time 20 "$BASE_URL/api/system/readiness")"
+          echo "$response" | jq .
+          status="$(echo "$response" | jq -r '.status // "unknown"')"
+          if [ "$status" != "ready" ]; then
+            echo "::error::MONK readiness is '$status'. See blockers below."
+            echo "$response" | jq -r '.blockers[]? // empty' | while read -r blocker; do
+              echo "::error::$blocker"
+            done
+            exit 1
+          fi
+          echo "MONK production readiness checks passed."
