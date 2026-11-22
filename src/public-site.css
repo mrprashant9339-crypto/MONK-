@@ -238,3 +238,17 @@
 .portal-page .section-intro p,.portal-page .directory-head p,.portal-page .roles-section>p{color:#625963!important}
 .portal-page .directory-foot{color:#625963!important}
 .portal-page .directory-foot a{color:#8f315e!important}
+
+
+/* WCAG AA contrast for Business workspace preview and local discovery panels */
+.portal-page .business-name b,.portal-page .business-activity b,.portal-page .business-activity strong{color:#242027!important}
+.portal-page .business-name small,.portal-page .business-metrics span,.portal-page .business-activity span,.portal-page .business-activity small{color:#625963!important}
+.portal-page .business-activity>span{color:#625963!important}
+.portal-page .local-finder-head h2{color:#242027!important}
+.portal-page .local-finder-head p{color:#625963!important}
+.portal-page .local-finder-foot>span{color:#625963!important}
+.portal-page .workflow-title>span:first-child{color:#242027!important}
+.portal-page .workflow-live{color:#27613c!important}
+.portal-page .workflow-step>span{color:#625963!important}
+.portal-page .workflow-step>div>b{color:#242027!important}
+.portal-page .workflow-step>div>small{color:#625963!important}
