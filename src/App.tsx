@@ -128,6 +128,18 @@ export default function App() {
   }, [location.search]);
 
   useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setOverlayMode("command");
+      }
+      if (event.key === "Escape") setOverlayMode(null);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  useEffect(() => {
     if (!focusRunning) return;
     const timer = window.setInterval(() => {
       setFocusSeconds(current => Math.max(0, current - 1));
@@ -367,7 +379,7 @@ export default function App() {
         </div>
       </aside>
       <main className="main">
-        <header className="topbar"><div className="crumb"><span className="crumb-mark">M</span> Workspace <span>/</span> {active}</div><div className="top-actions"><button className="icon-btn" aria-label="Search" onClick={() => setOverlayMode("command")}><Search size={18} /></button><button className="icon-btn" aria-label="Notifications" onClick={() => setOverlayMode("notifications")}><Bell size={18} /></button><button className="top-avatar" aria-label="Open profile settings" onClick={() => setActive("Settings")}>{session?.user.email?.[0]?.toUpperCase() ?? "P"}</button></div></header>
+        <header className="topbar"><div className="crumb"><span className="crumb-mark">M</span> Workspace <span>/</span> {active}</div><div className="top-actions"><button className="icon-btn" aria-label="Search (Ctrl or Command plus K)" onClick={() => setOverlayMode("command")}><Search size={18} /></button><button className="icon-btn" aria-label="Notifications" onClick={() => setOverlayMode("notifications")}><Bell size={18} /></button><button className="top-avatar" aria-label="Open profile settings" onClick={() => setActive("Settings")}>{session?.user.email?.[0]?.toUpperCase() ?? "P"}</button></div></header>
         <div className="content">
           <div className="welcome-row"><div><p className="eyebrow"><Sparkles size={13} /> THE OPERATING SYSTEM FOR YOUR WORK</p><h1>{active === "Overview" ? "One workspace. Entire operation." : active === "Tasks" ? "Turn plans into progress." : active === "Focus" ? "Protect your focus." : `${active}, in one place.`}<span>.</span></h1><p className="muted">{active === "Overview" ? "Projects, customers, people and execution — connected in one calm workspace." : `Bring your ${active.toLowerCase()} workflow into the MONK workspace.`}</p></div>{(["Overview","Tasks","Focus"].includes(active)) && <button className="primary" onClick={() => { setActive("Tasks"); window.setTimeout(() => document.getElementById("new-task")?.focus(), 0); }}><Plus size={17} /> New task</button>}</div>
           {!isSupabaseConfigured && <div className="config-banner"><Zap size={17} /><span><b>Preview mode</b> — add Supabase environment variables to enable persistent tasks and authentication.</span></div>}
