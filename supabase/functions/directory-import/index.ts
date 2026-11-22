@@ -64,6 +64,18 @@ function validOptionalString(value: unknown, max = 300): value is string | null 
   return value === undefined || value === null || (typeof value === "string" && value.length <= max);
 }
 
+function isSafeHttpUrl(value: string): boolean {
+  try {
+    const parsed = new URL(value);
+    return (parsed.protocol === "https:" || parsed.protocol === "http:")
+      && Boolean(parsed.hostname)
+      && !parsed.username
+      && !parsed.password;
+  } catch {
+    return false;
+  }
+}
+
 function validRecord(record: IncomingInstitution): boolean {
   return Boolean(
     record && typeof record.sourceRecordId === "string" && record.sourceRecordId.length > 0 && record.sourceRecordId.length <= 200 &&
@@ -71,8 +83,19 @@ function validRecord(record: IncomingInstitution): boolean {
     typeof record.institutionKind === "string" && typeof record.categoryKey === "string" && typeof record.ownershipKey === "string" &&
     validOptionalString(record.stateCode, 2) && validOptionalString(record.district) && validOptionalString(record.city) &&
     validOptionalString(record.locality) && validOptionalString(record.postalCode, 20) && validOptionalString(record.address, 1000) &&
-    validOptionalString(record.websiteUrl, 500) && validOptionalString(record.aisheCode, 100) &&
-    validOptionalString(record.sourceUpdatedAt, 50)
+    validOptionalString(record.websiteUrl, 500) &&
+    (record.websiteUrl == null || isSafeHttpUrl(record.websiteUrl)) &&
+    validOptionalString(record.aisheCode, 100) &&
+    validOptionalString(record.sourceUpdatedAt, 50) &&
+    (record.sourceUpdatedAt == null || Number.isFinite(Date.parse(record.sourceUpdatedAt))) &&
+    (record.officialIdentifiers === undefined || (
+      record.officialIdentifiers !== null &&
+      typeof record.officialIdentifiers === "object" &&
+      Object.keys(record.officialIdentifiers).length <= 20 &&
+      Object.entries(record.officialIdentifiers).every(([key, value]) =>
+        key.length <= 80 && typeof value === "string" && value.length <= 200
+      )
+    ))
   );
 }
 
