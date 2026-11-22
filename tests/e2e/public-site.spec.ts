@@ -71,3 +71,40 @@ test("manifest and favicon are served by the production preview", async ({ reque
   expect(favicon.status()).toBe(200);
   expect(await favicon.text()).toContain("<svg");
 });
+
+const trustRoutes = [
+  "/contact",
+  "/support/tickets",
+  "/support/tickets/LOCAL-MISSING",
+  "/status",
+  "/incidents",
+  "/security-center",
+  "/security/vulnerability-disclosure",
+  "/privacy-center",
+  "/cookies/preferences",
+  "/data-rights",
+  "/offline",
+  "/maintenance",
+  "/error",
+  "/this-route-does-not-exist"
+];
+
+test("support, trust, privacy and recovery routes render meaningful pages", async ({ page }) => {
+  for (const route of trustRoutes) {
+    const response = await page.goto(route, { waitUntil: "domcontentloaded" });
+    expect(response, `missing document response for ${route}`).not.toBeNull();
+    expect(response!.status(), `unexpected HTTP status for ${route}`).toBe(200);
+    await expect(page.locator("#root")).toBeVisible();
+    await expect(page.locator("#root")).toContainText(/MONK/i);
+    await expect(page.locator("h1").first(), `missing page heading for ${route}`).toBeVisible();
+  }
+});
+
+test("offline fallback and service worker assets are available", async ({ request }) => {
+  const offline = await request.get("/offline.html");
+  expect(offline.status()).toBe(200);
+  expect(await offline.text()).toContain("You're offline right now.");
+  const worker = await request.get("/sw.js");
+  expect(worker.status()).toBe(200);
+  expect(await worker.text()).toContain("monk-shell-v1");
+});
