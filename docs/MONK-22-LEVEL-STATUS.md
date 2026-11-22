@@ -7,7 +7,7 @@ This tracker separates repository implementation from production activation. A f
 | Level | Workstream | Repository status | Production status | Gate |
 |---:|---|---|---|---|
 | 1 | Codebase, CI and deployment audit | Complete for inspected repository and latest known deployment | Latest prior Worker deployment was 100% traffic; this feature branch is not deployed | Browser smoke test still required |
-| 2 | National taxonomy | Implemented 36 state/UT codes, 21 institution categories, ownership and verification enums | Not yet applied to database | Migration |
+| 2 | National taxonomy | Implemented 36 state/UT codes, 24 institution categories, ownership and verification enums | Not yet applied to database | Migration |
 | 3 | Official source registry | Official regulator/source registry seeded in migration and source URLs documented | Source entries start with import disabled and terms review pending | Review each source's licence, terms and update cadence |
 | 4 | National directory schema | Additive schema migrations drafted for institutions, programmes, approvals, sources and campuses/source identity | Not applied; Supabase projects inactive | Restore correct project and inspect existing schema |
 | 5 | National ingestion | Guarded batch Edge Function created; idempotent source IDs and snapshots | Not deployed; source imports disabled by default | Active Supabase, importer secret, source permission and approved source |
