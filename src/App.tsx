@@ -155,7 +155,7 @@ export default function App() {
     try {
       const result = mode === "login"
         ? await supabase.auth.signInWithPassword({ email: email.trim(), password })
-        : await supabase.auth.signUp({ email: email.trim(), password });
+        : await supabase.auth.signUp({ email: email.trim(), password, options: { emailRedirectTo: `${window.location.origin}/login?vertical=${organizationVertical}` } });
       if (result.error) {
         setAuthMessage(result.error.message);
         return;
