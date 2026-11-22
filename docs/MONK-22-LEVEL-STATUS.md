@@ -23,24 +23,25 @@ This tracker separates code, backend activation and production release. A featur
 | 15 | Adaptive policy engine | Rules and policy resolver v2 deployed; returns pending acceptances per user/org; onboarding resolves entity-specific policies | Legally reviewed policy documents must be drafted and published |
 | 16 | Policy acceptance | Version/hash acceptance Edge Function deployed; explicit-checkbox onboarding gate and public Terms/Privacy routes implemented; append-only audit live | Publish approved documents, then test acceptance/renewal and legal pages |
 | 17 | Authentication/onboarding | Existing Supabase Auth retained; classification fields integrated in code | End-to-end signup and email verification |
-| 18 | Role-based permissions | Classification RPC role-gated; all 28 authenticated SECURITY DEFINER RPCs have hardened search paths; education roles included in organization membership; parent/student guardian-link RLS tautologies fixed | Complete per-role matrix and two-tenant adversarial tests; Supabase Auth leaked-password protection remains to be enabled |
+| 18 | Role-based permissions | Organization RPCs check active membership/roles; search paths hardened; education roles and parent/student tenant-link policies corrected | Complete per-role matrix and two-tenant adversarial tests; Auth leaked-password protection is disabled; 29 public SECURITY DEFINER functions are executable by authenticated role and require per-function review |
 | 19 | RLS and tenant isolation | Directory/policy RLS applied; server-only tables explicitly deny client reads | Run two-tenant adversarial tests |
 | 20 | Integrations/operations | Worker config has logs/traces and rate-limit binding; Cloudflare preview builds disabled to avoid failed preview deployment | Deploy production Worker; configure API secrets/quotas |
-| 21 | QA/security | GitHub CI passed on `78c49f4`: frontend build, Worker syntax, 6 Worker route tests and all four Deno checks | Browser E2E, authenticated onboarding tests and cross-tenant security review |
+| 21 | QA/security | GitHub Actions run #505 passed on `90484c8fd66b10534381ac0bd17c7fab31a81e68`: frontend build, Worker syntax, 6 Worker route tests and all Deno checks | Browser E2E, authenticated onboarding tests and cross-tenant security review |
 | 22 | Production release | Not released | Worker deploy, live data, legal docs, secrets, E2E and rollback verification |
 
 ## Production state
 
-- Primary Supabase project: `yucwackrbekwaxiyuobt`, now `ACTIVE_HEALTHY`.
-- Nine directory/policy migrations plus one hardening migration have been applied to the primary project.
+- Primary Supabase project: `yucwackrbekwaxiyuobt`, status `ACTIVE_HEALTHY`, PostgreSQL 17.
+- Applied directory/policy and hardening migrations are present in production migration history.
 - Deployed and active Edge Functions: `directory-import` (version 4), `policy-resolve` (version 2), `policy-accept` (version 1); existing `send-education-invitation` remains active.
-- All 28 existing authenticated SECURITY DEFINER RPCs now have a hardened `public, extensions, pg_temp` search path. Education parent/student relationship policies now compare both record and tenant IDs; `is_org_member` recognizes principal, HOD, teacher, student and parent roles. Supabase Security Advisor still flags authenticated execution for review, and leaked-password protection remains disabled.
-- Production database contains 36 regions, 24 categories and 19 source-registry entries. New organizations inherit server-side feature flags; CRM, documents and projects are enabled by default, while payments, location and marketplace remain disabled. It contains no institution listings yet. This is deliberate: no unverified record is represented as real.
-- All source registry entries remain import-disabled until terms/licence and allowed use are reviewed. Tenant module flags are not readable or writable by anon/authenticated clients. AISHE's website copyright policy specifically requires Ministry permission before reproducing its content; this restriction is recorded in the source registry.
+- Production database contains 36 regions, 24 categories and 19 source-registry entries. It contains no institution listings yet. This is deliberate: no unverified record is represented as real.
+- All source registry entries remain import-disabled until terms/licence and allowed use are reviewed. AISHE's website copyright policy specifically requires Ministry permission before reproducing its content; this restriction is recorded in the source registry.
 - Directory import requires a server-side `DIRECTORY_IMPORT_TOKEN`, which is not configured yet.
 - Cloudflare Worker `monk` has no secret bindings. `GOOGLE_MAPS_API_KEY`, Google billing, API restrictions and quotas are required before nearby search can return provider results.
-- Policy rules exist, but no policy document is published. The onboarding gate blocks workspace access until the applicable documents are published and explicitly accepted. Public `/terms` and `/privacy` routes currently show that no effective version is published.
-- Existing database security advisor still reports warnings for the pre-existing SECURITY DEFINER RPC surface and disabled leaked-password protection. The new classification RPC checks owner/admin/principal server-side; do not treat the remaining warnings as resolved.
+- Policy rules exist, but no policy document is published. The onboarding gate blocks workspace access until the applicable documents are published and explicitly accepted. Public `/terms` and `/privacy` routes currently show no published version.
+- Latest Supabase catalog check: 34 public SECURITY DEFINER functions; 29 are executable by `authenticated`, 0 by `anon`, and 5 are service/owner-only. This is an advisory surface, not proof that all 29 are exploitable. Function definitions show role/membership checks on the organization and data RPCs, but a full per-function authorization review and adversarial tenant tests remain open.
+- Supabase Security Advisor also reports Auth leaked-password protection disabled. No authenticated users or production auth settings were modified during this audit.
+- Performance advisor reports unindexed foreign keys and multiple permissive RLS policies; these need table-by-table query-plan and policy review rather than blind index/policy changes.
 - Worker production deployment is still the previous version. PR #20 is not merged or deployed.
 
 ## Branch and pull request
