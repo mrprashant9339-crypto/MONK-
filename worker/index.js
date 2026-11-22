@@ -243,7 +243,7 @@ async function handleDirectoryInstitution(request, env, origin, url) {
     });
   }
   if (request.method !== "GET") return responseJson({ error: "Method not allowed" }, 405, origin);
-  if (!origin || !ALLOWED_ORIGINS.has(origin)) return responseJson({ error: "Origin not allowed" }, 403, origin);
+  if (origin && !ALLOWED_ORIGINS.has(origin)) return responseJson({ error: "Origin not allowed" }, 403, origin);
 
   const clientIp = request.headers.get("CF-Connecting-IP");
   if (!clientIp) return responseJson({ error: "Unable to identify request source" }, 400, origin);
@@ -364,7 +364,7 @@ async function handleDirectorySearch(request, env, origin, url) {
     });
   }
   if (request.method !== "GET") return responseJson({ error: "Method not allowed" }, 405, origin);
-  if (!origin || !ALLOWED_ORIGINS.has(origin)) return responseJson({ error: "Origin not allowed" }, 403, origin);
+  if (origin && !ALLOWED_ORIGINS.has(origin)) return responseJson({ error: "Origin not allowed" }, 403, origin);
 
   const clientIp = request.headers.get("CF-Connecting-IP");
   if (!clientIp) return responseJson({ error: "Unable to identify request source" }, 400, origin);
