@@ -90,3 +90,9 @@
 .footer-socials a:hover{border-color:#8b6276;background:#29232b;color:#fff}
 .footer-socials a:focus-visible,.footer-legal button:focus-visible,.footer-legal a:focus-visible{outline:2px solid #ef78ad;outline-offset:3px}
 @media(prefers-reduced-motion:reduce){.footer-socials a{transition:none}}
+
+.about-creator{background:#faf6f8}
+.about-creator-copy{max-width:620px}
+.about-creator-copy p{font-size:13px;line-height:1.85;color:#756c77}
+.about-creator-copy a{display:inline-flex;align-items:center;gap:8px;margin-top:10px;color:#a94775;text-decoration:none;font-size:11px;font-weight:750}
+.about-creator-copy a:hover{text-decoration:underline}
