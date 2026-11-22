@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { setTimeout as delay } from "node:timers/promises";
 import { chromium } from "playwright";
+import axe from "axe-core";
 
 const baseUrl = "http://127.0.0.1:4173";
 let server;
@@ -62,6 +63,18 @@ test("public MONK portals render and expose expected navigation and consent cont
     assert.match(await page.locator("h1").first().innerText(), /Run your business/i);
     assert.equal(await page.getByRole("button", { name: /Use my location/i }).count(), 1);
     assert.equal(await page.getByPlaceholder(/pharmacy in Muzaffarpur/i).count(), 1);
+
+    for (const route of ["/", "/campus", "/business"]) {
+      await page.goto(baseUrl + route, { waitUntil: "networkidle" });
+      await page.addScriptTag({ content: axe.source });
+      const accessibility = await page.evaluate(async () => window.axe.run(document));
+      const serious = accessibility.violations.filter(item => ["critical", "serious"].includes(item.impact));
+      assert.deepEqual(
+        serious.map(item => ({ id: item.id, impact: item.impact, help: item.help, nodes: item.nodes.map(node => node.target) })),
+        [],
+        "Serious accessibility violations on " + route
+      );
+    }
 
     assert.deepEqual(pageErrors, [], "Public portal navigation must not produce uncaught browser errors.");
   } finally {
