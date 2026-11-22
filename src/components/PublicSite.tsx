@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
+import type { ReactNode, ComponentType } from "react";
+import "../public-site.css";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ArrowRight, ArrowUpRight, Building2, GraduationCap, Store, Users, BookOpen, ShieldCheck, ChartNoAxesCombined, CalendarDays, ClipboardList, CreditCard, Package, Receipt, Sparkles, Menu, X, CheckCircle2, MapPin, Search, Layers3, LockKeyhole, Workflow, ChevronRight } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Building2, GraduationCap, Store, Users, BookOpen, ShieldCheck, ChartNoAxesCombined, CalendarDays, ClipboardList, Package, Receipt, Menu, X, CheckCircle2, MapPin, Search, Layers3, Workflow, ChevronRight } from "lucide-react";
 
 type Portal = "campus" | "business";
 const governmentColleges = [
@@ -46,7 +48,7 @@ function Header({ active }: { active?: Portal }) {
     <button className="mobile-menu" aria-label="Toggle navigation" onClick={() => setMenu(v => !v)}>{menu ? <X/> : <Menu/>}</button>
   </header>;
 }
-function Reveal({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+function Reveal({ children, className = "" }: { children: ReactNode; className?: string }) {
   useEffect(() => {
     const nodes = document.querySelectorAll(".reveal:not(.is-visible)");
     const observer = new IntersectionObserver(entries => entries.forEach(entry => {
@@ -89,7 +91,7 @@ function DirectoryDemo() {
     <div className="directory-foot"><span>Sample preview · Not a complete live admission directory</span><a href={type === "government" ? "https://sbte.bihar.gov.in/government-institute" : "https://sbte.bihar.gov.in/private-institutes"} target="_blank" rel="noreferrer">Open official SBTE directory <ArrowUpRight size={15}/></a></div>
   </section>;
 }
-function FeatureGrid({ items }: { items: typeof campusFeatures }) {
+function FeatureGrid({ items }: { items: Array<{ icon: ComponentType<{ size?: number }>; title: string; desc: string }> }) {
   return <div className="feature-grid">{items.map((item, i) => <Reveal key={item.title}><article className="feature-card" style={{transitionDelay:`${i * 45}ms`}}><span><item.icon size={19}/></span><h3>{item.title}</h3><p>{item.desc}</p></article></Reveal>)}</div>;
 }
 function CampusPage() {
