@@ -23,6 +23,7 @@ export default function App() {
   const [password, setPassword] = useState("");
   const [authBusy, setAuthBusy] = useState(false);
   const [authMessage, setAuthMessage] = useState("");
+  const [authMode, setAuthMode] = useState<"login" | "signup">(new URLSearchParams(window.location.search).get("mode") === "signup" ? "signup" : "login");
   const [tasks, setTasks] = useState<Task[]>(demoTasks);
   const [projects, setProjects] = useState<Project[]>([]);
   const [projectId, setProjectId] = useState("");
@@ -52,7 +53,6 @@ export default function App() {
       setOrganizationId(orgId);
       if (!orgId) {
         setOrganizationName("MONK Studio");
-        setOrganizationVertical("business");
         setProjects([]);
         setTasks([]);
         setProjectId("");
@@ -112,7 +112,10 @@ export default function App() {
   }, [organizationVertical, active]);
 
   useEffect(() => {
-    const vertical = new URLSearchParams(location.search).get("vertical");
+    const params = new URLSearchParams(location.search);
+    const mode = params.get("mode");
+    if (mode === "login" || mode === "signup") setAuthMode(mode);
+    const vertical = params.get("vertical");
     if (vertical === "education" || vertical === "business") setOrganizationVertical(vertical);
   }, [location.search]);
 
@@ -274,11 +277,11 @@ export default function App() {
     <main className="auth-page"><div className="auth-card">
       <a className="brand" href="/"><span className="brand-mark">M</span> MONK<span className="brand-dot">.</span></a>
       <p className="eyebrow">YOUR WORKSPACE, REIMAGINED</p><h1>Make room for<br /><em>meaningful work.</em></h1>
-      <p className="muted">Sign in to continue to your MONK workspace.</p>
+      <p className="muted">{authMode === "signup" ? "Create your account to set up a secure MONK workspace." : "Sign in to continue to your MONK workspace."}</p>
       <label>Email address<input type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.com" /></label>
       <label>Password<input type="password" autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} placeholder="At least 8 characters" /></label>
-      <button className="primary full" disabled={authBusy} onClick={() => signIn("login")}>{authBusy ? "Please wait…" : "Sign in"} <ArrowUpRight size={17} /></button>
-      <button className="text-button full" disabled={authBusy} onClick={() => signIn("signup")}>Create an account</button>
+      <button className="primary full" disabled={authBusy} onClick={() => signIn(authMode)}>{authBusy ? "Please wait…" : authMode === "signup" ? "Create account" : "Sign in"} <ArrowUpRight size={17} /></button>
+      <button className="text-button full" disabled={authBusy} onClick={() => { setAuthMode(current => current === "login" ? "signup" : "login"); setAuthMessage(""); }}>{authMode === "signup" ? "Already have an account? Sign in" : "New to MONK? Create an account"}</button>
       {authMessage && <p className="notice">{authMessage}</p>}<p className="tiny">Protected by Supabase Authentication · <a href="/">Back to public website</a></p>
     </div></main>
   );
