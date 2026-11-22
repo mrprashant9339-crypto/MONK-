@@ -17,7 +17,7 @@ export default function WorkspaceOverlays({mode,onClose,onNavigate,projects,task
   ].filter(x=>(x.label+" "+x.detail).toLowerCase().includes(query.trim().toLowerCase())).slice(0,12),[projects,tasks,query]);
   if(!mode)return null;
   function handleSearchKey(event:KeyboardEvent<HTMLInputElement>){if(event.key==="ArrowDown"){event.preventDefault();setActiveIndex(index=>Math.min(items.length-1,index+1));}else if(event.key==="ArrowUp"){event.preventDefault();setActiveIndex(index=>Math.max(0,index-1));}else if(event.key==="Enter"&&items[activeIndex]){event.preventDefault();choose(items[activeIndex]);}}
-  function choose(item:(typeof items)[number]){if(item.kind==="project"&&"id"in item){onSelectProject(item.id);onNavigate("Projects");}else if(item.kind==="task"){onNavigate("Tasks");}else onNavigate(item.label);onClose();}
+  function choose(item:(typeof items)[number]){if(item.kind==="project"&&"id"in item&&typeof item.id==="string"){onSelectProject(item.id);onNavigate("Projects");}else if(item.kind==="task"){onNavigate("Tasks");}else onNavigate(item.label);onClose();}
   return <div className="wo-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)onClose();}}>
     <section className={mode==="command"?"wo-dialog":"wo-dialog wo-notification-dialog"} role="dialog" aria-modal="true" aria-label={mode==="command"?"Search and command menu":"Notifications and preferences"}>
       <header className="wo-header"><span>{mode==="command"?<Command/>:<Bell/>}{mode==="command"?"Search MONK":"Notifications"}</span><button onClick={onClose} aria-label="Close dialog"><X/></button></header>
