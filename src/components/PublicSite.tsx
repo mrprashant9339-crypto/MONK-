@@ -61,7 +61,7 @@ function Reveal({ children, className = "" }: { children: ReactNode; className?:
 }
 function Footer() {
   const navigate = useNavigate();
-  return <footer className="public-footer"><div className="footer-top"><div><Brand/><p>One platform. Two ways to move forward.</p></div><div className="footer-links"><button onClick={() => navigate("/campus")}>MONK Campus</button><button onClick={() => navigate("/business")}>MONK Business</button><a href="https://dashboard.aishe.gov.in/" target="_blank" rel="noreferrer">AISHE India</a><a href="https://www.ugc.gov.in/" target="_blank" rel="noreferrer">UGC</a></div></div><div className="footer-bottom"><span>© {new Date().getFullYear()} MONK. All rights reserved.</span><span>Designed for people building what matters.</span></div></footer>;
+  return <footer className="public-footer"><div className="footer-top"><div><Brand/><p>One platform. Two ways to move forward.</p></div><div className="footer-links"><button onClick={() => navigate("/campus")}>MONK Campus</button><button onClick={() => navigate("/business")}>MONK Business</button><a href="https://dashboard.aishe.gov.in/" target="_blank" rel="noreferrer">AISHE India</a><a href="https://www.ugc.gov.in/" target="_blank" rel="noreferrer">UGC</a></div></div><div className="footer-bottom"><span>© {new Date().getFullYear()} MONK. All rights reserved.</span><span className="footer-legal"><a href="/terms">Terms &amp; Conditions</a><a href="/privacy">Privacy Notice</a></span></div></footer>;
 }
 function PortalCard({ portal, title, desc, points, onClick }: { portal: Portal; title: string; desc: string; points: string[]; onClick: () => void }) {
   const Icon = portal === "campus" ? GraduationCap : Store;
@@ -449,10 +449,65 @@ function BusinessPage() {
     <section className="portal-bottom-cta"><div><span className="section-kicker">READY WHEN YOU ARE</span><h2>Make the next workday<br/>a little more organized.</h2><p>Set up your business workspace and invite your team when you are ready.</p></div><button className="button-dark" onClick={() => navigate("/login?vertical=business&mode=signup")}>Set up MONK Business <ArrowUpRight size={17}/></button></section>
   </main><Footer/></>;
 }
+
+type PublicPolicyDocument = {
+  id: string;
+  policy_key: string;
+  version: string;
+  title: string;
+  jurisdiction: string;
+  effective_at: string;
+  content_markdown: string;
+  content_sha256: string;
+};
+
+function PublicPolicyPage({ policyKey, heading }: { policyKey: "platform" | "privacy"; heading: string }) {
+  const [documents, setDocuments] = useState<PublicPolicyDocument[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      setLoading(true); setError("");
+      try {
+        const response = await fetch(`/api/policies/public?key=${policyKey}`);
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload.error || "Policy documents are temporarily unavailable.");
+        if (active) setDocuments(payload.documents ?? []);
+      } catch (reason) {
+        if (active) setError(reason instanceof Error ? reason.message : "Policy documents are temporarily unavailable.");
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+    return () => { active = false; };
+  }, [policyKey]);
+
+  return <><Header/><main className="public-policy-page">
+    <span className="section-kicker">MONK / LEGAL</span>
+    <h1>{heading}</h1>
+    <p className="public-policy-intro">Only currently published and effective versions are displayed here. Organization-specific schedules are resolved during workspace onboarding.</p>
+    {loading && <p className="policy-public-state">Loading current policy documents…</p>}
+    {error && <p className="policy-public-state" role="alert">{error}</p>}
+    {!loading && !error && documents.length === 0 && <div className="policy-public-state policy-not-published">
+      <b>No published version is available yet.</b>
+      <p>This policy is being prepared for legal review. MONK will display the effective version here after approval and publication. No draft is presented as an active agreement.</p>
+    </div>}
+    {documents.map(document => <article className="public-policy-document" key={document.id}>
+      <div><span>Version {document.version}</span><span>Effective {new Date(document.effective_at).toLocaleDateString("en-IN")}</span><span>{document.jurisdiction}</span></div>
+      <h2>{document.title}</h2>
+      <pre>{document.content_markdown}</pre>
+    </article>)}
+  </main><Footer/></>;
+}
+
 export default function PublicSite() {
   const location = useLocation();
   useEffect(() => { window.scrollTo({ top: 0, behavior: "instant" }); }, [location.pathname]);
   if (location.pathname === "/campus") return <CampusPage/>;
   if (location.pathname === "/business") return <BusinessPage/>;
+  if (location.pathname === "/terms") return <PublicPolicyPage policyKey="platform" heading="Terms & Conditions"/>;
+  if (location.pathname === "/privacy") return <PublicPolicyPage policyKey="privacy" heading="Privacy Notice"/>;
   return <HomePage/>;
 }
