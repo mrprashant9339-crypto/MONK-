@@ -118,11 +118,23 @@ export function CookieNotice() {
   useEffect(() => {
     try {
       const saved = localStorage.getItem("monk-cookie-preferences-v1");
-      if (!saved) { setVisible(true); return; }
-      const parsed = JSON.parse(saved) as { analytics?: boolean };
-      setAnalytics(parsed.analytics === true);
-      setVisible(false);
+      if (!saved) { setVisible(true); }
+      else {
+        const parsed = JSON.parse(saved) as { analytics?: boolean };
+        setAnalytics(parsed.analytics === true);
+        setVisible(false);
+      }
     } catch { setVisible(true); }
+    const openSettings = () => {
+      try {
+        const saved = localStorage.getItem("monk-cookie-preferences-v1");
+        if (saved) setAnalytics((JSON.parse(saved) as { analytics?: boolean }).analytics === true);
+      } catch { setAnalytics(false); }
+      setManage(true);
+      setVisible(true);
+    };
+    window.addEventListener("monk:open-cookie-settings", openSettings);
+    return () => window.removeEventListener("monk:open-cookie-settings", openSettings);
   }, []);
   function saveChoice(allowAnalytics: boolean) {
     const preference = { necessary: true, analytics: allowAnalytics, updatedAt: new Date().toISOString(), version: 1 };
