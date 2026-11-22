@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { ReactNode, ComponentType } from "react";
 import "../public-site.css";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ArrowRight, ArrowUpRight, Building2, GraduationCap, Store, Users, BookOpen, ShieldCheck, ChartNoAxesCombined, CalendarDays, ClipboardList, Package, Receipt, Menu, X, CheckCircle2, MapPin, Search, Layers3, Workflow, ChevronRight } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Building2, GraduationCap, Store, Users, BookOpen, ShieldCheck, BarChart3, CalendarDays, ClipboardList, Package, Receipt, Menu, X, CheckCircle2, MapPin, Search, Layers3, Workflow, ChevronRight } from "lucide-react";
 
 type Portal = "campus" | "business";
 const governmentColleges = [
@@ -24,7 +24,7 @@ const campusFeatures = [
   { icon: CalendarDays, title: "Attendance & timetable", desc: "Daily attendance, class schedules, academic calendar and alerts." },
   { icon: ClipboardList, title: "Exams & results", desc: "Internal assessments, practical records, marks workflows and result visibility." },
   { icon: ShieldCheck, title: "Institution controls", desc: "Principal, HOD, teacher, student and admin permissions with audit history." },
-  { icon: ChartNoAxesCombined, title: "Institution insights", desc: "Attendance trends, academic progress and department-level summaries." }
+  { icon: BarChart3, title: "Institution insights", desc: "Attendance trends, academic progress and department-level summaries." }
 ];
 const businessFeatures = [
   { icon: Users, title: "Customer relationship", desc: "Customer records, enquiries, follow-ups, notes and sales pipeline." },
@@ -43,7 +43,7 @@ function Header({ active }: { active?: Portal }) {
   const navigate = useNavigate();
   const [menu, setMenu] = useState(false);
   return <header className="public-header"><button className="brand-button" onClick={() => navigate("/")}><Brand /></button>
-    <nav className={menu ? "public-nav open" : "public-nav"}><button className={active === "campus" ? "nav-active" : ""} onClick={() => { navigate("/campus"); setMenu(false); }}>Campus</button><button className={active === "business" ? "nav-active" : ""} onClick={() => { navigate("/business"); setMenu(false); }}>Business</button><a href="#how-it-works" onClick={() => setMenu(false)}>How it works</a><a href="#about" onClick={() => setMenu(false)}>About MONK</a></nav>
+    <nav className={menu ? "public-nav open" : "public-nav"}><button className={active === "campus" ? "nav-active" : ""} onClick={() => { navigate("/campus"); setMenu(false); }}>Campus</button><button className={active === "business" ? "nav-active" : ""} onClick={() => { navigate("/business"); setMenu(false); }}>Business</button><a href="/#how-it-works" onClick={() => setMenu(false)}>How it works</a><a href="/#about" onClick={() => setMenu(false)}>About MONK</a></nav>
     <div className="header-actions"><button className="login-link" onClick={() => navigate("/login")}>Log in</button><button className="header-cta" onClick={() => navigate("/login?mode=signup")}>Get started <ArrowUpRight size={15}/></button></div>
     <button className="mobile-menu" aria-label="Toggle navigation" onClick={() => setMenu(v => !v)}>{menu ? <X/> : <Menu/>}</button>
   </header>;
