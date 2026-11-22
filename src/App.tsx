@@ -293,7 +293,7 @@ export default function App() {
 
   if (!session && location.pathname === "/login") return (
     <main className="auth-page"><div className="auth-card">
-      <a className="brand" href="/"><span className="brand-mark">M</span> MONK<span className="brand-dot">.</span></a>
+      <a className="brand" href="/"><img className="brand-mark-image" src="/brand/monk-icon.svg" alt="MONK" /> MONK<span className="brand-dot">.</span></a>
       <p className="eyebrow">YOUR WORKSPACE, REIMAGINED</p><h1>Make room for<br /><em>meaningful work.</em></h1>
       <p className="muted">{authMode === "signup" ? "Create your account to set up a secure MONK workspace." : "Sign in to continue to your MONK workspace."}</p>
       <label>Email address<input type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.com" /></label>
@@ -307,7 +307,7 @@ export default function App() {
 
   if (isSupabaseConfigured && session && !workspaceReady) return (
     <main className="auth-page"><section className="auth-card">
-      <a className="brand" href="#"><span className="brand-mark">M</span> MONK<span className="brand-dot">.</span></a>
+      <a className="brand" href="#"><img className="brand-mark-image" src="/brand/monk-icon.svg" alt="MONK" /> MONK<span className="brand-dot">.</span></a>
       <p className="eyebrow">SECURE WORKSPACE</p><h1>{loading ? "Loading your" : "Workspace"}<br /><em>{loading ? "workspace…" : "could not load."}</em></h1>
       <p className="muted">{loading ? "Checking your organization membership and workspace access." : "Your session is active, but MONK could not retrieve your workspace."}</p>
       {workspaceError && <p className="notice" role="alert">{workspaceError}</p>}
@@ -318,7 +318,7 @@ export default function App() {
 
   if (isSupabaseConfigured && session && workspaceReady && !organizationId) return (
     <main className="auth-page"><form className="auth-card" onSubmit={createOrganization}>
-      <a className="brand" href="#"><span className="brand-mark">M</span> MONK<span className="brand-dot">.</span></a>
+      <a className="brand" href="#"><img className="brand-mark-image" src="/brand/monk-icon.svg" alt="MONK" /> MONK<span className="brand-dot">.</span></a>
       <p className="eyebrow">FIRST-TIME SETUP</p><h1>Create your<br /><em>workspace.</em></h1>
       <p className="muted">Your organization is the secure boundary for its projects and tasks.</p>
       <label>Workspace name<input required maxLength={100} value={organizationName} onChange={e => setOrganizationName(e.target.value)} /></label>
@@ -332,7 +332,7 @@ export default function App() {
 
   if (isSupabaseConfigured && session && workspaceReady && organizationId && organizationVertical === "business" && projects.length === 0 && active === "Overview") return (
     <main className="auth-page"><form className="auth-card" onSubmit={createProject}>
-      <a className="brand" href="#"><span className="brand-mark">M</span> MONK<span className="brand-dot">.</span></a>
+      <a className="brand" href="#"><img className="brand-mark-image" src="/brand/monk-icon.svg" alt="MONK" /> MONK<span className="brand-dot">.</span></a>
       <p className="eyebrow">WORKSPACE SETUP</p><h1>Create your first<br /><em>project.</em></h1>
       <p className="muted">Tasks belong to projects, so create one to start tracking work.</p>
       <label>Project name<input required maxLength={120} value={projectName} onChange={e => setProjectName(e.target.value)} /></label>
@@ -346,7 +346,7 @@ export default function App() {
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <a className="brand" href="#"><span className="brand-mark">M</span> MONK<span className="brand-dot">.</span></a>
+        <a className="brand" href="#"><img className="brand-mark-image" src="/brand/monk-icon.svg" alt="MONK" /> MONK<span className="brand-dot">.</span></a>
         <div className="workspace-switch"><div className="workspace-avatar">M</div><div><strong>{organizationName}</strong><small>{projects.find(p => p.id === projectId)?.name ?? "Personal workspace"}</small></div><ChevronRight size={15} /></div>
         <nav className="monk-navigation">{["WORKSPACE","GROWTH","MANAGE","EXPLORE","PERSONAL"].map(group => <section className="nav-section" key={group}><p className="side-label">{group}</p>{nav.filter(item => item.group === group).map(item => <button key={item.name} className={active === item.name ? "nav-item selected" : "nav-item"} onClick={() => setActive(item.name)}><item.icon size={16} /><span>{item.name}</span>{item.name === "Projects" && <span className="nav-count">{projects.length}</span>}</button>)}</section>)}</nav>
         <div className="sidebar-bottom"><div className="secure"><ShieldCheck size={16} /><span><b>Private by design</b><small>Organization-scoped access.</small></span></div>
