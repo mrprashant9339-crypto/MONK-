@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import "../public-site.css";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ArrowRight, ArrowUpRight, GraduationCap, Store, Users, BookOpen, ShieldCheck, BarChart3, CalendarDays, ClipboardList, Package, Receipt, Menu, X, CheckCircle2, MapPin, Search, Layers3, Workflow, ChevronRight, Mail } from "lucide-react";
+import { ArrowRight, ArrowUpRight, GraduationCap, Store, Users, BookOpen, ShieldCheck, BarChart3, CalendarDays, ClipboardList, Package, Receipt, Menu, X, CheckCircle2, MapPin, Search, Layers3, Workflow, ChevronRight, Mail, Github, Linkedin, Instagram } from "lucide-react";
 
 type Portal = "campus" | "business";
 const governmentColleges = [
@@ -62,7 +62,43 @@ function Reveal({ children, className = "" }: { children: ReactNode; className?:
 }
 function Footer() {
   const navigate = useNavigate();
-  return <footer className="public-footer"><div className="footer-top"><div><Brand/><p>One platform. Two ways to move forward.</p></div><div className="footer-links"><button onClick={() => navigate("/campus")}>MONK Campus</button><button onClick={() => navigate("/business")}>MONK Business</button><a href="https://sbte.bihar.gov.in/" target="_blank" rel="noreferrer">SBTE Bihar</a></div></div><div className="footer-support"><span><ShieldCheck size={17}/> Need help? Contact official MONK Support</span><a href="mailto:admin@monk.monster"><Mail size={16}/> admin@monk.monster</a><small>For account, workspace and general enquiries.</small></div><div className="footer-bottom"><span>© {new Date().getFullYear()} MONK. All rights reserved.</span><span>Designed for people building what matters.</span></div></footer>;
+  return <footer className="public-footer" aria-label="MONK website footer">
+    <div className="footer-main">
+      <section className="footer-brand-column" aria-labelledby="footer-brand-title">
+        <a className="footer-brand-link" href="/" onClick={event => { event.preventDefault(); navigate("/"); }}><Brand /></a>
+        <p className="footer-tagline">Connecting Campus and Commerce.</p>
+        <div className="footer-creator"><span className="footer-overline">A PROJECT BY</span><strong id="footer-brand-title">Prashant Kumar</strong><span>Designed and developed independently.</span></div>
+        <span className="footer-location"><MapPin size={13}/> Based in India · Built for a global audience</span>
+      </section>
+      <nav className="footer-column" aria-label="Platform links"><h2>Platform</h2>
+        <a className="footer-link" href="/" onClick={event => {event.preventDefault();navigate("/");}}>Home</a>
+        <a className="footer-link" href="/campus" onClick={event => {event.preventDefault();navigate("/campus");}}>MONK Campus</a>
+        <a className="footer-link" href="/business" onClick={event => {event.preventDefault();navigate("/business");}}>MONK Business</a>
+        <a className="footer-link" href="/#how-it-works" onClick={event => {event.preventDefault();navigate("/");window.setTimeout(()=>document.querySelector("#how-it-works")?.scrollIntoView({behavior:"smooth"}),60);}}>How it works</a>
+        <a className="footer-link" href="/login?mode=signup" onClick={event=>{event.preventDefault();navigate("/login?mode=signup");}}>Get started</a>
+      </nav>
+      <nav className="footer-column" aria-label="Resources and support"><h2>Resources &amp; Support</h2>
+        <a className="footer-link" href="/#about" onClick={event=>{event.preventDefault();navigate("/");window.setTimeout(()=>document.querySelector("#about")?.scrollIntoView({behavior:"smooth"}),60);}}>About the project</a>
+        <span className="footer-link footer-link-muted">Documentation<small>Coming soon</small></span>
+        <span className="footer-link footer-link-muted">Product updates<small>Coming soon</small></span>
+        <span className="footer-link footer-link-muted">FAQ<small>Coming soon</small></span>
+        <a className="footer-link" href="mailto:admin@monk.monster">Contact support</a>
+      </nav>
+      <section className="footer-column footer-connect" aria-labelledby="footer-connect-title"><h2 id="footer-connect-title">Connect with MONK</h2>
+        <a className="footer-email" href="mailto:admin@monk.monster"><Mail size={16}/>admin@monk.monster</a>
+        <p className="footer-contact-note">For account, workspace and general enquiries.</p>
+        <div className="footer-socials" aria-label="Social profiles">
+          <span title="LinkedIn profile will be added"><Linkedin size={17}/><small>LinkedIn</small></span>
+          <span title="GitHub profile will be added"><Github size={17}/><small>GitHub</small></span>
+          <span title="Instagram profile will be added"><Instagram size={17}/><small>Instagram</small></span>
+        </div>
+        <p className="footer-social-note">Official social profile links will be published here once verified.</p>
+      </section>
+    </div>
+    <div className="footer-project-note"><ShieldCheck size={16}/><p><strong>Independent project in development.</strong> Features and product previews may change. Any sample figures or records shown publicly are illustrative, not live customer data.</p></div>
+    <div className="footer-legal"><a href="/privacy">Privacy policy <small>Coming soon</small></a><a href="/terms">Terms of service <small>Coming soon</small></a><a href="mailto:admin@monk.monster">Support</a></div>
+    <div className="footer-bottom"><span>© {new Date().getFullYear()} MONK. All rights reserved.</span><span className="footer-company-placeholder"><span className="footer-company-mark">M</span><span><small>FUTURE COMPANY IDENTITY</small><strong>Reserved for company logo / name</strong></span></span></div>
+  </footer>;
 }
 function PortalCard({ portal, title, desc, points, onClick }: { portal: Portal; title: string; desc: string; points: string[]; onClick: () => void }) {
   const Icon = portal === "campus" ? GraduationCap : Store;
