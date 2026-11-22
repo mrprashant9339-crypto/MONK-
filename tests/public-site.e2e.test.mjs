@@ -34,7 +34,23 @@ test("public MONK portals render and expose expected navigation and consent cont
     page.on("pageerror", error => pageErrors.push(error.message));
 
     await page.goto(baseUrl, { waitUntil: "networkidle" });
-    assert.match(await page.locator("h1").first().innerText(), /Make room for/i);
+    assert.match(await page.locator("h1").first().innerText(), /Run your work/i);
+    assert.equal(await page.locator(".hero-art[aria-hidden='true']").count(), 1);
+    assert.equal(await page.getByRole("img", { name: "MONK logo" }).count() > 0, true);
+
+    const llmsResponse = await page.request.get(baseUrl + "/llms.txt");
+    assert.equal(llmsResponse.status(), 200);
+    const llmsText = await llmsResponse.text();
+    assert.match(llmsText, /^# MONK/m);
+    assert.match(llmsText, /\[MONK Campus\]/);
+
+    const catalogResponse = await page.request.get(baseUrl + "/.well-known/ai-catalog.json");
+    assert.equal(catalogResponse.status(), 200);
+    assert.match(catalogResponse.headers()["content-type"] || "", /application\/json/);
+    const catalog = await catalogResponse.json();
+    assert.equal(catalog.specVersion, "1.0");
+    assert.deepEqual(catalog.entries, []);
+    assert.equal(catalog.host.displayName, "MONK");
     assert.equal(await page.getByRole("button", { name: /MONK Campus/i }).count() > 0, true);
     assert.equal(await page.getByRole("button", { name: /MONK Business/i }).count() > 0, true);
 
