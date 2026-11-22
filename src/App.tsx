@@ -1,3 +1,4 @@
+import { INDIA_STATES_AND_UTS, INSTITUTION_CATEGORIES } from "./data/india-directory";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import PublicSite from "./components/PublicSite";
@@ -10,6 +11,7 @@ import CRMManagement from "./components/CRMManagement";
 
 type Project = { id: string; name: string; code: string; description?: string | null; due_date?: string | null; visibility?: "internal" | "client_visible"; status?: "draft" | "active" | "at_risk" | "in_review" | "completed" };
 type Task = { id: string; title: string; status: "todo" | "in_progress" | "blocked" | "review" | "done"; priority: "low" | "medium" | "high" | "urgent"; due_date: string | null; project_id: string };
+type OrganizationEntityType = "government_college" | "private_college" | "government_university" | "private_university" | "coaching_institute" | "government_body" | "trust_society" | "business" | "sole_proprietor" | "company" | "partnership" | "other";
 const demoTasks: Task[] = [
   { id: "demo-1", title: "Define the next milestone", status: "todo", priority: "high", due_date: null, project_id: "demo" },
   { id: "demo-2", title: "Review product requirements", status: "done", priority: "medium", due_date: null, project_id: "demo" },
@@ -31,6 +33,9 @@ export default function App() {
   const [newTask, setNewTask] = useState("");
   const [organizationName, setOrganizationName] = useState("MONK Studio");
   const [organizationVertical, setOrganizationVertical] = useState<"business" | "education">(new URLSearchParams(window.location.search).get("vertical") === "education" ? "education" : "business");
+  const [organizationEntityType, setOrganizationEntityType] = useState<OrganizationEntityType>(new URLSearchParams(window.location.search).get("vertical") === "education" ? "private_college" : "business");
+  const [organizationInstitutionCategory, setOrganizationInstitutionCategory] = useState("");
+  const [organizationStateCode, setOrganizationStateCode] = useState("");
   const [organizationSlug, setOrganizationSlug] = useState("monk-studio");
   const [projectName, setProjectName] = useState("MONK Workspace");
   const [projectCode, setProjectCode] = useState("MONK-001");
@@ -60,10 +65,13 @@ export default function App() {
         return;
       }
       const organizationResult = await supabase.from("organizations")
-        .select("name,vertical").eq("id", orgId).single();
+        .select("name,vertical,entity_type,institution_category,state_code").eq("id", orgId).single();
       if (organizationResult.error) throw organizationResult.error;
       setOrganizationName(organizationResult.data.name);
       setOrganizationVertical(organizationResult.data.vertical === "education" ? "education" : "business");
+      if (organizationResult.data.entity_type) setOrganizationEntityType(organizationResult.data.entity_type as OrganizationEntityType);
+      setOrganizationInstitutionCategory(organizationResult.data.institution_category ?? "");
+      setOrganizationStateCode(organizationResult.data.state_code ?? "");
       const projectResult = await supabase.from("projects")
         .select("id,name,code,description,due_date,visibility,status")
         .eq("organization_id", orgId)
@@ -116,7 +124,10 @@ export default function App() {
     const mode = params.get("mode");
     if (mode === "login" || mode === "signup") setAuthMode(mode);
     const vertical = params.get("vertical");
-    if (vertical === "education" || vertical === "business") setOrganizationVertical(vertical);
+    if (vertical === "education" || vertical === "business") {
+      setOrganizationVertical(vertical);
+      setOrganizationEntityType(vertical === "education" ? "private_college" : "business");
+    }
   }, [location.search]);
 
   useEffect(() => {
@@ -179,8 +190,15 @@ export default function App() {
       org_name: organizationName.trim(), org_slug: organizationSlug.toLowerCase().trim(),
       org_country: "IN", org_timezone: "Asia/Kolkata", org_currency: "INR", org_locale: "en-IN", org_industry: organizationVertical === "education" ? "Education" : "Technology", org_vertical: organizationVertical
     });
+    if (error) { setSaving(false); setWorkspaceError(error.message); return; }
+    const { error: classificationError } = await supabase.rpc("set_organization_classification", {
+      p_entity_type: organizationEntityType,
+      p_institution_category: organizationVertical === "education" ? organizationInstitutionCategory || null : null,
+      p_state_code: organizationStateCode || null,
+      p_enabled_modules: []
+    });
     setSaving(false);
-    if (error) { setWorkspaceError(error.message); return; }
+    if (classificationError) { setWorkspaceError(`Workspace created, but organization classification could not be saved: ${classificationError.message}`); return; }
     setOrganizationId("created");
     await loadWorkspace();
   }
@@ -303,7 +321,12 @@ export default function App() {
       <p className="eyebrow">FIRST-TIME SETUP</p><h1>Create your<br /><em>workspace.</em></h1>
       <p className="muted">Your organization is the secure boundary for its projects and tasks.</p>
       <label>Workspace name<input required maxLength={100} value={organizationName} onChange={e => setOrganizationName(e.target.value)} /></label>
-      <label>Workspace type<select value={organizationVertical} onChange={e => setOrganizationVertical(e.target.value as "business" | "education")}><option value="business">Business workspace</option><option value="education">Education institution</option></select></label>
+      <label>Workspace type<select value={organizationVertical} onChange={e => { const nextVertical = e.target.value as "business" | "education"; setOrganizationVertical(nextVertical); setOrganizationEntityType(nextVertical === "education" ? "private_college" : "business"); }}><option value="business">Business workspace</option><option value="education">Education institution</option></select></label>
+      <label>Organization category<select value={organizationEntityType} onChange={e => setOrganizationEntityType(e.target.value as OrganizationEntityType)}>
+        {organizationVertical === "education" ? <><option value="government_college">Government college</option><option value="private_college">Private college</option><option value="government_university">Government university</option><option value="private_university">Private university</option><option value="coaching_institute">Coaching institute</option><option value="government_body">Government education body</option><option value="trust_society">Trust / society</option><option value="other">Other education organization</option></> : <><option value="business">Business</option><option value="sole_proprietor">Sole proprietorship</option><option value="company">Company</option><option value="partnership">Partnership</option><option value="trust_society">Trust / society</option><option value="government_body">Government body</option><option value="other">Other organization</option></>}
+      </select></label>
+      {organizationVertical === "education" && <label>Institution category<select value={organizationInstitutionCategory} onChange={e => setOrganizationInstitutionCategory(e.target.value)}><option value="">Select academic category</option>{INSTITUTION_CATEGORIES.map(category => <option key={category.id} value={category.id}>{category.label}</option>)}</select></label>}
+      <label>State / Union Territory<select value={organizationStateCode} onChange={e => setOrganizationStateCode(e.target.value)}><option value="">Select state / UT</option>{INDIA_STATES_AND_UTS.map(region => <option key={region.code} value={region.code}>{region.name}</option>)}</select></label>
       <label>Workspace URL slug<input required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" maxLength={50} value={organizationSlug} onChange={e => setOrganizationSlug(e.target.value)} /></label>
       {workspaceError && <p className="notice">{workspaceError}</p>}
       <button className="primary full" disabled={saving}>{saving ? "Creating…" : "Create workspace"} <ArrowUpRight size={17} /></button>
