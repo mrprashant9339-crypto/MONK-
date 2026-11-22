@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   ArrowLeft, ArrowRight, ArrowUpRight, CheckCircle2, ChevronDown, CircleHelp,
@@ -20,7 +20,7 @@ const storeList = <T,>(key: string, value: T[]) => {
 };
 const emailAddress = "admin@monk.monster";
 
-function Shell({ eyebrow, title, intro, children }: { eyebrow: string; title: string; intro: string; children: React.ReactNode }) {
+function Shell({ eyebrow, title, intro, children }: { eyebrow: string; title: string; intro: string; children: ReactNode }) {
   return <main className="st-shell">
     <header className="st-header">
       <Link to="/" className="st-brand"><span className="st-mark">M</span><span>MONK<span>.</span></span></Link>
