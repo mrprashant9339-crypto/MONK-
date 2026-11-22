@@ -29,6 +29,8 @@ jobs:
         run: npm run build
       - name: Check Cloudflare Worker syntax
         run: node --check worker/index.js
+      - name: Test Cloudflare Worker routes
+        run: npm run test:worker
       - name: Type-check Supabase Edge Functions
         run: |
           deno check --node-modules-dir=auto --no-lock supabase/functions/_shared/policy.ts
