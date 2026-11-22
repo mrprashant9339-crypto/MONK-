@@ -30,6 +30,8 @@ After the Worker branch is deployed, request:
 
 `GET https://monk.monster/api/system/readiness`
 
+The GitHub Actions workflow `.github/workflows/production-readiness.yml` can be run manually against production/staging and is also triggered after a successful Cloudflare deployment. It fails the release check and prints each blocker unless the readiness endpoint returns `status=ready`.
+
 The endpoint returns safe aggregate values only:
 - Whether the Worker has `GOOGLE_MAPS_API_KEY` configured (boolean only).
 - Count of published institution records.
