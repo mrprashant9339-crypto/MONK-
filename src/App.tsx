@@ -194,8 +194,7 @@ export default function App() {
     const { error: classificationError } = await supabase.rpc("set_organization_classification", {
       p_entity_type: organizationEntityType,
       p_institution_category: organizationVertical === "education" ? organizationInstitutionCategory || null : null,
-      p_state_code: organizationStateCode || null,
-      p_enabled_modules: []
+      p_state_code: organizationStateCode || null
     });
     setSaving(false);
     if (classificationError) { setWorkspaceError(`Workspace created, but organization classification could not be saved: ${classificationError.message}`); return; }
