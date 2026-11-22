@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ArrowLeft, ArrowRight, ArrowUpRight, BookOpen, BriefcaseBusiness, Building2, Check, ChevronDown, CircleHelp, Code2, Compass, Copy, GraduationCap, Layers3, Mail, Newspaper, Search, ShieldCheck, Sparkles, Store, Workflow } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
+import { ArrowRight, ArrowUpRight, BookOpen, BriefcaseBusiness, Building2, ChevronDown, CircleHelp, Code2, Compass, GraduationCap, Layers3, Mail, Newspaper, Search, ShieldCheck, Sparkles, Store, Workflow } from "lucide-react";
 import "../extended-public.css";
 
 type Card = { icon: typeof BookOpen; title: string; description: string; href?: string; tag?: string };
