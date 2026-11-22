@@ -15,7 +15,10 @@ const publicRoutes = [
   "/disclaimer",
   "/security",
   "/accessibility",
-  "/data-rights"
+  "/data-rights",
+  "/features", "/solutions", "/pricing", "/compare-plans", "/integrations", "/resources",
+  "/blog", "/blog/building-with-clarity", "/case-studies", "/case-studies/local-business-example",
+  "/roadmap", "/careers", "/partners", "/403", "/500", "/session-expired"
 ];
 
 test("public routes render the application without a blank screen", async ({ page }) => {
@@ -106,4 +109,36 @@ test("offline fallback and service worker assets are available", async ({ reques
   const worker = await request.get("/sw.js");
   expect(worker.status()).toBe(200);
   expect(await worker.text()).toContain("monk-shell-v1");
+});
+
+test("feature filters and integration search update the visible catalogue", async ({ page }) => {
+  await page.goto("/features");
+  await page.getByRole("button", { name: "Planned" }).click();
+  await expect(page.getByRole("heading", { name: "AI-assisted workflows" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Workspace foundation" })).toHaveCount(0);
+  await page.goto("/integrations");
+  await page.getByRole("textbox", { name: "Search integrations" }).fill("Supabase");
+  await expect(page.getByRole("heading", { name: "Supabase" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Email delivery" })).toHaveCount(0);
+});
+
+test("pricing does not invent prices or expose checkout", async ({ page }) => {
+  await page.goto("/pricing");
+  await expect(page.getByText(/No fabricated prices or checkout/i)).toBeVisible();
+  await expect(page.getByRole("link", { name: /contact the project/i })).toBeVisible();
+  await expect(page.getByRole("button", { name: /buy|subscribe|checkout/i })).toHaveCount(0);
+});
+
+test("case study examples are explicitly labelled illustrative", async ({ page }) => {
+  await page.goto("/case-studies/local-business-example");
+  await expect(page.getByText(/Illustrative scenario — not a customer case study/i)).toBeVisible();
+  await expect(page.getByRole("heading", { name: /local business workflow example/i })).toBeVisible();
+});
+
+test("unknown editorial slugs and recovery routes provide clear next steps", async ({ page }) => {
+  for (const route of ["/blog/missing-article", "/case-studies/missing-example", "/403", "/500", "/session-expired"]) {
+    await page.goto(route);
+    await expect(page.locator("h1").first()).toBeVisible();
+    await expect(page.getByRole("link", { name: /contact support/i })).toBeVisible();
+  }
 });
