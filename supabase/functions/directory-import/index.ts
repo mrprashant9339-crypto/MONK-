@@ -52,7 +52,7 @@ function stableJson(value: unknown): string {
     const object = value as Record<string, unknown>;
     return "{" + Object.keys(object).sort().map((key) => JSON.stringify(key) + ":" + stableJson(object[key])).join(",") + "}";
   }
-  return JSON.stringify(value);
+  return JSON.stringify(value) ?? "null";
 }
 
 async function sha256(value: string): Promise<string> {
@@ -145,6 +145,18 @@ Deno.serve(async (request) => {
         .maybeSingle();
 
       if (snapshotError) throw new Error("Snapshot write failed: " + snapshotError.message);
+      let snapshotId = snapshot?.id as string | undefined;
+      if (!snapshotId) {
+        const { data: existingSnapshot, error: existingSnapshotError } = await supabase
+          .from("monk_directory_source_snapshots")
+          .select("id")
+          .eq("source_id", source.id)
+          .eq("source_record_id", record.sourceRecordId)
+          .eq("snapshot_hash", snapshotHash)
+          .single();
+        if (existingSnapshotError) throw new Error("Snapshot confirmation failed: " + existingSnapshotError.message);
+        snapshotId = existingSnapshot.id;
+      }
       counts.snapshots++;
 
       const { data: mapping, error: mappingError } = await supabase
@@ -203,15 +215,17 @@ Deno.serve(async (request) => {
           source_id: source.id,
           source_record_id: record.sourceRecordId,
           institution_id: institutionId,
-          last_seen_snapshot_id: snapshot?.id ?? null,
+          last_seen_snapshot_id: snapshotId,
           last_seen_at: new Date().toISOString(),
         }, { onConflict: "source_id,source_record_id" });
       if (mapUpsertError) throw new Error("Source identity mapping failed: " + mapUpsertError.message);
 
-      if (snapshot?.id) {
-        await supabase.from("monk_directory_source_snapshots")
+      if (snapshotId) {
+        const { error: reviewStatusError } = await supabase.from("monk_directory_source_snapshots")
           .update({ import_status: "needs_review" })
-          .eq("id", snapshot.id);
+          .eq("id", snapshotId)
+          .eq("import_status", "received");
+        if (reviewStatusError) throw new Error("Snapshot status update failed: " + reviewStatusError.message);
       }
       counts.mappedRecords++;
     } catch (error) {
