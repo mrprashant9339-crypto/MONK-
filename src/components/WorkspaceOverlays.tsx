@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type KeyboardEvent } from "react";
 import { Activity, Bell, CheckSquare, Command, FolderKanban, Search, ShieldCheck, X, Zap } from "lucide-react";
 import "../workspace-overlays.css";
 
@@ -7,7 +7,7 @@ type Task={id:string;title:string;status:string;priority:string};
 type Mode="command"|"notifications"|null;
 export default function WorkspaceOverlays({mode,onClose,onNavigate,projects,tasks,onSelectProject}:{mode:Mode;onClose:()=>void;onNavigate:(section:string)=>void;projects:Project[];tasks:Task[];onSelectProject:(id:string)=>void}) {
   const [query,setQuery]=useState("");const [activeIndex,setActiveIndex]=useState(0);const [digest,setDigest]=useState(true);const [product,setProduct]=useState(true);
-  useEffect(()=>{if(mode!=="command"){setQuery("");setActiveIndex(0);}},[mode,mode==="command"]);
+  useEffect(()=>{if(mode!=="command"){setQuery("");setActiveIndex(0);}},[mode]);
   useEffect(()=>{try{const p=JSON.parse(localStorage.getItem("monk-notification-preferences-v1")||"{}");setDigest(p.digest!==false);setProduct(p.product!==false);}catch{}},[]);
   function savePrefs(next:{digest:boolean;product:boolean}){setDigest(next.digest);setProduct(next.product);try{localStorage.setItem("monk-notification-preferences-v1",JSON.stringify(next));}catch{}}
   const items=useMemo(()=>[
@@ -16,7 +16,7 @@ export default function WorkspaceOverlays({mode,onClose,onNavigate,projects,task
     ...tasks.map(t=>({kind:"task",label:t.title,detail:"Task · "+t.priority+" priority · "+t.status.replace("_"," "),key:"task-"+t.id}))
   ].filter(x=>(x.label+" "+x.detail).toLowerCase().includes(query.trim().toLowerCase())).slice(0,12),[projects,tasks,query]);
   if(!mode)return null;
-  function handleSearchKey(event:React.KeyboardEvent<HTMLInputElement>){if(event.key==="ArrowDown"){event.preventDefault();setActiveIndex(index=>Math.min(items.length-1,index+1));}else if(event.key==="ArrowUp"){event.preventDefault();setActiveIndex(index=>Math.max(0,index-1));}else if(event.key==="Enter"&&items[activeIndex]){event.preventDefault();choose(items[activeIndex]);}}\n  function choose(item:(typeof items)[number]){if(item.kind==="project"&&"id"in item){onSelectProject(item.id);onNavigate("Projects");}else if(item.kind==="task"){onNavigate("Tasks");}else onNavigate(item.label);onClose();}
+  function handleSearchKey(event:KeyboardEvent<HTMLInputElement>){if(event.key==="ArrowDown"){event.preventDefault();setActiveIndex(index=>Math.min(items.length-1,index+1));}else if(event.key==="ArrowUp"){event.preventDefault();setActiveIndex(index=>Math.max(0,index-1));}else if(event.key==="Enter"&&items[activeIndex]){event.preventDefault();choose(items[activeIndex]);}}\n  function choose(item:(typeof items)[number]){if(item.kind==="project"&&"id"in item){onSelectProject(item.id);onNavigate("Projects");}else if(item.kind==="task"){onNavigate("Tasks");}else onNavigate(item.label);onClose();}
   return <div className="wo-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)onClose();}}>
     <section className={mode==="command"?"wo-dialog":"wo-dialog wo-notification-dialog"} role="dialog" aria-modal="true" aria-label={mode==="command"?"Search and command menu":"Notifications and preferences"}>
       <header className="wo-header"><span>{mode==="command"?<Command/>:<Bell/>}{mode==="command"?"Search MONK":"Notifications"}</span><button onClick={onClose} aria-label="Close dialog"><X/></button></header>
