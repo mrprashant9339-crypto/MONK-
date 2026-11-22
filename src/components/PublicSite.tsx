@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type { ReactNode } from "react";
+import type { FormEvent, ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import "../public-site.css";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -104,11 +104,129 @@ function CampusPage() {
     <section className="portal-bottom-cta"><div><span className="section-kicker">FOR YOUR INSTITUTION</span><h2>Give your campus<br/>one clear workspace.</h2><p>Start with a secure institution account, then invite the people who need access.</p></div><button className="button-dark" onClick={() => navigate("/login?vertical=education&mode=signup")}>Set up MONK Campus <ArrowUpRight size={17}/></button></section>
   </main><Footer/></>;
 }
+
+type NearbyPlace = {
+  providerPlaceId: string;
+  name: string;
+  address: string | null;
+  category: string | null;
+  businessStatus: string | null;
+  distanceMeters: number | null;
+  mapsUrl: string | null;
+};
+
+function LocalBusinessFinder() {
+  const [category, setCategory] = useState("all");
+  const [radius, setRadius] = useState("5000");
+  const [query, setQuery] = useState("");
+  const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [places, setPlaces] = useState<NearbyPlace[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [searched, setSearched] = useState(false);
+
+  async function requestNearby(latitude: number, longitude: number) {
+    setLoading(true); setError(""); setSearched(true);
+    try {
+      const response = await fetch("/api/businesses/nearby", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ latitude, longitude, radiusMeters: Number(radius), placeType: category })
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "Nearby search is unavailable.");
+      setPlaces(payload.results ?? []);
+    } catch (reason) {
+      setPlaces([]);
+      setError(reason instanceof Error ? reason.message : "Nearby search is unavailable.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function useMyLocation() {
+    setError("");
+    if (!navigator.geolocation) {
+      setError("Location is not supported by this browser. Search by locality or PIN code instead.");
+      return;
+    }
+    setLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      position => {
+        const nextLocation = { latitude: position.coords.latitude, longitude: position.coords.longitude };
+        setLocation(nextLocation);
+        void requestNearby(nextLocation.latitude, nextLocation.longitude);
+      },
+      positionError => {
+        setLoading(false);
+        setError(positionError.code === positionError.PERMISSION_DENIED
+          ? "Location permission was denied. Search by locality, city or PIN code instead."
+          : "Your location could not be determined. Search by locality, city or PIN code instead.");
+      },
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 30000 }
+    );
+  }
+
+  async function searchByText(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const searchText = query.trim();
+    if (searchText.length < 2) { setError("Enter a business category, locality, city or PIN code."); return; }
+    setLoading(true); setError(""); setSearched(true);
+    try {
+      const response = await fetch("/api/businesses/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query: searchText,
+          ...(location ? { latitude: location.latitude, longitude: location.longitude, radiusMeters: Number(radius) } : {})
+        })
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "Business search is unavailable.");
+      setPlaces(payload.results ?? []);
+    } catch (reason) {
+      setPlaces([]);
+      setError(reason instanceof Error ? reason.message : "Business search is unavailable.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return <section className="local-finder" id="nearby-businesses">
+    <div className="local-finder-head">
+      <span className="section-kicker">DISCOVER YOUR AREA</span>
+      <h2>Find businesses<br/><em>around your location.</em></h2>
+      <p>Use your location only when you request nearby results, or search manually by business, locality, city or PIN code.</p>
+    </div>
+    <div className="local-finder-controls">
+      <div className="local-finder-filters">
+        <label>Business category<select value={category} onChange={event => setCategory(event.target.value)}>
+          <option value="all">All categories</option><option value="restaurant">Restaurants</option><option value="cafe">Cafés</option><option value="hospital">Hospitals</option><option value="pharmacy">Pharmacies</option><option value="bank">Banks</option><option value="atm">ATMs</option><option value="school">Schools</option><option value="university">Universities</option><option value="car_repair">Vehicle repair</option><option value="gas_station">Fuel stations</option><option value="grocery_store">Grocery stores</option><option value="supermarket">Supermarkets</option><option value="hardware_store">Hardware stores</option><option value="store">Shops</option>
+        </select></label>
+        <label>Search radius<select value={radius} onChange={event => setRadius(event.target.value)}><option value="1000">1 km</option><option value="3000">3 km</option><option value="5000">5 km</option><option value="10000">10 km</option><option value="25000">25 km</option></select></label>
+        <button type="button" className="button-dark" onClick={useMyLocation} disabled={loading}><MapPin size={16}/>{loading ? "Searching…" : "Use my location"}</button>
+      </div>
+      <form className="local-manual-search" onSubmit={searchByText}>
+        <label className="directory-search"><Search size={16}/><input value={query} onChange={event => setQuery(event.target.value)} placeholder="e.g. pharmacy in Muzaffarpur or 842001"/></label>
+        <button className="button-light" type="submit" disabled={loading}>Search area <ArrowRight size={15}/></button>
+      </form>
+    </div>
+    {error && <p className="local-finder-message" role="alert">{error}</p>}
+    {loading && <p className="local-finder-message" aria-live="polite">Finding current business listings…</p>}
+    {!loading && searched && !error && places.length === 0 && <p className="local-finder-message">No matching places were returned for this search. Try a wider radius or another category.</p>}
+    {places.length > 0 && <div className="nearby-place-grid">{places.map(place => <article className="nearby-place" key={place.providerPlaceId}>
+      <div><span className="nearby-place-category">{(place.category ?? "local business").replaceAll("_", " ")}</span><h3>{place.name}</h3><p><MapPin size={13}/>{place.address ?? "Address unavailable"}</p></div>
+      <div className="nearby-place-bottom"><span>{place.distanceMeters !== null ? `${(place.distanceMeters / 1000).toFixed(1)} km away` : place.businessStatus ?? "Listed place"}</span>{place.mapsUrl && <a href={place.mapsUrl} target="_blank" rel="noreferrer">Open in Google Maps <ArrowUpRight size={13}/></a>}</div>
+    </article>)}</div>}
+    <div className="local-finder-foot"><span>Location is requested only after you select “Use my location”.</span><span>Place information provided by Google Maps.</span></div>
+  </section>;
+}
+
 function BusinessPage() {
   const navigate = useNavigate();
   return <><Header active="business"/><main className="portal-page business-page"><section className="portal-hero"><div className="portal-hero-copy"><span className="eyebrow-pill"><Store size={14}/> MONK BUSINESS</span><h1>Run your business.<br/><em>Not the busywork.</em></h1><p>From a neighbourhood shop to a growing startup, connect customers, products, orders and people in one simple operating workspace.</p><div className="hero-actions"><button className="button-dark" onClick={() => navigate("/login?vertical=business&mode=signup")}>Create a business workspace <ArrowRight size={17}/></button><a href="#business-demo">See local business demo <ChevronRight size={16}/></a></div><div className="demo-label"><span className="demo-pulse"/> Sample workspace · No login required</div></div>
     <div className="business-preview"><div className="preview-top"><span><MonkMark/> BUSINESS OVERVIEW</span><span className="preview-status">DEMO</span></div><div className="business-name"><span className="store-avatar"><Store size={21}/></span><span><b>Muzaffarpur Cycle & Auto Works</b><small>Local repair & retail · Sample business</small></span></div><div className="business-metrics"><div><small>Today's sales</small><strong>₹8,450</strong><span>Illustrative</span></div><div><small>Open orders</small><strong>12</strong><span>Sample records</span></div></div><div className="business-activity"><span>RECENT ACTIVITY</span><div><i className="activity-dot pink-dot"/><span><b>New service booking</b><small>Brake service · 10:42 AM</small></span><strong>New</strong></div><div><i className="activity-dot yellow-dot"/><span><b>Stock updated</b><small>Cycle tubes · 11:15 AM</small></span><strong>Done</strong></div></div><small className="preview-disclaimer">Fictional local demo — no real business or transaction data</small></div></section>
-    <section className="portal-benefits"><div className="section-intro"><span className="section-kicker">MADE FOR EVERYDAY OPERATIONS</span><h2>From first enquiry<br/><em>to finished work.</em></h2><p>Simple tools for the real jobs that keep a business moving.</p></div><FeatureGrid items={businessFeatures}/></section>
+    <section className="portal-benefits"><div className="section-intro"><span className="section-kicker">MADE FOR EVERYDAY OPERATIONS</span><h2>From first enquiry<br/><em>to finished work.</em></h2><p>Simple tools for the real jobs that keep a business moving.</p></div><FeatureGrid items={businessFeatures}/></section><LocalBusinessFinder/>
     <section className="business-demo-section" id="business-demo"><div><span className="section-kicker">A LOCAL BUSINESS, AS A DEMO</span><h2>See how a neighbourhood<br/><em>business could run on MONK.</em></h2><p>This sample is set in Muzaffarpur to make the workflow relatable. It is a fictional example, not a claim that a local shop has joined MONK.</p><div className="demo-checks"><span><CheckCircle2 size={15}/> Customer enquiry to follow-up</span><span><CheckCircle2 size={15}/> Product and service inventory</span><span><CheckCircle2 size={15}/> Booking, invoice and payment status</span></div></div><div className="workflow-card"><div className="workflow-title"><span>ONE CUSTOMER JOURNEY</span><span className="workflow-live">SAMPLE FLOW</span></div>{[{n:"01",t:"Customer enquiry",d:"A customer asks for a cycle repair."},{n:"02",t:"Create service order",d:"Assign mechanic and promised delivery."},{n:"03",t:"Track parts & progress",d:"Record spare parts and work status."},{n:"04",t:"Invoice & close",d:"Issue bill and mark payment received."}].map((step,i)=><div className="workflow-step" key={step.n}><span>{step.n}</span><div><b>{step.t}</b><small>{step.d}</small></div>{i===3?<CheckCircle2 size={17}/>:<ChevronRight size={17}/>}</div>)}</div></section>
     <section className="roles-section"><span className="section-kicker">FROM SOLO OWNER TO TEAM</span><h2>One workspace for<br/><em>the people behind it.</em></h2><div className="role-chips">{["Owner / Admin","Manager","Sales","Accounts","Operations","Staff"].map(role=><span key={role}><CheckCircle2 size={15}/>{role}</span>)}</div><p>Business permissions are assigned by the workspace owner. Demo figures are illustrative only.</p></section>
     <section className="portal-bottom-cta"><div><span className="section-kicker">READY WHEN YOU ARE</span><h2>Make the next workday<br/>a little more organized.</h2><p>Set up your business workspace and invite your team when you are ready.</p></div><button className="button-dark" onClick={() => navigate("/login?vertical=business&mode=signup")}>Set up MONK Business <ArrowUpRight size={17}/></button></section>
