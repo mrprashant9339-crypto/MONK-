@@ -102,7 +102,7 @@ Each page follows the same acceptance checklist:
 
 **Interactions:** ticket draft create/read/delete/export; status filters and incident filters over clearly labelled preview data; vulnerability report mail handoff; privacy request draft; cookie preference controls; retry, refresh, home, contact support, copy reference ID, and return-to-previous-page. No local draft may be presented as a submitted server ticket. No uptime indicator may be fabricated.
 
-## Phase 3 — Authentication and account entry
+## Phase 3 — Authentication and account entry\n\n**Implementation update:** Added password recovery, password reset, email confirmation resend, authenticated TOTP MFA management, invitation entry and login recovery links. Uses existing Supabase Auth methods; no new auth schema is introduced. Automated route and form-validation tests added.\n
 
 - Login, signup, email verification, resend verification, forgot password, reset password.
 - MFA setup and challenge UI, authenticator/recovery code screens, passkey setup/sign-in UI where supported.
