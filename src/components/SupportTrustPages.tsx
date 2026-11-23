@@ -49,11 +49,11 @@ function ContactPage() {
       if(error) throw error;
       if(!data?.ok || !data?.ticketRef) throw new Error(data?.error || "Your request could not be submitted.");
       setSubmittedRef(data.ticketRef); setNotificationStatus(data.notification || "not_configured"); setName(""); setEmail(""); setMessage(""); setWebsite("");
-    } catch(error) { setSubmitError(error instanceof Error ? error.message : "Unable to submit your request. Please use the published email or WhatsApp route."); }
+    } catch(error) { setSubmitError(error instanceof Error ? error.message : "Unable to submit your request. Please contact admin@monk.monster."); }
     finally { setSending(false); }
   }
   return <Shell eyebrow="CONTACT SUPPORT" title="A clear path to the right help." intro="Submit a support request directly to MONK. A reference number is shown after the server confirms that your request has been stored.">
-    {submittedRef&&<div className="st-success-panel" role="status"><strong>Support request received.</strong><p>Your reference number is <strong>{submittedRef}</strong>. Keep it for future correspondence.</p><p>{notificationStatus==="sent"?"A notification email was sent to the support inbox.":notificationStatus==="failed"?"The request is saved, but the support notification email failed. Use the published email or WhatsApp route for urgent follow-up.":"The request is saved on the support server. Email alerts are not configured, so use the published email or WhatsApp route for urgent follow-up."}</p></div>}
+    {submittedRef&&<div className="st-success-panel" role="status"><strong>Support request received.</strong><p>Your reference number is <strong>{submittedRef}</strong>. Keep it for future correspondence.</p><p>{notificationStatus==="sent"?"A notification email was sent to the support inbox.":notificationStatus==="failed"?"The request is saved, but the support notification email failed. contact admin@monk.monster for urgent follow-up.":"The request is saved on the support server. Email alerts are not configured, so contact admin@monk.monster for urgent follow-up."}</p></div>}
     {submitError&&<div className="st-alert" role="alert">{submitError}</div>}
     <div className="st-grid st-contact-grid"><form className="st-card st-form" onSubmit={submit}>
       <div className="st-card-title"><MessageSquare/><div><h2>Write to the MONK team</h2><p>Required fields are marked with an asterisk.</p></div></div>
@@ -65,7 +65,7 @@ function ContactPage() {
       <div className="st-note"><ShieldCheck size={17}/> Never send passwords, one-time passcodes, full payment-card details or unnecessary identity documents.</div>
       <button className="st-primary" type="submit" disabled={!valid||sending}>{sending?<><RefreshCw size={16} className="st-spin"/> Submitting securely…</>:<><Mail size={16}/> Submit support request <ArrowUpRight size={16}/></>}</button>
     </form><aside className="st-card st-side-card"><span className="st-icon"><LifeBuoy/></span><h2>Other support routes</h2>
-      <Link to="/support/tickets"><ClipboardList/> Support tickets <ArrowRight/></Link><a href="https://wa.me/919288435641" target="_blank" rel="noreferrer"><MessageSquare/> WhatsApp support <ArrowUpRight/></a><Link to="/security-center"><ShieldCheck/> Security center <ArrowRight/></Link><Link to="/privacy-center"><LockKeyhole/> Privacy center <ArrowRight/></Link><Link to="/status"><Activity/> Service status <ArrowRight/></Link>
+      <Link to="/support/tickets"><ClipboardList/> Support tickets <ArrowRight/></Link><a href="" target="_blank" rel="noreferrer"><MessageSquare/> Email support <ArrowUpRight/></a><Link to="/security-center"><ShieldCheck/> Security center <ArrowRight/></Link><Link to="/privacy-center"><LockKeyhole/> Privacy center <ArrowRight/></Link><Link to="/status"><Activity/> Service status <ArrowRight/></Link>
       <div className="st-divider"/><p className="st-small">Prefer email? Use the published support address.</p><div className="st-email"><a href={`mailto:${emailAddress}`}>{emailAddress}</a><button type="button" aria-label="Copy support email" onClick={()=>{void navigator.clipboard?.writeText(emailAddress);setCopied(true);}}><Copy size={15}/></button></div>{copied&&<small className="st-success">Email address copied when clipboard permission is available.</small>}
     </aside></div>
   </Shell>;
@@ -89,7 +89,7 @@ function TicketListPage() {
     finally{setSending(false);}
   }
   return <Shell eyebrow="SUPPORT TICKETS" title="Keep every support request organized." intro="Submit a request to MONK's server-side support queue. This browser keeps a local reference copy; it is not the authoritative ticket database.">
-    {created&&<div className="st-success-panel" role="status"><strong>Support request received.</strong><p>Reference: <strong>{created}</strong>. Keep this number for follow-up.</p><p>{notificationStatus==="sent"?"A notification email was sent to the support inbox.":notificationStatus==="failed"?"The request is saved, but the support notification email failed. Use the published email or WhatsApp route for urgent follow-up.":"The request is saved on the support server. Email alerts are not configured, so use the published email or WhatsApp route for urgent follow-up."}</p></div>}
+    {created&&<div className="st-success-panel" role="status"><strong>Support request received.</strong><p>Reference: <strong>{created}</strong>. Keep this number for follow-up.</p><p>{notificationStatus==="sent"?"A notification email was sent to the support inbox.":notificationStatus==="failed"?"The request is saved, but the support notification email failed. contact admin@monk.monster for urgent follow-up.":"The request is saved on the support server. Email alerts are not configured, so contact admin@monk.monster for urgent follow-up."}</p></div>}
     {submitError&&<div className="st-alert" role="alert">{submitError}</div>}
     <div className="st-grid st-ticket-grid"><form className="st-card st-form" onSubmit={create}><div className="st-card-title"><ClipboardList/><div><h2>Submit a support request</h2><p>You will receive a reference number after successful submission.</p></div></div>
       <label>Your name *<input required minLength={2} maxLength={80} autoComplete="name" value={fullName} onChange={e=>setFullName(e.target.value)} placeholder="Full name"/></label>
