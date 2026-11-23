@@ -16,7 +16,8 @@ const publicRoutes = [
   "/security",
   "/accessibility",
   "/data-rights",
-  "/contact"
+  "/contact",
+  "/thank-you"
 ];
 
 test("public routes render the application without a blank screen", async ({ page }) => {
@@ -105,7 +106,7 @@ test("manifest and favicon are served by the production preview", async ({ reque
   expect(await favicon.text()).toContain("<svg");
 });
 
-test("contact form submits to the server-side support intake and shows a reference", async ({ page }) => {
+test("contact form submits to the server-side support intake and opens a noindex thank-you page", async ({ page }) => {
   await page.route("https://yucwackrbekwaxiyuobt.supabase.co/functions/v1/support-ticket-intake", async route => {
     await route.fulfill({
       status: 201,
@@ -118,7 +119,9 @@ test("contact form submits to the server-side support intake and shows a referen
   await page.getByLabel(/Email address/i).fill("test@example.com");
   await page.getByLabel(/Message/i).fill("I need help with my MONK workspace account.");
   await page.getByRole("button", { name: /Submit support request/i }).click();
-  await expect(page.getByRole("status")).toContainText("MONK-20261123-AB12CD34");
+  await expect(page.url()).toContain("/thank-you");
+  await expect(page.getByText("MONK-20261123-AB12CD34")).toBeVisible();
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", "noindex, nofollow");
 });
 
 test("unknown production URLs return an actual HTTP 404", async ({ request }) => {
@@ -136,4 +139,12 @@ test("route-specific titles and social preview tags are served before hydration"
   await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute("content", "summary_large_image");
   await page.goto("/business");
   await expect(page).toHaveTitle("MONK Business — Business Operations Workspace");
+});
+
+test("optional analytics do not load before consent or without a real GA4 ID", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator(".cookie-notice")).toBeVisible();
+  await expect(page.locator('script[src*="googletagmanager.com"]')).toHaveCount(0);
+  await page.getByRole("button", { name: "Accept optional" }).click();
+  await expect(page.locator('script[src*="googletagmanager.com"]')).toHaveCount(0);
 });
