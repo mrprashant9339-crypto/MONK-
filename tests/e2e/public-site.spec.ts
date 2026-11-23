@@ -119,7 +119,7 @@ test("contact form submits to the server-side support intake and opens a noindex
   await page.getByLabel(/Email address/i).fill("test@example.com");
   await page.getByLabel(/Message/i).fill("I need help with my MONK workspace account.");
   await page.getByRole("button", { name: /Submit support request/i }).click();
-  await expect(page.url()).toContain("/thank-you");
+  expect(page.url()).toContain("/thank-you");
   await expect(page.getByText("MONK-20261123-AB12CD34")).toBeVisible();
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", "noindex, nofollow");
 });
