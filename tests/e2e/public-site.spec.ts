@@ -3,6 +3,7 @@ import { expect, test } from "@playwright/test";
 const publicRoutes = [
   "/",
   "/about",
+  "/signup",
   "/documentation",
   "/updates",
   "/faq",
@@ -33,6 +34,18 @@ test("public routes render the application without a blank screen", async ({ pag
   }
 });
 
+test("homepage offers distinct Campus and Business paths", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: /I run a college.*Explore Campus/i }).click();
+  await expect(page).toHaveURL(/\/campus$/);
+  await page.getByRole("button", { name: /Create a college workspace/i }).click();
+  await expect(page).toHaveURL(/\/signup\?vertical=education$/);
+
+  await page.goto("/business");
+  await page.getByRole("button", { name: /Create a business workspace/i }).click();
+  await expect(page).toHaveURL(/\/signup\?vertical=business$/);
+});
+
 test("footer navigation opens the About page", async ({ page }) => {
   await page.goto("/");
   const aboutLink = page.locator("footer").getByRole("link", { name: /about the project/i });
@@ -42,8 +55,8 @@ test("footer navigation opens the About page", async ({ page }) => {
   await expect(page.getByRole("heading", { name: /two focused workspaces/i })).toBeVisible();
 });
 
-test("signup requires explicit terms and privacy acknowledgement", async ({ page }) => {
-  await page.goto("/login?mode=signup");
+test("canonical signup route and legacy query alias open the same registration flow", async ({ page }) => {
+  await page.goto("/signup");
   const checkbox = page.getByRole("checkbox");
   await expect(checkbox).toBeVisible();
   const createAccount = page.getByRole("button", { name: /create account/i });
@@ -52,6 +65,9 @@ test("signup requires explicit terms and privacy acknowledgement", async ({ page
   await expect(createAccount).toBeEnabled();
   await expect(page.getByRole("link", { name: /terms of service/i })).toBeVisible();
   await expect(page.getByRole("link", { name: /privacy policy/i })).toBeVisible();
+  await page.goto("/login?mode=signup");
+  await expect(page.getByRole("checkbox")).toBeVisible();
+  await expect(page.getByRole("button", { name: /create account/i })).toBeDisabled();
 });
 
 test("public pages remain usable at a narrow mobile viewport", async ({ page }) => {
@@ -197,4 +213,144 @@ test("login exposes password recovery and email verification routes", async ({ p
   await expect(page.getByRole("link", { name: /forgot password/i })).toBeVisible();
   await expect(page.getByRole("link", { name: /resend email verification/i })).toBeVisible();
   await expect(page.getByRole("link", { name: /account security \/ mfa/i })).toBeVisible();
+});
+
+test("Campus directory provides India-wide institution filters and published-record search", async ({ page }) => {
+  await page.goto("/campus", { waitUntil: "domcontentloaded" });
+  const directory = page.locator("#college-directory");
+  await expect(directory).toBeVisible();
+  await expect(directory.getByRole("heading", { name: /explore institutions/i })).toBeVisible();
+
+  const category = directory.getByLabel("Category");
+  const region = directory.getByLabel("State / Union Territory");
+  const ownership = directory.getByLabel("Ownership");
+  await expect(category.locator("option")).toContainText(["All categories", "Engineering & Technology", "Medical Colleges", "Law Colleges"]);
+  await expect(region.locator("option")).toContainText(["All India", "Andaman and Nicobar Islands", "Bihar"]);
+  await expect(ownership.locator("option")).toContainText(["All ownership types", "Central Government", "Private"]);
+
+  await category.selectOption("engineering");
+  await region.selectOption("BR");
+  await ownership.selectOption("private");
+  const search = directory.getByRole("searchbox", { name: "Search institutions" });
+  await search.fill("IIT");
+  await search.press("Enter");
+  await expect(directory.locator(".national-directory-summary")).toContainText(/published institution record/i);
+  await expect(directory.locator("form button[type=submit]")).toBeVisible();
+});
+
+test("support ticket form submits through the intake API and stores only a receipt reference", async ({ page }) => {
+  let submitted: Record<string, unknown> | null = null;
+
+  await page.route("**/functions/v1/support-ticket-intake", async (route) => {
+    const request = route.request();
+    const origin = request.headers().origin ?? "*";
+    if (request.method() === "OPTIONS") {
+      await route.fulfill({
+        status: 200,
+        headers: {
+          "access-control-allow-origin": origin,
+          "access-control-allow-methods": "POST, OPTIONS",
+          "access-control-allow-headers": request.headers()["access-control-request-headers"] ?? "authorization, apikey, content-type, x-client-info",
+          "access-control-max-age": "86400",
+          vary: "Origin"
+        },
+        body: "ok"
+      });
+      return;
+    }
+
+    submitted = request.postDataJSON() as Record<string, unknown>;
+    await route.fulfill({
+      status: 201,
+      headers: {
+        "access-control-allow-origin": origin,
+        "access-control-allow-headers": "authorization, apikey, content-type, x-client-info",
+        "content-type": "application/json",
+        vary: "Origin"
+      },
+      body: JSON.stringify({
+        ok: true,
+        ticketRef: "MONK-2026-TEST",
+        createdAt: "2026-11-23T00:00:00.000Z",
+        notification: "sent"
+      })
+    });
+  });
+
+  await page.goto("/support/tickets");
+  await page.getByLabel(/full name/i).fill("Test User");
+  await page.getByLabel(/subject/i).fill("Test support request");
+  await page.getByLabel(/category/i).selectOption("Campus workspace");
+  await page.getByLabel(/email address/i).fill("test@example.com");
+  await page.getByLabel(/details/i).fill("This is a browser test of the support intake submission.");
+  await expect(page.getByRole("button", { name: /submit support request/i })).toBeEnabled();
+  await page.getByRole("button", { name: /submit support request/i }).click();
+
+  await expect(page.getByRole("status")).toContainText("MONK-2026-TEST");
+  expect(submitted).toMatchObject({
+    fullName: "Test User",
+    email: "test@example.com",
+    category: "Campus workspace",
+    subject: "Test support request"
+  });
+  expect(submitted?.website).toBe("");
+
+  const receipt = await page.evaluate(() => JSON.parse(localStorage.getItem("monk-support-tickets-v1") || "[]"));
+  expect(receipt).toHaveLength(1);
+  expect(receipt[0]).toMatchObject({
+    id: "MONK-2026-TEST",
+    ticketRef: "MONK-2026-TEST",
+    status: "Submitted"
+  });
+  expect(receipt[0]).not.toHaveProperty("message");
+  expect(receipt[0]).not.toHaveProperty("email");
+  expect(receipt[0]).not.toHaveProperty("fullName");
+
+  await page.goto("/support/tickets/MONK-2026-TEST");
+  await expect(page.getByText(/submission received; live tracking unavailable/i)).toBeVisible();
+  await expect(page.getByText(/support inbox notified/i)).toBeVisible();
+});
+
+test("support intake failures show the backend rejection and do not save a receipt", async ({ page }) => {
+  await page.route("**/functions/v1/support-ticket-intake", async (route) => {
+    const request = route.request();
+    const origin = request.headers().origin ?? "*";
+    if (request.method() === "OPTIONS") {
+      await route.fulfill({
+        status: 200,
+        headers: {
+          "access-control-allow-origin": origin,
+          "access-control-allow-methods": "POST, OPTIONS",
+          "access-control-allow-headers": request.headers()["access-control-request-headers"] ?? "authorization, apikey, content-type, x-client-info",
+          "access-control-max-age": "86400",
+          vary: "Origin"
+        },
+        body: "ok"
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 429,
+      headers: {
+        "access-control-allow-origin": origin,
+        "access-control-allow-headers": "authorization, apikey, content-type, x-client-info",
+        "content-type": "application/json",
+        vary: "Origin"
+      },
+      body: JSON.stringify({ error: "Too many requests from this connection. Please try again later." })
+    });
+  });
+
+  await page.goto("/support/tickets");
+  await page.getByLabel(/full name/i).fill("Test User");
+  await page.getByLabel(/subject/i).fill("Rate limit test");
+  await page.getByLabel(/category/i).selectOption("Technical issue");
+  await page.getByLabel(/email address/i).fill("test@example.com");
+  await page.getByLabel(/details/i).fill("This request should be rejected by the server-side rate limit.");
+  await page.getByRole("button", { name: /submit support request/i }).click();
+
+  await expect(page.getByRole("alert")).toContainText("Too many requests from this connection");
+  await expect(page.getByRole("button", { name: /submit support request/i })).toBeEnabled();
+  const receipt = await page.evaluate(() => JSON.parse(localStorage.getItem("monk-support-tickets-v1") || "[]"));
+  expect(receipt).toHaveLength(0);
 });

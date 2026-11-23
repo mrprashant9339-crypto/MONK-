@@ -26,3 +26,6 @@
 @media(max-width:760px){.st-header{height:66px;padding:0 17px}.st-header nav{display:none}.st-back{font-size:12px}.st-wrap{padding:24px 16px 0}.st-hero{padding:42px 0 27px}.st-hero h1{letter-spacing:-1.5px}.st-hero p{font-size:14px}.st-contact-grid,.st-ticket-grid{grid-template-columns:1fr}.st-card{padding:20px;border-radius:15px}.st-status-grid,.st-resource-grid{grid-template-columns:1fr}.st-detail dl{grid-template-columns:1fr 1fr}.st-footer{margin-top:42px}.st-footer div{gap:12px}.st-security-note{flex-direction:column}.st-system-card{padding:28px 22px}.st-mail-link{width:100%}}
 @media(max-width:390px){.st-header{padding:0 12px}.st-brand{font-size:18px}.st-wrap{padding-left:12px;padding-right:12px}.st-card{padding:16px}.st-detail dl{grid-template-columns:1fr}.st-system-actions>*{width:100%}}
 @media(prefers-reduced-motion:reduce){.st-resource,.st-primary,.st-switch span:after{transition:none}}
+
+/* Keep the support anti-bot field available to form parsers but outside the visible layout. */
+.st-honeypot{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;clip-path:inset(50%)!important;white-space:nowrap!important;border:0!important}

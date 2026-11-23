@@ -8,7 +8,7 @@ This inventory distinguishes implemented foundations, previews, planned surfaces
 |---|---|---|
 | / | Implemented | Public home and Campus/Business entry paths |
 | /about | Implemented | Project identity and development status |
-| /campus | Implemented preview | College data is illustrative and incomplete; national directory verification remains separate work |
+| /campus | Public page + live directory UI implemented | India-wide search reads published records from `monk_directory_institutions`; filters cover categories, all states/UTs and ownership. Production currently has 0 published records; regulator-source permission and dataset verification remain pending |
 | /business | Implemented preview | Fictional local business workflow |
 | /features | Frontend implemented | Filterable catalogue; feature maturity is labelled |
 | /solutions | Frontend implemented | Campus, education groups, local business and startup use cases |
@@ -34,15 +34,22 @@ This inventory distinguishes implemented foundations, previews, planned surfaces
 | /security | Implemented | Security overview; not a certification |
 | /accessibility | Implemented | Accessibility information |
 | /data-rights | Implemented | Local request draft; not server submission |
-| /login | Implemented foundation | Password sign-in and signup with legal acknowledgement; Supabase Auth required |\n| /forgot-password | Frontend + existing auth API | Password recovery request; generic privacy-safe response |\n| /account-recovery | Frontend + existing auth API | Alias for password recovery |\n| /reset-password | Frontend + existing auth API | Strong password and confirmation validation; requires valid recovery session |\n| /verify-email | Frontend + existing auth API | Confirmation guidance and resend signup email |\n| /mfa | Frontend + existing auth API | Authenticated TOTP enrolment, verification and factor removal |\n| /invite | Frontend + existing invitation RPC | Preserves invite token through sign-in; server validates invitation after authentication |
+| /login | Implemented foundation | Password sign-in; Supabase Auth required |
+| /signup | Canonical registration route | Opens the existing Supabase Auth signup flow with legal acknowledgement; legacy `/login?mode=signup` remains supported |
+| /forgot-password | Frontend + existing auth API | Password recovery request; generic privacy-safe response |
+| /account-recovery | Frontend + existing auth API | Alias for password recovery |
+| /reset-password | Frontend + existing auth API | Strong password and confirmation validation; requires valid recovery session |
+| /verify-email | Frontend + existing auth API | Confirmation guidance and resend signup email |
+| /mfa | Frontend + existing auth API | Authenticated TOTP enrolment, verification and factor removal |
+| /invite | Frontend + existing invitation RPC | Preserves invite token through sign-in; server validates invitation after authentication |
 
 ## Trust, support and recovery
 
 | Route | Current state | Notes |
 |---|---|---|
 | /contact | Implemented frontend handoff | Opens a prepared email; does not claim server receipt |
-| /support/tickets | Implemented local draft | Browser-local ticket drafts only |
-| /support/tickets/:id | Implemented local draft detail | Reads current browser storage |
+| /support/tickets | Server-side intake connected | Public form calls the rate-limited `support-ticket-intake` Edge Function; successful references are stored locally with minimal metadata. No server-side status/reply lookup yet |
+| /support/tickets/:id | Submission receipt / local draft detail | Shows locally retained submission reference or legacy draft; does not claim live ticket status |
 | /status | Transparency page | Monitoring is unavailable; no uptime claim |
 | /incidents | Transparency page | No authoritative incident feed connected |
 | /security-center | Implemented | Security navigation and safe reporting guidance |
@@ -67,11 +74,23 @@ This inventory distinguishes implemented foundations, previews, planned surfaces
 - Mobile navigation, responsive card grids, contained horizontal table scrolling and reduced-motion styles.
 - No new runtime dependency added by Phases 0–2.
 
-## Workspace sections currently exposed in navigation\n\n| Route / capability | Current state | Notes |\n|---|---|---|\n| Workspace search / command palette | Frontend implemented | Ctrl/Command+K, search across navigation, projects and tasks; arrow-key and Enter selection |\n| Notifications centre | Frontend implemented | Honest empty state; notification preferences are local-only until delivery is connected |\n| Calendar | Frontend implemented | Month navigation and agenda from task due dates; no external calendar sync or event creation |\n| Profile settings | Frontend implemented | Display name update through existing Supabase Auth user metadata |\n| Display preferences | Frontend implemented | Compact density, week start and notification preferences stored locally |\n| Account security settings | Frontend implemented | Links to MFA, password recovery and security guidance |\n| First-time onboarding | Frontend implemented | Five-step Campus/Business organisation setup; local draft persistence; existing create_organization RPC |\n
+## Workspace sections currently exposed in navigation
+
+| Route / capability | Current state | Notes |
+|---|---|---|
+| Workspace search / command palette | Frontend implemented | Ctrl/Command+K, search across navigation, projects and tasks; arrow-key and Enter selection |
+| Notifications centre | Frontend implemented | Honest empty state; notification preferences are local-only until delivery is connected |
+| Calendar | Frontend implemented | Month navigation and agenda from task due dates; no external calendar sync or event creation |
+| Profile settings | Frontend implemented | Display name update through existing Supabase Auth user metadata |
+| Display preferences | Frontend implemented | Compact density, week start and notification preferences stored locally |
+| Account security settings | Frontend implemented | Links to MFA, password recovery and security guidance |
+| First-time onboarding | Frontend implemented | Five-step Campus/Business organisation setup; local draft persistence; existing create_organization RPC |
+
 
 | Section | Current state from source review |
 |---|---|
-| Calendar | Frontend implemented | Task due-date calendar and selected-day agenda |\n| Overview | Implemented foundation |
+| Calendar | Frontend implemented | Task due-date calendar and selected-day agenda |
+| Overview | Implemented foundation |
 | Projects | Implemented foundation |
 | Tasks | Implemented foundation |
 | Team | Implemented foundation |
@@ -80,7 +99,8 @@ This inventory distinguishes implemented foundations, previews, planned surfaces
 | Sales | Dedicated live-data frontend implemented | Overview, dynamic status pipeline, people/company directories, existing lead RPC and spreadsheet-safe CSV export |
 | Education | Partial functional module; education vertical |
 | Documents | Functional local-first frontend preview | Search, drag/drop and file picker; temporary in-memory queue, download/remove; no server upload or persistence until secure storage is connected |
-| Business Operations | Dedicated frontend surfaces implemented; backend scope explicitly gated | Business control room, organization structure, deals desk, source-record timeline, products, inventory, orders, invoices, finance and reports; only verified organization/CRM/project data is live |\n| Analytics | Dedicated reports view | Reports from verified leads, contacts, companies and projects; no revenue or financial estimates |
+| Business Operations | Dedicated frontend surfaces implemented; backend scope explicitly gated | Business control room, organization structure, deals desk, source-record timeline, products, inventory, orders, invoices, finance and reports; only verified organization/CRM/project data is live |
+| Analytics | Dedicated reports view | Reports from verified leads, contacts, companies and projects; no revenue or financial estimates |
 | Finance | Dedicated finance UI / ledger backend pending | Ledger-not-connected state; no balances, transactions, tax or payment data fabricated |
 | Marketplace | Placeholder / integration catalog pending |
 | AI Copilot | Placeholder / AI runtime not connected |
@@ -94,7 +114,7 @@ This inventory distinguishes implemented foundations, previews, planned surfaces
 - Actual status monitoring, incident ingestion, support ticket delivery and privacy request submission.
 - Backend pricing, subscription checkout and billing entitlements.
 - Real customer case studies or independently verified outcomes.
-- Complete national college directory population and source verification.
+- Complete national institution directory population and source verification; the all-India search UI is implemented, but published records remain empty until source permissions and verification are approved.
 
 ## Inventory maintenance rules
 

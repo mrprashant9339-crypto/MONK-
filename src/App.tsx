@@ -34,7 +34,7 @@ export default function App() {
   const [authBusy, setAuthBusy] = useState(false);
   const [authMessage, setAuthMessage] = useState("");
   const [legalAccepted, setLegalAccepted] = useState(false);
-  const [authMode, setAuthMode] = useState<"login" | "signup">(new URLSearchParams(window.location.search).get("mode") === "signup" ? "signup" : "login");
+  const [authMode, setAuthMode] = useState<"login" | "signup">(window.location.pathname === "/signup" || new URLSearchParams(window.location.search).get("mode") === "signup" ? "signup" : "login");
   const [tasks, setTasks] = useState<Task[]>(demoTasks);
   const [projects, setProjects] = useState<Project[]>([]);
   const [projectId, setProjectId] = useState("");
@@ -126,10 +126,12 @@ export default function App() {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const mode = params.get("mode");
-    if (mode === "login" || mode === "signup") setAuthMode(mode);
+    if (location.pathname === "/signup") setAuthMode("signup");
+    else if (mode === "login" || mode === "signup") setAuthMode(mode);
+    else if (location.pathname === "/login") setAuthMode("login");
     const vertical = params.get("vertical");
     if (vertical === "education" || vertical === "business") setOrganizationVertical(vertical);
-  }, [location.search]);
+  }, [location.pathname, location.search]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -328,9 +330,9 @@ export default function App() {
 
   if (isAuthRoute(location.pathname)) return <Suspense fallback={<main className="auth-page"><section className="auth-card">Loading secure account page…</section></main>}><AuthRoutes /></Suspense>;
 
-  if (!session && location.pathname !== "/login") return <PublicSite />;
+  if (!session && location.pathname !== "/login" && location.pathname !== "/signup") return <PublicSite />;
 
-  if (!session && location.pathname === "/login") return (
+  if (!session && (location.pathname === "/login" || location.pathname === "/signup")) return (
     <main className="auth-page"><div className="auth-card">
       <a className="brand" href="/"><span className="brand-mark">M</span> MONK<span className="brand-dot">.</span></a>
       <p className="eyebrow">YOUR WORKSPACE, REIMAGINED</p><h1>Make room for<br /><em>meaningful work.</em></h1>

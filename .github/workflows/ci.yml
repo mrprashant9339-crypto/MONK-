@@ -2,9 +2,9 @@ name: MONK CI
 
 on:
   push:
-    branches: [main, frontend-first-complete]
+    branches: [main, frontend-first-complete, phase-7-campus-workspace]
   pull_request:
-    branches: [main]
+    branches: [main, frontend-first-complete]
   workflow_dispatch:
 
 permissions:
