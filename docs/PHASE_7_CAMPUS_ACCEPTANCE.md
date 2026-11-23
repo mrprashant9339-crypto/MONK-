@@ -107,3 +107,11 @@ Phase 7 is complete only when all accepted Campus modules are implemented end-to
 - CI now runs on pushes to `phase-7-campus-workspace` and pull requests targeting `frontend-first-complete`; previously this branch/PR base was not included in the workflow triggers.
 
 This is one completed hardening vertical, not a claim that all Phase 7 acceptance items—or all Phase 0–7 roadmap items—are complete.
+
+### 2026-11-23 — 7.5 India-wide directory UI
+- Added the shared India states/UT and institution/regulator taxonomy from the national directory workstream.
+- Replaced the Bihar-only static college preview with a public directory component backed by `monk_directory_institutions` and its published-record RLS policy.
+- Added data-driven category, state/UT, ownership and text filters; pagination; field-level verification labels; official website links; regulator reference links; responsive empty/error states.
+- Search results are request-sequenced to prevent stale responses from replacing newer filters. External institution links are restricted to HTTP(S) URLs without embedded credentials.
+- Added Playwright coverage for the India-wide filter and search controls.
+- Production database audit: the directory currently contains **0 institution records** and 19 registered regulator/source records remain `terms_review_status='pending'`, `import_enabled=false`. Therefore the UI is implemented, but national dataset ingestion and verification are **not complete**. Imports remain blocked until source reuse terms and permissions are reviewed and approved.
