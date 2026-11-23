@@ -98,7 +98,7 @@ const businessFeatures = [
 ];
 
 function MonkMark({ large = false }: { large?: boolean }) {
-  return <span className={large ? "monk-mark monk-mark-large" : "monk-mark"}><img src="/brand/monk-icon.svg" alt="MONK" /></span>;
+  return <span className={large ? "monk-mark monk-mark-large" : "monk-mark"}><img src="/brand/monk-icon.svg" alt="" /></span>;
 }
 function Brand({ portal }: { portal?: Portal }) {
   if (portal) return <img className={`brand-lockup brand-lockup-${portal}`} src={`/brand/monk-${portal}-logo.svg`} alt={portal === "campus" ? "MONK Campus" : "MONK Business"} />;
