@@ -66,6 +66,7 @@ function ThankYouPage() {
 }
 
 function ContactPage() {
+  const navigate = useNavigate();
   const [name,setName]=useState(""); const [email,setEmail]=useState(""); const [topic,setTopic]=useState("General enquiry"); const [message,setMessage]=useState(""); const [website,setWebsite]=useState("");
   const [copied,setCopied]=useState(false); const [sending,setSending]=useState(false); const [submitError,setSubmitError]=useState("");
   const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && name.trim().length>=2 && message.trim().length>=10;
@@ -82,7 +83,6 @@ function ContactPage() {
     finally { setSending(false); }
   }
   return <Shell eyebrow="CONTACT SUPPORT" title="A clear path to the right help." intro="Submit a support request directly to MONK. A reference number is shown after the server confirms that your request has been stored.">
-    {submittedRef&&<div className="st-success-panel" role="status"><strong>Support request received.</strong><p>Your reference number is <strong>{submittedRef}</strong>. Keep it for future correspondence.</p><p>{notificationStatus==="sent"?"A notification email was sent to the support inbox.":notificationStatus==="failed"?"The request is saved, but the support notification email failed. contact admin@monk.monster for urgent follow-up.":"The request is saved on the support server. Email alerts are not configured, so contact admin@monk.monster for urgent follow-up."}</p></div>}
     {submitError&&<div className="st-alert" role="alert">{submitError}</div>}
     <div className="st-grid st-contact-grid"><form className="st-card st-form" onSubmit={submit}>
       <div className="st-card-title"><MessageSquare/><div><h2>Write to the MONK team</h2><p>Required fields are marked with an asterisk.</p></div></div>
@@ -101,9 +101,10 @@ function ContactPage() {
 }
 
 function TicketListPage() {
+  const navigate = useNavigate();
   const [tickets,setTickets]=useState<Ticket[]>(()=>readList<Ticket>(TICKET_KEY));
-  const [fullName,setFullName]=useState(""); const [subject,setSubject]=useState(""); const [category,setCategory]=useState("Technical issue"); const [email,setEmail]=useState(""); const [message,setMessage]=useState(""); const [created,setCreated]=useState<string|null>(null);
-  const [sending,setSending]=useState(false); const [notificationStatus,setNotificationStatus]=useState<string|null>(null); const [submitError,setSubmitError]=useState("");
+  const [fullName,setFullName]=useState(""); const [subject,setSubject]=useState(""); const [category,setCategory]=useState("Technical issue"); const [email,setEmail]=useState(""); const [message,setMessage]=useState(""); const [website,setWebsite]=useState("");
+  const [sending,setSending]=useState(false); const [submitError,setSubmitError]=useState("");
   const valid=fullName.trim().length>=2 && subject.trim().length>=4 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && message.trim().length>=10;
   async function create(e:FormEvent){
     e.preventDefault(); if(!valid||sending)return; setSending(true);setSubmitError("");
@@ -119,7 +120,6 @@ function TicketListPage() {
     finally{setSending(false);}
   }
   return <Shell eyebrow="SUPPORT TICKETS" title="Keep every support request organized." intro="Submit a request to MONK's server-side support queue. This browser keeps a local reference copy; it is not the authoritative ticket database.">
-    {created&&<div className="st-success-panel" role="status"><strong>Support request received.</strong><p>Reference: <strong>{created}</strong>. Keep this number for follow-up.</p><p>{notificationStatus==="sent"?"A notification email was sent to the support inbox.":notificationStatus==="failed"?"The request is saved, but the support notification email failed. contact admin@monk.monster for urgent follow-up.":"The request is saved on the support server. Email alerts are not configured, so contact admin@monk.monster for urgent follow-up."}</p></div>}
     {submitError&&<div className="st-alert" role="alert">{submitError}</div>}
     <div className="st-grid st-ticket-grid"><form className="st-card st-form" onSubmit={create}><div className="st-card-title"><ClipboardList/><div><h2>Submit a support request</h2><p>You will receive a reference number after successful submission.</p></div></div>
       <label>Your name *<input required minLength={2} maxLength={80} autoComplete="name" value={fullName} onChange={e=>setFullName(e.target.value)} placeholder="Full name"/></label>
@@ -212,7 +212,7 @@ function SystemFallbackPage({kind}:{kind:"offline"|"maintenance"|"error"|"not-fo
 }
 
 export function isSupportTrustRoute(path:string) {
-  return ["/thank-you","/contact","/support/tickets","/status","/incidents","/security-center","/security/vulnerability-disclosure","/privacy-center","/cookies/preferences","/data-rights","/offline","/maintenance","/error","/thank-you"].includes(path) || /^\/support\/tickets\/[^/]+$/.test(path);
+  return ["/thank-you","/contact","/support/tickets","/status","/incidents","/security-center","/security/vulnerability-disclosure","/privacy-center","/cookies/preferences","/data-rights","/offline","/maintenance","/error"].includes(path) || /^\/support\/tickets\/[^/]+$/.test(path);
 }
 export default function SupportTrustPages() {
   const {pathname}=useLocation();
