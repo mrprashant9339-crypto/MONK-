@@ -213,3 +213,40 @@ test("direct signup path opens the canonical account creation screen", async ({ 
   await expect(page.getByRole("button", { name: /create account/i })).toBeVisible();
   await expect(page.getByRole("checkbox")).toBeVisible();
 });
+
+test("homepage and consent banner fit common mobile widths", async ({ page }) => {
+  for (const width of [360, 390]) {
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto("/");
+    const dimensions = await page.evaluate(() => ({
+      viewport: document.documentElement.clientWidth,
+      document: document.documentElement.scrollWidth,
+      banner: (() => {
+        const element = document.querySelector(".cookie-notice");
+        if (!element) return null;
+        const rect = element.getBoundingClientRect();
+        return { top: rect.top, bottom: rect.bottom, height: rect.height };
+      })()
+    }));
+    expect(dimensions.document, `horizontal overflow at ${width}px`).toBeLessThanOrEqual(width + 2);
+    expect(dimensions.banner).not.toBeNull();
+    expect(dimensions.banner!.top).toBeGreaterThanOrEqual(0);
+    expect(dimensions.banner!.bottom).toBeLessThanOrEqual(844);
+    await expect(page.getByRole("button", { name: /I run a college/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /I run a business/i })).toBeVisible();
+  }
+});
+
+test("public header controls expose a visible keyboard focus indicator", async ({ page }) => {
+  await page.goto("/");
+  await page.keyboard.press("Tab");
+  const focusStyle = await page.evaluate(() => {
+    const active = document.activeElement as HTMLElement | null;
+    if (!active) return null;
+    const style = getComputedStyle(active);
+    return { tag: active.tagName, outlineStyle: style.outlineStyle, outlineWidth: style.outlineWidth };
+  });
+  expect(focusStyle).not.toBeNull();
+  expect(focusStyle!.outlineStyle).not.toBe("none");
+  expect(focusStyle!.outlineWidth).not.toBe("0px");
+});
