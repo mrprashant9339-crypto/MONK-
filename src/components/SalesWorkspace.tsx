@@ -91,7 +91,7 @@ export default function SalesWorkspace({organizationId}:{organizationId:string|n
       const first = cell.trimStart()[0];
       const safe = first && "=+-@".includes(first) ? "'" + cell : cell;
       return '"' + safe.split('"').join('""') + '"';
-    }).join(",")).join("\\r\\n");
+    }).join(",")).join("\r\n");
     const url=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
     const anchor=document.createElement("a");anchor.href=url;anchor.download="monk-sales-leads.csv";document.body.appendChild(anchor);anchor.click();anchor.remove();window.setTimeout(()=>URL.revokeObjectURL(url),1000);
   }
