@@ -24,7 +24,7 @@ function Shell({ eyebrow, title, intro, children }: { eyebrow: string; title: st
   useEffect(() => { document.title = `${title} | MONK`; const meta = document.querySelector('meta[name="description"]'); if (meta) meta.setAttribute("content", intro.slice(0, 155)); }, [title, intro]);
   return <main className="st-shell">
     <header className="st-header">
-      <Link to="/" className="st-brand"><span className="st-mark">M</span><span>MONK<span>.</span></span></Link>
+      <Link to="/" className="st-brand"><img className="st-mark" src="/brand/monk-icon.svg" alt="" /><span>MONK<span>.</span></span></Link>
       <nav><Link to="/contact">Contact</Link><Link to="/support/tickets">Support tickets</Link><Link to="/security-center">Security</Link></nav>
       <Link to="/" className="st-back"><ArrowLeft size={15}/> Website</Link>
     </header>
