@@ -4,12 +4,12 @@
 MONK has one public website and two distinct product journeys. The root route is public and does not require authentication. Visitors choose Campus or Business, explore public product information and clearly-labelled demo content, and authenticate only when they create or enter a private workspace.
 
 ## Journey A — MONK Campus
-- Public page: college-focused product overview, institutional workflows, role model and directory preview.
+- Public page: college-focused product overview, institutional workflows, role model and India-wide institution directory search.
 - Institution types: government and private colleges, with verified affiliation and institute identifiers.
 - Roles: platform admin, institution admin/principal, HOD, faculty, student and optional guardian.
 - Core modules: institution profile, departments/branches, courses/semesters, notices, timetable, attendance, assignments, assessments/results, documents and analytics.
 - Data policy: public directory data must be sourced from official SBTE/AICTE/state sources; demo metrics and student records must be marked fictional and never presented as live records.
-- Current UI: public Campus landing page and a small illustrative college directory preview. Full verified 46-institute dataset and complete institutional workflows remain follow-up work.
+- Current UI: public Campus landing page with data-backed, published-record directory search across Indian states/UTs, categories and ownership types. The production directory currently has zero published institution records; the 19 registered authority/source records remain gated pending terms review. Complete source-authorized dataset ingestion and institutional workflows remain follow-up work.
 
 ## Journey B — MONK Business
 - Public page: business-focused overview, workflows, feature cards and sample dashboard.
@@ -51,7 +51,7 @@ MONK has one public website and two distinct product journeys. The root route is
 - Business public landing page: implemented; shop workflow is fictional demo data.
 - Animated M mark and pink/white/yellow/black visual system: implemented.
 - Existing Supabase authentication integration: retained; selected vertical is preselected and synced into the existing onboarding state.
-- Full 46-college verified dataset: not yet imported.
+- India-wide source-authorized and verified institution dataset: not yet imported; source terms and import permission remain pending.
 - Complete campus role workflows and production RBAC audit: pending.
 - Real business integrations and advanced Finance/Marketplace/AI modules: pending.
 - Production deployment of the latest public-portal build: must be confirmed by Cloudflare deployment record and live smoke tests.
