@@ -10,7 +10,7 @@ function mockEnv() {
       async fetch(request) {
         const url = new URL(request.url);
         requested.push(url.pathname);
-        if (url.pathname === "/index.html") return new Response("<main>MONK app</main>", { status: 200, headers: { "content-type": "text/html" } });
+        if (url.pathname === "/") return new Response("<main>MONK app</main>", { status: 200, headers: { "content-type": "text/html" } });
         if (url.pathname === "/404.html") return new Response("<main>404</main>", { status: 404, headers: { "content-type": "text/html" } });
         return new Response("not found", { status: 404 });
       }
@@ -24,7 +24,7 @@ test("known public routes are routed to the SPA entry document", async () => {
     const env = mockEnv();
     const response = await worker.fetch(new Request(`https://monk.monster${route}`), env);
     assert.equal(response.status, 200);
-    assert.deepEqual(env.requested, ["/index.html"]);
+    assert.deepEqual(env.requested, ["/"]);
   }
 });
 
@@ -40,5 +40,5 @@ test("trailing slashes resolve to the canonical application route", async () => 
   const env = mockEnv();
   const response = await worker.fetch(new Request("https://monk.monster/campus/"), env);
   assert.equal(response.status, 200);
-  assert.deepEqual(env.requested, ["/index.html"]);
+  assert.deepEqual(env.requested, ["/"]);
 });
