@@ -5,6 +5,7 @@ import "../business-operations-live.css";
 
 type View = "Command"|"Organization"|"Deals"|"Activities"|"Products"|"Inventory"|"Orders"|"Invoices"|"Finance"|"Reports";
 type Row = Record<string,any>;
+type OrderLine = {product_id:string;quantity:string;unit_price:string;tax_rate:string};
 const views:{name:View;icon:any;eyebrow:string;title:string;description:string}[]=[
 {name:"Command",icon:Sparkles,eyebrow:"BUSINESS CONTROL ROOM",title:"The business, in motion.",description:"Live commercial operations, connected to this organization."},
 {name:"Organization",icon:Building2,eyebrow:"ORGANIZATION STRUCTURE",title:"Build the operating structure.",description:"Branches, departments and accountable teams."},
@@ -37,6 +38,7 @@ export default function BusinessOperationsLive({organizationId,initialView="Comm
  const [form,setForm]=useState<Record<string,string>>({});
  const [showForm,setShowForm]=useState(false);
  const [formKind,setFormKind]=useState("");
+ const [orderLines,setOrderLines]=useState<OrderLine[]>([{product_id:"",quantity:"1",unit_price:"",tax_rate:"0"}]);
  const [selectedOrder,setSelectedOrder]=useState("");
  const [warehouseForOrder,setWarehouseForOrder]=useState<Record<string,string>>({});
  const [paymentAmount,setPaymentAmount]=useState("");
@@ -123,7 +125,7 @@ export default function BusinessOperationsLive({organizationId,initialView="Comm
  },[data]);
  const current=views.find(x=>x.name===view)!;
  const filtered=(rows:Row[],keys:string[])=>rows.filter(row=>keys.map(k=>row[k]??"").join(" ").toLowerCase().includes(query.toLowerCase()));
- const openForm=(kind:string,defaults:Record<string,string>={})=>{setFormKind(kind);setForm(defaults);setShowForm(true);setError("");setNotice("");};
+ const openForm=(kind:string,defaults:Record<string,string>={})=>{setFormKind(kind);setForm(defaults);if(kind==="order")setOrderLines([{product_id:"",quantity:"1",unit_price:"",tax_rate:"0"}]);setShowForm(true);setError("");setNotice("");};
 
  async function submitForm(event:FormEvent){
   event.preventDefault();if(!supabase||!organizationId)return;setSaving(true);setError("");setNotice("");
@@ -140,8 +142,13 @@ export default function BusinessOperationsLive({organizationId,initialView="Comm
     if(rpcError)throw rpcError;result={error:null,data:movementId};
    }
    if(formKind==="order"){
-    const product=data.products.find(x=>x.id===form.product_id);if(!product)throw new Error("Select an active product.");
-    const {data:orderId,error:rpcError}=await supabase.rpc("business_create_order",{p_company_id:form.company_id||null,p_contact_id:form.contact_id||null,p_currency:form.currency||currency,p_notes:form.notes||null,p_items:[{product_id:product.id,description:product.name,quantity:Number(form.quantity),unit_price:Number(form.unit_price||product.unit_price),tax_rate:Number(form.tax_rate??product.tax_rate)}]});
+    if(!orderLines.length)throw new Error("Add at least one order item.");
+    const items=orderLines.map(line=>{
+     const product=data.products.find(x=>x.id===line.product_id&&x.status==="active");
+     if(!product)throw new Error("Select an active product for every order line.");
+     return {product_id:product.id,description:product.name,quantity:Number(line.quantity),unit_price:Number(line.unit_price||product.unit_price),tax_rate:Number(line.tax_rate||product.tax_rate)};
+    });
+    const {data:orderId,error:rpcError}=await supabase.rpc("business_create_order",{p_company_id:form.company_id||null,p_contact_id:form.contact_id||null,p_currency:form.currency||currency,p_notes:form.notes||null,p_items:items});
     if(rpcError)throw rpcError;result={error:null,data:orderId};
    }
    if(formKind==="account")result=await supabase.from("business_finance_accounts").insert({organization_id:organizationId,code:form.code.trim().toUpperCase(),name:form.name.trim(),account_type:form.account_type,currency:form.currency||currency,created_by:(await supabase.auth.getUser()).data.user?.id});
@@ -218,7 +225,19 @@ export default function BusinessOperationsLive({organizationId,initialView="Comm
    {formKind==="activity"&&<><label>Subject<input required maxLength={180} value={form.subject||""} onChange={e=>setForm({...form,subject:e.target.value})}/></label><label>Type<select value={form.kind||"task"} onChange={e=>setForm({...form,kind:e.target.value})}>{["call","email","meeting","task","note","follow_up"].map(x=><option key={x}>{x}</option>)}</select></label><label>Deal<select value={form.deal_id||""} onChange={e=>setForm({...form,deal_id:e.target.value})}><option value="">No linked deal</option>{data.deals.map(x=><option key={x.id} value={x.id}>{x.title}</option>)}</select></label><label>Contact<select value={form.contact_id||""} onChange={e=>setForm({...form,contact_id:e.target.value})}><option value="">No linked contact</option>{data.contacts.map(x=><option key={x.id} value={x.id}>{x.first_name} {x.last_name}</option>)}</select></label><label>Due date<input type="datetime-local" value={form.due_at||""} onChange={e=>setForm({...form,due_at:e.target.value})}/></label><label>Notes<textarea value={form.body||""} onChange={e=>setForm({...form,body:e.target.value})}/></label></>}
    {formKind==="product"&&<><label>SKU<input required maxLength={40} value={form.sku||""} onChange={e=>setForm({...form,sku:e.target.value})}/></label><label>Name<input required maxLength={180} value={form.name||""} onChange={e=>setForm({...form,name:e.target.value})}/></label><label>Type<select value={form.product_type||"product"} onChange={e=>setForm({...form,product_type:e.target.value})}><option value="product">Product</option><option value="service">Service</option></select></label><label>Unit<input value={form.unit||"unit"} onChange={e=>setForm({...form,unit:e.target.value})}/></label><label>Sale price<input required type="number" min="0" step="0.01" value={form.unit_price||"0"} onChange={e=>setForm({...form,unit_price:e.target.value})}/></label><label>Cost price<input type="number" min="0" step="0.01" value={form.unit_cost||"0"} onChange={e=>setForm({...form,unit_cost:e.target.value})}/></label><label>Tax rate %<input type="number" min="0" max="100" step="0.001" value={form.tax_rate||"0"} onChange={e=>setForm({...form,tax_rate:e.target.value})}/></label></>}
    {formKind==="movement"&&<><label>Product<select required value={form.product_id||""} onChange={e=>setForm({...form,product_id:e.target.value})}><option value="">Choose product</option>{data.products.map(x=><option key={x.id} value={x.id}>{x.sku} · {x.name}</option>)}</select></label><label>Warehouse<select required value={form.warehouse_id||""} onChange={e=>setForm({...form,warehouse_id:e.target.value})}><option value="">Choose warehouse</option>{data.warehouses.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label><label>Movement<select value={form.movement_type||"receipt"} onChange={e=>setForm({...form,movement_type:e.target.value})}>{["opening","receipt","issue","adjustment_in","adjustment_out"].map(x=><option key={x}>{x}</option>)}</select></label><label>Quantity<input required type="number" min="0.001" step="0.001" value={form.quantity||""} onChange={e=>setForm({...form,quantity:e.target.value})}/></label><label>Unit cost<input type="number" min="0" step="0.01" value={form.unit_cost||"0"} onChange={e=>setForm({...form,unit_cost:e.target.value})}/></label><label>Reference<input value={form.reference||""} onChange={e=>setForm({...form,reference:e.target.value})}/></label><label>Notes<textarea value={form.notes||""} onChange={e=>setForm({...form,notes:e.target.value})}/></label></>}
-   {formKind==="order"&&<><label>Product<select required value={form.product_id||""} onChange={e=>{const p=data.products.find(x=>x.id===e.target.value);setForm({...form,product_id:e.target.value,unit_price:String(p?.unit_price??0),tax_rate:String(p?.tax_rate??0)});}}><option value="">Choose catalog item</option>{data.products.filter(x=>x.status==="active").map(x=><option key={x.id} value={x.id}>{x.sku} · {x.name}</option>)}</select></label><label>Quantity<input required type="number" min="0.001" step="0.001" value={form.quantity||"1"} onChange={e=>setForm({...form,quantity:e.target.value})}/></label><label>Unit price<input required type="number" min="0" step="0.01" value={form.unit_price||""} onChange={e=>setForm({...form,unit_price:e.target.value})}/></label><label>Tax rate %<input type="number" min="0" max="100" step="0.001" value={form.tax_rate||"0"} onChange={e=>setForm({...form,tax_rate:e.target.value})}/></label><label>Company<select value={form.company_id||""} onChange={e=>setForm({...form,company_id:e.target.value})}><option value="">No company</option>{data.companies.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label><label>Contact<select value={form.contact_id||""} onChange={e=>setForm({...form,contact_id:e.target.value})}><option value="">No contact</option>{data.contacts.map(x=><option key={x.id} value={x.id}>{x.first_name} {x.last_name}</option>)}</select></label><label>Notes<textarea value={form.notes||""} onChange={e=>setForm({...form,notes:e.target.value})}/></label></>}
+   {formKind==="order"&&<>
+    <div className="bol-order-lines">{orderLines.map((line,index)=><div className="bol-order-line" key={index}>
+     <label>Product<select required value={line.product_id} onChange={e=>{const p=data.products.find(x=>x.id===e.target.value);setOrderLines(current=>current.map((item,i)=>i===index?{...item,product_id:e.target.value,unit_price:String(p?.unit_price??0),tax_rate:String(p?.tax_rate??0)}:item));}}><option value="">Choose catalog item</option>{data.products.filter(x=>x.status==="active").map(x=><option key={x.id} value={x.id}>{x.sku} · {x.name}</option>)}</select></label>
+     <label>Quantity<input required type="number" min="0.001" step="0.001" value={line.quantity} onChange={e=>setOrderLines(current=>current.map((item,i)=>i===index?{...item,quantity:e.target.value}:item))}/></label>
+     <label>Unit price<input required type="number" min="0" step="0.01" value={line.unit_price} onChange={e=>setOrderLines(current=>current.map((item,i)=>i===index?{...item,unit_price:e.target.value}:item))}/></label>
+     <label>Tax rate %<input type="number" min="0" max="100" step="0.001" value={line.tax_rate} onChange={e=>setOrderLines(current=>current.map((item,i)=>i===index?{...item,tax_rate:e.target.value}:item))}/></label>
+     {orderLines.length>1&&<button type="button" className="bol-danger-action" onClick={()=>setOrderLines(current=>current.filter((_,i)=>i!==index))}>Remove line</button>}
+    </div>)}</div>
+    <button type="button" className="bol-add-line" onClick={()=>setOrderLines(current=>[...current,{product_id:"",quantity:"1",unit_price:"",tax_rate:"0"}])}><Plus size={13}/> Add another item</button>
+    <label>Company<select value={form.company_id||""} onChange={e=>setForm({...form,company_id:e.target.value})}><option value="">No company</option>{data.companies.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
+    <label>Contact<select value={form.contact_id||""} onChange={e=>setForm({...form,contact_id:e.target.value})}><option value="">No contact</option>{data.contacts.map(x=><option key={x.id} value={x.id}>{x.first_name} {x.last_name}</option>)}</select></label>
+    <label>Notes<textarea value={form.notes||""} onChange={e=>setForm({...form,notes:e.target.value})}/></label>
+   </>}
    {formKind==="account"&&<><label>Account type<select required value={form.account_type||"asset"} onChange={e=>setForm({...form,account_type:e.target.value})}>{["asset","liability","equity","income","expense"].map(x=><option key={x}>{x}</option>)}</select></label></>}
    <footer><button type="button" className="bol-cancel" onClick={()=>setShowForm(false)}>Cancel</button><button type="submit" disabled={saving}>{saving?"Saving…":"Save record"}</button></footer>
   </form></section></div>}
