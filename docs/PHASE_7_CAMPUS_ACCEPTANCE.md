@@ -96,3 +96,14 @@ The existing repository already contains a substantial education foundation: ins
 ## Definition of done
 
 Phase 7 is complete only when all accepted Campus modules are implemented end-to-end, all role and tenant security tests pass, data provenance for the institution directory is auditable, CI is green on the exact head commit, and production release checks are separately verified. A roadmap document or a rendered screen alone does not count as implementation completion.
+
+## Implementation log
+
+### 2026-11-23 — Phase 7.0 guardian scope hardening
+- The guardian portal now resolves the authenticated guardian profile before requesting guardian-child links.
+- The browser query explicitly filters `education_student_guardians.guardian_id` to the resolved guardian profile; RLS remains the authoritative server-side boundary.
+- Added `supabase/tests/phase_7_guardian_portal_scope.sql` to assert RLS on guardian/student records, guardian-specific parent policies for attendance, documents and published results, private storage scope, and the private bucket limit.
+- Read-only verification against the active Supabase database confirmed all guardian-link, parent-record, private-storage and bucket assertions.
+- CI now runs on pushes to `phase-7-campus-workspace` and pull requests targeting `frontend-first-complete`; previously this branch/PR base was not included in the workflow triggers.
+
+This is one completed hardening vertical, not a claim that all Phase 7 acceptance items—or all Phase 0–7 roadmap items—are complete.
