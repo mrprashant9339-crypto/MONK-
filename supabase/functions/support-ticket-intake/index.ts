@@ -52,11 +52,22 @@ Deno.serve(async (req: Request) => {
   if (origin && !allowedOrigins.has(origin)) return json({ error: "Origin not allowed." }, 403, origin);
 
   try {
-    const contentLength = Number(req.headers.get("content-length") || "0");
-    if (contentLength > 12000) return json({ error: "Request is too large." }, 413, origin);
-    const body = await req.json();
-    if (!body || typeof body !== "object" || Array.isArray(body)) {
-      return json({ error: "Invalid request." }, 400, origin);
+    // Enforce the limit against the actual payload, not only Content-Length (which
+    // may be absent or incorrect on streamed/chunked requests).
+    const rawBody = await req.text();
+    if (new TextEncoder().encode(rawBody).byteLength > 12000) {
+      return json({ error: "Request is too large." }, 413, origin);
+    }
+
+    let body: Record<string, unknown>;
+    try {
+      const parsed: unknown = JSON.parse(rawBody);
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        return json({ error: "Invalid request." }, 400, origin);
+      }
+      body = parsed as Record<string, unknown>;
+    } catch {
+      return json({ error: "Invalid JSON request." }, 400, origin);
     }
 
     // Honeypot: silently accept bots without storing or notifying.
