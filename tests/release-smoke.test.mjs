@@ -100,3 +100,24 @@ test("public route metadata provides distinct titles and descriptions", async ()
   assert.equal(new Set(titles).size, titles.length, "page titles must be unique");
   assert.equal(new Set(descriptions).size, descriptions.length, "page descriptions must be unique");
 });
+
+test("social sharing metadata and placeholder image are complete", async () => {
+  const html = await readFile(join(root, "index.html"), "utf8");
+  assert.match(html, /property="og:image" content="https:\/\/monk\.monster\/brand\/monk-share-placeholder\.svg"/);
+  assert.match(html, /property="og:image:width" content="1200"/);
+  assert.match(html, /property="og:image:height" content="630"/);
+  assert.match(html, /name="twitter:card" content="summary_large_image"/);
+  const image = await readFile(join(root, "public", "brand", "monk-share-placeholder.svg"), "utf8");
+  assert.match(image, /width="1200" height="630"/);
+  assert.match(image, /OFFICIAL SHARE IMAGE/);
+});
+
+test("every authored image element has an alt attribute", async () => {
+  const files = (await walk(join(root, "src"))).filter(path => /\.(?:ts|tsx|js|jsx)$/.test(path));
+  for (const file of files) {
+    const source = await readFile(file, "utf8");
+    for (const match of source.matchAll(/<img\b[^>]*>/g)) {
+      assert.match(match[0], /\balt=/, `missing alt text in ${file}: ${match[0]}`);
+    }
+  }
+});
