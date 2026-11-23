@@ -152,3 +152,20 @@ test("GA4 is loaded only after analytics consent and a real measurement ID", asy
   assert.match(privacy, /sessionStorage/);
   assert.match(privacy, /localStorage/);
 });
+
+test("thank-you conversions are emitted only for a real submission context and accepted analytics", async () => {
+  const support = await readFile(join(root, "src", "components", "SupportTrustPages.tsx"), "utf8");
+  const legal = await readFile(join(root, "src", "components", "LegalPages.tsx"), "utf8");
+  assert.match(support, /monk:thank-you-conversion/);
+  assert.match(support, /monk:thank-you-ready/);
+  assert.match(legal, /preferences\.analytics/);
+  assert.match(legal, /pending === "signup" \? "sign_up" : "generate_lead"/);
+  assert.match(legal, /monk:cookie-preferences-changed/);
+});
+
+test("cookie preferences page uses the shared consent record version", async () => {
+  const support = await readFile(join(root, "src", "components", "SupportTrustPages.tsx"), "utf8");
+  assert.match(support, /version:2/);
+  assert.match(support, /monk:cookie-preferences-changed/);
+  assert.doesNotMatch(support, /No analytics provider is currently active/);
+});
