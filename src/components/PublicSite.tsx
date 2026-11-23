@@ -10,7 +10,8 @@ import { ArrowRight, ArrowUpRight, GraduationCap, Store, Users, BookOpen, Shield
 type Portal = "campus" | "business";
 
 const PUBLIC_PAGE_METADATA: Record<string, { title: string; description: string }> = {
-  "/thank-you": { title: "Submission received — MONK", description: "Your MONK submission has been received. Review the next steps and keep your reference number if one was provided." },\n  "/": { title: "MONK — Campus & Business Workspaces", description: "MONK brings college operations and business workflows into focused, connected workspaces. Explore Campus and Business." },
+  "/thank-you": { title: "Submission received — MONK", description: "Your MONK submission has been received. Review the next steps and keep your reference number if one was provided." },
+  "/": { title: "MONK — Campus & Business Workspaces", description: "MONK brings college operations and business workflows into focused, connected workspaces. Explore Campus and Business." },
   "/about": { title: "About MONK — Independent Workspace Platform", description: "Learn about MONK, its independent development, product direction and current preview availability." },
   "/documentation": { title: "MONK Documentation — Product Guide", description: "Explore MONK product guidance, workspace concepts and available workflows for Campus and Business." },
   "/updates": { title: "MONK Updates — Product Progress", description: "Read product updates and development notes for the MONK Campus and Business workspaces." },
