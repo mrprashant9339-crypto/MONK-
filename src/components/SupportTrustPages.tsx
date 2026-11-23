@@ -75,7 +75,7 @@ function TicketListPage() {
   const [tickets,setTickets]=useState<Ticket[]>(()=>readList<Ticket>(TICKET_KEY));
   const [fullName,setFullName]=useState(""); const [subject,setSubject]=useState(""); const [category,setCategory]=useState("Technical issue"); const [email,setEmail]=useState(""); const [message,setMessage]=useState(""); const [created,setCreated]=useState<string|null>(null);
   const [sending,setSending]=useState(false); const [notificationStatus,setNotificationStatus]=useState<string|null>(null); const [submitError,setSubmitError]=useState("");
-  const valid=subject.trim().length>=4 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && message.trim().length>=10;
+  const valid=fullName.trim().length>=2 && subject.trim().length>=4 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && message.trim().length>=10;
   async function create(e:FormEvent){
     e.preventDefault(); if(!valid||sending)return; setSending(true);setSubmitError("");setCreated(null);
     try {
