@@ -62,8 +62,15 @@ test("browser source contains no privileged Supabase secret key", async () => {
   }
 });
 
-test("Cloudflare serves the Vite build with SPA route fallback", async () => {
+test("Cloudflare serves the Vite build through the Worker and real 404 page", async () => {
   const config = await readFile(join(root, "wrangler.jsonc"), "utf8");
   assert.match(config, /"directory"\s*:\s*"\.\/dist"/);
-  assert.match(config, /"not_found_handling"\s*:\s*"single-page-application"/);
+  assert.match(config, /"main"\s*:\s*"\.\/worker\.js"/);
+  assert.match(config, /"binding"\s*:\s*"ASSETS"/);
+  assert.match(config, /"not_found_handling"\s*:\s*"404-page"/);
+  const worker = await readFile(join(root, "worker.js"), "utf8");
+  assert.match(worker, /isApplicationRoute/);
+  const notFound = await readFile(join(root, "public", "404.html"), "utf8");
+  assert.match(notFound, /<meta name="robots" content="noindex, nofollow">/);
+  assert.match(notFound, /Back to MONK/);
 });
