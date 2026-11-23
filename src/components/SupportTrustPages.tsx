@@ -39,7 +39,7 @@ function Shell({ eyebrow, title, intro, children }: { eyebrow: string; title: st
 
 function ContactPage() {
   const [name,setName]=useState(""); const [email,setEmail]=useState(""); const [topic,setTopic]=useState("General enquiry"); const [message,setMessage]=useState(""); const [website,setWebsite]=useState("");
-  const [copied,setCopied]=useState(false); const [sending,setSending]=useState(false); const [submittedRef,setSubmittedRef]=useState<string|null>(null); const [submitError,setSubmitError]=useState("");
+  const [copied,setCopied]=useState(false); const [sending,setSending]=useState(false); const [submittedRef,setSubmittedRef]=useState<string|null>(null); const [notificationStatus,setNotificationStatus]=useState<string|null>(null); const [submitError,setSubmitError]=useState("");
   const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && name.trim().length>=2 && message.trim().length>=10;
   async function submit(e:FormEvent) {
     e.preventDefault(); if(!valid || sending) return;
@@ -48,12 +48,12 @@ function ContactPage() {
       const {data,error}=await supabase.functions.invoke("support-ticket-intake",{body:{fullName:name,email,category:topic,subject:topic,message,website}});
       if(error) throw error;
       if(!data?.ok || !data?.ticketRef) throw new Error(data?.error || "Your request could not be submitted.");
-      setSubmittedRef(data.ticketRef); setName(""); setEmail(""); setMessage(""); setWebsite("");
+      setSubmittedRef(data.ticketRef); setNotificationStatus(data.notification || "not_configured"); setName(""); setEmail(""); setMessage(""); setWebsite("");
     } catch(error) { setSubmitError(error instanceof Error ? error.message : "Unable to submit your request. Please use the published email or WhatsApp route."); }
     finally { setSending(false); }
   }
   return <Shell eyebrow="CONTACT SUPPORT" title="A clear path to the right help." intro="Submit a support request directly to MONK. A reference number is shown after the server confirms that your request has been stored.">
-    {submittedRef&&<div className="st-success-panel" role="status"><strong>Support request received.</strong><p>Your reference number is <strong>{submittedRef}</strong>. Keep it for future correspondence.</p></div>}
+    {submittedRef&&<div className="st-success-panel" role="status"><strong>Support request received.</strong><p>Your reference number is <strong>{submittedRef}</strong>. Keep it for future correspondence.</p><p>{notificationStatus==="sent"?"A notification email was sent to the support inbox.":notificationStatus==="failed"?"The request is saved, but the support notification email failed. Use the published email or WhatsApp route for urgent follow-up.":"The request is saved on the support server. Email alerts are not configured, so use the published email or WhatsApp route for urgent follow-up."}</p></div>}
     {submitError&&<div className="st-alert" role="alert">{submitError}</div>}
     <div className="st-grid st-contact-grid"><form className="st-card st-form" onSubmit={submit}>
       <div className="st-card-title"><MessageSquare/><div><h2>Write to the MONK team</h2><p>Required fields are marked with an asterisk.</p></div></div>
@@ -74,7 +74,7 @@ function ContactPage() {
 function TicketListPage() {
   const [tickets,setTickets]=useState<Ticket[]>(()=>readList<Ticket>(TICKET_KEY));
   const [subject,setSubject]=useState(""); const [category,setCategory]=useState("Technical issue"); const [email,setEmail]=useState(""); const [message,setMessage]=useState(""); const [created,setCreated]=useState<string|null>(null);
-  const [sending,setSending]=useState(false); const [submitError,setSubmitError]=useState("");
+  const [sending,setSending]=useState(false); const [notificationStatus,setNotificationStatus]=useState<string|null>(null); const [submitError,setSubmitError]=useState("");
   const valid=subject.trim().length>=4 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && message.trim().length>=10;
   async function create(e:FormEvent){
     e.preventDefault(); if(!valid||sending)return; setSending(true);setSubmitError("");setCreated(null);
@@ -84,12 +84,12 @@ function TicketListPage() {
       if(!data?.ok||!data?.ticketRef)throw new Error(data?.error||"The support request could not be submitted.");
       const ticket:Ticket={id:data.ticketRef,subject:subject.trim(),category,message:message.trim(),email:email.trim(),createdAt:data.createdAt||new Date().toISOString(),status:"Submitted"};
       const next=[ticket,...tickets]; if(storeList(TICKET_KEY,next))setTickets(next);
-      setCreated(ticket.id);setSubject("");setMessage("");
+      setCreated(ticket.id);setNotificationStatus(data.notification || "not_configured");setSubject("");setMessage("");
     } catch(error){setSubmitError(error instanceof Error?error.message:"Unable to submit your request. Please try again.");}
     finally{setSending(false);}
   }
   return <Shell eyebrow="SUPPORT TICKETS" title="Keep every support request organized." intro="Submit a request to MONK's server-side support queue. This browser keeps a local reference copy; it is not the authoritative ticket database.">
-    {created&&<div className="st-success-panel" role="status"><strong>Support request received.</strong><p>Reference: <strong>{created}</strong>. Keep this number for follow-up.</p></div>}
+    {created&&<div className="st-success-panel" role="status"><strong>Support request received.</strong><p>Reference: <strong>{created}</strong>. Keep this number for follow-up.</p><p>{notificationStatus==="sent"?"A notification email was sent to the support inbox.":notificationStatus==="failed"?"The request is saved, but the support notification email failed. Use the published email or WhatsApp route for urgent follow-up.":"The request is saved on the support server. Email alerts are not configured, so use the published email or WhatsApp route for urgent follow-up."}</p></div>}
     {submitError&&<div className="st-alert" role="alert">{submitError}</div>}
     <div className="st-grid st-ticket-grid"><form className="st-card st-form" onSubmit={create}><div className="st-card-title"><ClipboardList/><div><h2>Submit a support request</h2><p>You will receive a reference number after successful submission.</p></div></div>
       <label>Subject *<input required minLength={4} maxLength={120} value={subject} onChange={e=>setSubject(e.target.value)} placeholder="Briefly describe the issue"/></label>
