@@ -177,7 +177,7 @@ test("FAQ answers are grounded in current published product and policy details",
   assert.match(faq, /not a complete live admission directory/);
   assert.match(faq, /does not offer a paid subscription/);
   assert.match(faq, /email draft/);
-  assert.equal((faq.match(/title:/g) || []).length, 8);
+  assert.equal((faq.match(/title:/g) || []).length, 9);
 });
 
 test("reviews section contains placeholders only and no fabricated customer claims", async () => {
