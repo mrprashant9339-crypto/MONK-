@@ -39,8 +39,8 @@ const PUBLIC_PAGE_METADATA: Record<string, { title: string; description: string 
 };
 
 function updatePublicPageMetadata(pathname: string) {
-  const path = pathname.length > 1 ? pathname.replace(/\\/+$/, "") : "/";
-  const metadata = PUBLIC_PAGE_METADATA[path] ?? (/^\\/support\\/tickets\\/[^/]+$/.test(path)
+  const path = pathname.length > 1 ? pathname.replace(/\/+$/, "") : "/";
+  const metadata = PUBLIC_PAGE_METADATA[path] ?? (/^\/support\/tickets\/[^/]+$/.test(path)
     ? { title: "Support Ticket Reference — MONK", description: "View the support ticket reference information available in this browser." }
     : { title: "Page not found — MONK", description: "The requested page could not be found on MONK." });
   document.title = metadata.title;
@@ -55,7 +55,7 @@ function updatePublicPageMetadata(pathname: string) {
     element.content = content;
   };
   setMeta("description", metadata.description);
-  const privatePath = ["/support/tickets", "/privacy-center", "/cookies/preferences", "/status", "/offline", "/maintenance", "/error"].includes(path) || /^\\/support\\/tickets\\//.test(path);
+  const privatePath = ["/support/tickets", "/privacy-center", "/cookies/preferences", "/status", "/offline", "/maintenance", "/error"].includes(path) || /^\/support\/tickets\//.test(path);
   setMeta("robots", privatePath ? "noindex, nofollow" : "index, follow, max-image-preview:large");
 
   let canonical = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
