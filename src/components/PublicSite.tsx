@@ -8,6 +8,65 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { ArrowRight, ArrowUpRight, GraduationCap, Store, Users, BookOpen, ShieldCheck, BarChart3, CalendarDays, ClipboardList, Package, Receipt, Menu, X, CheckCircle2, MapPin, Search, Layers3, Workflow, ChevronRight, Mail, Github, Instagram, Linkedin, Youtube } from "lucide-react";
 
 type Portal = "campus" | "business";
+
+const PUBLIC_PAGE_METADATA: Record<string, { title: string; description: string }> = {
+  "/": { title: "MONK — Campus & Business Workspaces", description: "MONK brings college operations and business workflows into focused, connected workspaces. Explore Campus and Business." },
+  "/about": { title: "About MONK — Independent Workspace Platform", description: "Learn about MONK, its independent development, product direction and current preview availability." },
+  "/documentation": { title: "MONK Documentation — Product Guide", description: "Explore MONK product guidance, workspace concepts and available workflows for Campus and Business." },
+  "/updates": { title: "MONK Updates — Product Progress", description: "Read product updates and development notes for the MONK Campus and Business workspaces." },
+  "/faq": { title: "MONK FAQ — Accounts, Workspaces & Access", description: "Find answers about MONK accounts, Campus and Business workspaces, previews, access and support." },
+  "/campus": { title: "MONK Campus — College & Institution Workspaces", description: "Explore a connected workspace concept for colleges, polytechnics, students, faculty and institution teams." },
+  "/business": { title: "MONK Business — Business Operations Workspace", description: "Explore customer, inventory, orders and team workflows in the MONK Business workspace." },
+  "/contact": { title: "Contact MONK — Support & Enquiries", description: "Contact the MONK team about account access, product questions, technical issues or privacy requests." },
+  "/support/tickets": { title: "Support Tickets — MONK", description: "Submit a support request to MONK or review the local reference details available in this browser." },
+  "/status": { title: "MONK Service Status", description: "View the current service status information published by MONK." },
+  "/incidents": { title: "MONK Incident History", description: "Review service incident information and updates published by MONK." },
+  "/security-center": { title: "MONK Security Center", description: "Read about MONK security practices, responsible use and security contact information." },
+  "/security/vulnerability-disclosure": { title: "Vulnerability Disclosure — MONK", description: "Read how to report a suspected security vulnerability to MONK responsibly." },
+  "/privacy-center": { title: "Privacy Center — MONK", description: "Find privacy information and ways to contact MONK about personal information requests." },
+  "/cookies/preferences": { title: "Cookie Preferences — MONK", description: "Review and update optional cookie preferences for the MONK website." },
+  "/data-rights": { title: "Data Rights Requests — MONK", description: "Contact MONK to request access, correction or deletion of personal information." },
+  "/offline": { title: "MONK — Offline", description: "MONK is currently unavailable offline. Reconnect to the internet and try again." },
+  "/maintenance": { title: "MONK — Maintenance", description: "MONK is temporarily unavailable while maintenance is in progress." },
+  "/error": { title: "MONK — Something Went Wrong", description: "An unexpected error occurred. Return to MONK or contact support if the issue continues." },
+  "/privacy": { title: "Privacy Policy — MONK", description: "Read how MONK processes account, workspace, support and technical information." },
+  "/terms": { title: "Terms of Service — MONK", description: "Read the terms governing access to the MONK website and workspaces." },
+  "/cookies": { title: "Cookie Policy — MONK", description: "Learn how cookies and browser storage are used by the MONK website." },
+  "/refunds": { title: "Refund Policy — MONK", description: "Read the MONK refund and cancellation information." },
+  "/disclaimer": { title: "Disclaimer — MONK", description: "Read important limitations and product-preview information for MONK." },
+  "/security": { title: "Security Overview — MONK", description: "Read the security overview and responsible access information for MONK." },
+  "/accessibility": { title: "Accessibility — MONK", description: "Read the MONK accessibility statement and ways to report an accessibility issue." },
+};
+
+function updatePublicPageMetadata(pathname: string) {
+  const path = pathname.length > 1 ? pathname.replace(/\\/+$/, "") : "/";
+  const metadata = PUBLIC_PAGE_METADATA[path] ?? (/^\\/support\\/tickets\\/[^/]+$/.test(path)
+    ? { title: "Support Ticket Reference — MONK", description: "View the support ticket reference information available in this browser." }
+    : { title: "Page not found — MONK", description: "The requested page could not be found on MONK." });
+  document.title = metadata.title;
+
+  const setMeta = (name: string, content: string) => {
+    let element = document.head.querySelector<HTMLMetaElement>(`meta[name="${name}"]`);
+    if (!element) {
+      element = document.createElement("meta");
+      element.name = name;
+      document.head.appendChild(element);
+    }
+    element.content = content;
+  };
+  setMeta("description", metadata.description);
+  const privatePath = ["/support/tickets", "/privacy-center", "/cookies/preferences", "/status", "/offline", "/maintenance", "/error"].includes(path) || /^\\/support\\/tickets\\//.test(path);
+  setMeta("robots", privatePath ? "noindex, nofollow" : "index, follow, max-image-preview:large");
+
+  let canonical = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+  if (!canonical) {
+    canonical = document.createElement("link");
+    canonical.rel = "canonical";
+    document.head.appendChild(canonical);
+  }
+  canonical.href = `https://monk.monster${path === "/" ? "/" : path}`;
+}
+
 const governmentColleges = [
   { code: "117", name: "Government Polytechnic, Muzaffarpur", city: "Muzaffarpur", branches: "Civil · Mechanical · Electrical · CSE · Electronics", tag: "North Bihar" },
   { code: "112", name: "Government Polytechnic, Bhagalpur", city: "Bhagalpur", branches: "Civil · Mechanical · Electrical · CSE · Textile", tag: "Eastern Bihar" },
@@ -275,7 +334,7 @@ function BusinessPage() {
 }
 export default function PublicSite() {
   const location = useLocation();
-  useEffect(() => { window.scrollTo({ top: 0, behavior: "instant" }); }, [location.pathname]);
+  useEffect(() => { window.scrollTo({ top: 0, behavior: "instant" }); updatePublicPageMetadata(location.pathname); }, [location.pathname]);
   if (isSupportTrustRoute(location.pathname)) return <><SupportTrustPages/><CookieNotice/></>;
   if (location.pathname === "/about") return <><AboutPage/><CookieNotice/></>;
   if (location.pathname === "/documentation") return <><ProjectInfoPage page="documentation"/><CookieNotice/></>;
