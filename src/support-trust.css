@@ -28,3 +28,10 @@
 @media(prefers-reduced-motion:reduce){.st-resource,.st-primary,.st-switch span:after{transition:none}}
 
 .st-honeypot{position:absolute!important;left:-10000px!important;top:auto!important;width:1px!important;height:1px!important;overflow:hidden!important;opacity:0!important}.st-spin{animation:st-spin .9s linear infinite}@keyframes st-spin{to{transform:rotate(360deg)}}
+
+.st-thank-you-card{max-width:720px;margin:12px auto 55px;padding:34px}
+.st-thank-you-card>.st-icon{width:48px;height:48px;display:grid;place-items:center;border-radius:14px;background:#edf4eb;color:#55734e}
+.st-thank-you-card h2{margin:20px 0 10px;font-size:22px;color:#242c25}
+.st-thank-you-card p{font-size:14px;line-height:1.8;color:#68756a}
+.st-thank-you-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+@media(max-width:560px){.st-thank-you-card{padding:22px}.st-thank-you-actions>*{width:100%;justify-content:center}}
