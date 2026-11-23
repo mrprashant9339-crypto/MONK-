@@ -42,3 +42,11 @@ test("trailing slashes resolve to the canonical application route", async () => 
   assert.equal(response.status, 200);
   assert.deepEqual(env.requested, ["/"]);
 });
+
+test("legacy signup path redirects to the canonical account creation route", async () => {
+  const env = mockEnv();
+  const response = await worker.fetch(new Request("https://monk.monster/signup"), env);
+  assert.equal(response.status, 302);
+  assert.equal(response.headers.get("location"), "https://monk.monster/login?mode=signup");
+  assert.deepEqual(env.requested, []);
+});
