@@ -30,9 +30,11 @@ test("public routes render the application without a blank screen", async ({ pag
   }
 });
 
-test("footer navigation opens the About page", async ({ page }) => {
+test("reference-inspired footer panel renders and footer navigation opens About", async ({ page }) => {
   await page.goto("/");
-  const aboutLink = page.locator("footer").getByRole("link", { name: /about the project/i });
+  await expect(page.locator("footer .footer-feature-panel")).toBeVisible();
+  await expect(page.locator("footer .footer-panel-wordmark")).toContainText("MONK");
+  const aboutLink = page.locator("footer").getByRole("link", { name: /about monk/i });
   await expect(aboutLink).toBeVisible();
   await aboutLink.click();
   await expect(page).toHaveURL(/\/about$/);
@@ -72,11 +74,12 @@ test("primary, Campus and Business logos render from their brand assets", async 
   await expect(page.getByRole("img", { name: "MONK Business" })).toBeVisible();
 });
 
-test("contact page exposes email and WhatsApp support routes", async ({ page }) => {
+test("contact page exposes email support without publishing a personal phone number", async ({ page }) => {
   await page.goto("/contact");
   await expect(page.getByRole("heading", { name: /a clear path to the right help/i })).toBeVisible();
-  await expect(page.getByRole("link", { name: /WhatsApp support/i })).toHaveAttribute("href", "https://wa.me/919288435641");
+  await expect(page.getByRole("link", { name: /WhatsApp support/i })).toHaveCount(0);
   await expect(page.getByRole("complementary").getByRole("link", { name: /admin@monk.monster/i })).toBeVisible();
+  await expect(page.locator("body")).not.toContainText(/WhatsApp|92884\s*35641|919288435641/i);
 });
 
 test("manifest and favicon are served by the production preview", async ({ request }) => {
