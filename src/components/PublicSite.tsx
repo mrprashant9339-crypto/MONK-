@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type { ReactNode } from "react";
+import type { MouseEvent, ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import "../public-site.css";
 import LegalPage, { CookieNotice } from "./LegalPages";
@@ -67,7 +67,7 @@ function Reveal({ children, className = "" }: { children: ReactNode; className?:
 }
 function Footer() {
   const navigate = useNavigate();
-  const go = (path: string) => (event: React.MouseEvent<HTMLAnchorElement>) => { event.preventDefault(); navigate(path); };
+  const go = (path: string) => (event: MouseEvent<HTMLAnchorElement>) => { event.preventDefault(); navigate(path); };
   return <footer className="public-footer" aria-label="MONK website footer">
     <div className="footer-top-grid">
       <section className="footer-brand-column"><a className="footer-brand-link" href="/" onClick={go("/")}><Brand /></a><p className="footer-tagline">Connecting Campus and Commerce.</p><span className="footer-overline">INDEPENDENTLY BUILT IN INDIA</span></section>
