@@ -119,6 +119,7 @@ export default function App() {
 
   useEffect(() => {
     if (organizationVertical !== "education" && active === "Education") setActive("Overview");
+    if (organizationVertical === "education" && (active === "CRM" || active === "Sales")) setActive("Overview");
   }, [organizationVertical, active]);
 
   useEffect(() => {
