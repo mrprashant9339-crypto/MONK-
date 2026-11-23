@@ -71,6 +71,7 @@ test("Cloudflare serves the Vite build with SPA route fallback", async () => {
 test("Phase 6 business migrations define tenant-scoped commerce and finance workflows", async () => {
   const foundation = await readFile(join(root, "supabase", "migrations", "20261123033736_phase_6_business_operations.sql"), "utf8");
   const fulfilment = await readFile(join(root, "supabase", "migrations", "20261123033825_phase_6_order_fulfilment_and_billing_controls.sql"), "utf8");
+  const indexes = await readFile(join(root, "supabase", "migrations", "20261123034346_phase_6_business_foreign_key_indexes.sql"), "utf8");
   for (const table of ["business_branches","business_departments","business_deals","business_activities","business_products","business_warehouses","business_inventory_movements","business_orders","business_order_items","business_invoices","business_invoice_items","business_payments","business_finance_accounts","business_journal_entries","business_journal_lines"]) {
     assert.match(foundation, new RegExp("create table if not exists public\\." + table));
   }
@@ -84,6 +85,8 @@ test("Phase 6 business migrations define tenant-scoped commerce and finance work
   assert.match(fulfilment, /business_cancel_order/);
   assert.match(fulfilment, /business_void_invoice/);
   assert.match(fulfilment, /for update/);
+  assert.match(indexes, /create index if not exists business_inventory_product_fk_idx/);
+  assert.match(indexes, /create index if not exists business_journal_lines_entry_fk_idx/);
 });
 
 test("Phase 6 business UI includes all operational views and reduced-motion support", async () => {
