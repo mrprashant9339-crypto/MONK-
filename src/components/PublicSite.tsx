@@ -5,7 +5,7 @@ import "../public-site.css";
 import LegalPage, { CookieNotice } from "./LegalPages";
 import SupportTrustPages, { isSupportTrustRoute } from "./SupportTrustPages";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ArrowRight, ArrowUpRight, GraduationCap, Store, Users, BookOpen, ShieldCheck, BarChart3, CalendarDays, ClipboardList, Package, Receipt, Menu, X, CheckCircle2, MapPin, Search, Layers3, Workflow, ChevronRight, Mail, Github, Linkedin, Instagram } from "lucide-react";
+import { ArrowRight, ArrowUpRight, GraduationCap, Store, Users, BookOpen, ShieldCheck, BarChart3, CalendarDays, ClipboardList, Package, Receipt, Menu, X, CheckCircle2, MapPin, Search, Layers3, Workflow, ChevronRight, Mail, Github } from "lucide-react";
 
 type Portal = "campus" | "business";
 const governmentColleges = [
