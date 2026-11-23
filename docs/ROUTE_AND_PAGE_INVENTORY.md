@@ -77,11 +77,11 @@ This inventory distinguishes implemented foundations, previews, planned surfaces
 | Team | Implemented foundation |
 | Activity | Implemented foundation |
 | CRM | Partial functional module; business vertical | Existing lead/contact/company CRUD screens; Sales now has its own dedicated workspace and design |
-| Sales | Advanced frontend workspace implemented; live data-backed foundation | Dedicated overview, dynamic status pipeline, people and company directories, lead creation via existing RPC, CSV export; no deal values, forecasts, quote/invoice or financial workflows yet |
+| Sales | Dedicated live-data frontend implemented | Overview, dynamic status pipeline, people/company directories, existing lead RPC and spreadsheet-safe CSV export |
 | Education | Partial functional module; education vertical |
 | Documents | Functional local-first frontend preview | Search, drag/drop and file picker; temporary in-memory queue, download/remove; no server upload or persistence until secure storage is connected |
-| Analytics | Placeholder / aggregation pending |
-| Finance | Placeholder / finance module pending |
+| Business Operations | Dedicated frontend surfaces implemented; backend scope explicitly gated | Business control room, organization structure, deals desk, source-record timeline, products, inventory, orders, invoices, finance and reports; only verified organization/CRM/project data is live |\n| Analytics | Dedicated reports view | Reports from verified leads, contacts, companies and projects; no revenue or financial estimates |
+| Finance | Dedicated finance UI / ledger backend pending | Ledger-not-connected state; no balances, transactions, tax or payment data fabricated |
 | Marketplace | Placeholder / integration catalog pending |
 | AI Copilot | Placeholder / AI runtime not connected |
 | Focus | Basic client-side timer |
