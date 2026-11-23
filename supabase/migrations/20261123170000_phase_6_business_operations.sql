@@ -352,7 +352,7 @@ create or replace function public.business_create_order(
 declare org_id uuid:=public.current_organization_id(); order_id uuid; order_no text; v_subtotal numeric(18,2):=0; v_taxes numeric(18,2):=0; item jsonb; qty numeric; price numeric; rate numeric; sub numeric; tax numeric; product_row public.business_products;
 begin
  if auth.uid() is null or org_id is null or not public.has_org_permission(org_id,'business.order.manage') then raise exception 'Permission denied' using errcode='42501'; end if;
- if jsonb_typeof(p_items)<>'array' or jsonb_array_length(p_items)<1 or jsonb_array_length(p_items)>100 then raise exception 'Provide between 1 and 100 order items' using errcode='22023'; end if;
+ if coalesce(jsonb_typeof(p_items),'')<>'array' or jsonb_array_length(p_items)<1 or jsonb_array_length(p_items)>100 then raise exception 'Provide between 1 and 100 order items' using errcode='22023'; end if;
  if p_currency !~ '^[A-Z]{3}$' then raise exception 'Invalid currency' using errcode='22023'; end if;
  if p_company_id is not null and not exists(select 1 from public.companies where id=p_company_id and organization_id=org_id and deleted_at is null) then raise exception 'Company not found' using errcode='P0002'; end if;
  if p_contact_id is not null and not exists(select 1 from public.contacts where id=p_contact_id and organization_id=org_id and deleted_at is null) then raise exception 'Contact not found' using errcode='P0002'; end if;
@@ -426,7 +426,7 @@ declare org_id uuid:=public.current_organization_id(); entry_id uuid; line jsonb
 begin
  if auth.uid() is null or org_id is null or not public.has_org_permission(org_id,'business.finance.manage') then raise exception 'Permission denied' using errcode='42501'; end if;
  if length(trim(coalesce(p_description,''))) not between 2 and 500 then raise exception 'Description must contain 2–500 characters' using errcode='22023'; end if;
- if jsonb_typeof(p_lines)<>'array' or jsonb_array_length(p_lines)<2 or jsonb_array_length(p_lines)>100 then raise exception 'A journal requires 2–100 lines' using errcode='22023'; end if;
+ if coalesce(jsonb_typeof(p_lines),'')<>'array' or jsonb_array_length(p_lines)<2 or jsonb_array_length(p_lines)>100 then raise exception 'A journal requires 2–100 lines' using errcode='22023'; end if;
  insert into public.business_journal_entries(organization_id,reference,description,entry_date,status,created_by)
  values(org_id,nullif(trim(p_reference),''),trim(p_description),coalesce(p_entry_date,current_date),'draft',auth.uid()) returning id into entry_id;
  for line in select value from jsonb_array_elements(p_lines) loop
