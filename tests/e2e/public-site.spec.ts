@@ -37,13 +37,13 @@ test("public routes render the application without a blank screen", async ({ pag
 test("homepage offers distinct Campus and Business paths", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: /I run a college.*Explore Campus/i }).click();
-  await expect(page).toHaveURL(/\\/campus$/);
+  await expect(page).toHaveURL(/\/campus$/);
   await page.getByRole("button", { name: /Create a college workspace/i }).click();
-  await expect(page).toHaveURL(/\\/signup\\?vertical=education$/);
+  await expect(page).toHaveURL(/\/signup\?vertical=education$/);
 
   await page.goto("/business");
   await page.getByRole("button", { name: /Create a business workspace/i }).click();
-  await expect(page).toHaveURL(/\\/signup\\?vertical=business$/);
+  await expect(page).toHaveURL(/\/signup\?vertical=business$/);
 });
 
 test("footer navigation opens the About page", async ({ page }) => {
