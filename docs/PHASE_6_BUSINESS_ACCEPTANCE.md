@@ -25,7 +25,9 @@
 - Additive migrations applied to the connected Supabase project:
   - `20261123033736_phase_6_business_operations`
   - `20261123033825_phase_6_order_fulfilment_and_billing_controls`
+  - `20261123034346_phase_6_business_foreign_key_indexes`
 - New business tables have RLS enabled, organization-scoped read/write policies and explicit authenticated grants; anonymous access is revoked.
+- Covering indexes were added for all Phase 6 foreign keys; Supabase performance advisors no longer report unindexed Phase 6 foreign keys.
 - Business RPCs are SECURITY INVOKER, explicitly granted to authenticated and revoked from anon/PUBLIC.
 - Inventory movements and payments are append-only. Posted journal entries and their lines are immutable.
 - Order fulfilment locks product rows, verifies stock, writes issue movements and changes order status in one transaction.
