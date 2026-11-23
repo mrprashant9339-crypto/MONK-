@@ -37,18 +37,46 @@ function Shell({ eyebrow, title, intro, children }: { eyebrow: string; title: st
   </main>;
 }
 
+function ThankYouPage() {
+  const navigate = useNavigate();
+  const [context] = useState<{ kind: "support" | "signup"; reference?: string; notification?: string } | null>(() => {
+    try {
+      const raw = sessionStorage.getItem("monk:thank-you-context");
+      if (!raw) return null;
+      sessionStorage.removeItem("monk:thank-you-context");
+      const parsed = JSON.parse(raw);
+      if (parsed?.kind !== "support" && parsed?.kind !== "signup") return null;
+      return parsed;
+    } catch { return null; }
+  });
+  const signup = context?.kind === "signup";
+  return <Shell eyebrow="SUBMISSION CONFIRMATION" title={signup ? "Check your inbox to continue." : "Your request is on its way."} intro={signup ? "Your MONK account request has been received. If email verification is enabled, open the message from MONK and confirm your email before signing in." : "The MONK support service confirmed that your request was stored. Keep the reference below for follow-up."}>
+    <section className="st-card st-thank-you-card">
+      <span className="st-icon"><CheckCircle2/></span>
+      <h2>{context ? (signup ? "Next step: verify your email" : "Support request received") : "No recent submission found"}</h2>
+      {context?.reference && <p>Support reference: <strong>{context.reference}</strong></p>}
+      {context?.kind === "support" && <p>{context.notification === "sent" ? "A support notification email was sent." : context.notification === "failed" ? "Your request is stored, but the notification email failed. Contact admin@monk.monster if the matter is urgent." : "Your request is stored. Email alerts are not configured; contact admin@monk.monster if the matter is urgent."}</p>}
+      {!context && <p>This page is only a confirmation destination. To send a request, use the contact form.</p>}
+      <div className="st-thank-you-actions">
+        <button className="st-primary" type="button" onClick={() => navigate(signup ? "/login" : "/")}>{signup ? "Continue to sign in" : "Back to MONK"} <ArrowRight size={16}/></button>
+        {!signup && <button className="st-secondary" type="button" onClick={() => navigate("/contact")}>Contact support</button>}
+      </div>
+    </section>
+  </Shell>;
+}
+
 function ContactPage() {
   const [name,setName]=useState(""); const [email,setEmail]=useState(""); const [topic,setTopic]=useState("General enquiry"); const [message,setMessage]=useState(""); const [website,setWebsite]=useState("");
-  const [copied,setCopied]=useState(false); const [sending,setSending]=useState(false); const [submittedRef,setSubmittedRef]=useState<string|null>(null); const [notificationStatus,setNotificationStatus]=useState<string|null>(null); const [submitError,setSubmitError]=useState("");
+  const [copied,setCopied]=useState(false); const [sending,setSending]=useState(false); const [submitError,setSubmitError]=useState("");
   const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && name.trim().length>=2 && message.trim().length>=10;
   async function submit(e:FormEvent) {
     e.preventDefault(); if(!valid || sending) return;
-    setSending(true); setSubmitError(""); setSubmittedRef(null);
+    setSending(true); setSubmitError("");
     try {
       const {data,error}=await supabase.functions.invoke("support-ticket-intake",{body:{fullName:name,email,category:topic,subject:topic,message,website}});
       if(error) throw error;
       if(!data?.ok || !data?.ticketRef) throw new Error(data?.error || "Your request could not be submitted.");
-      setSubmittedRef(data.ticketRef); setNotificationStatus(data.notification || "not_configured"); setName(""); setEmail(""); setMessage(""); setWebsite("");
+      try { sessionStorage.setItem("monk:thank-you-context", JSON.stringify({ kind: "support", reference: data.ticketRef, notification: data.notification || "not_configured" })); } catch {}\n      navigate("/thank-you");
     } catch(error) { setSubmitError(error instanceof Error ? error.message : "Unable to submit your request. Please contact admin@monk.monster."); }
     finally { setSending(false); }
   }
@@ -77,14 +105,14 @@ function TicketListPage() {
   const [sending,setSending]=useState(false); const [notificationStatus,setNotificationStatus]=useState<string|null>(null); const [submitError,setSubmitError]=useState("");
   const valid=fullName.trim().length>=2 && subject.trim().length>=4 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && message.trim().length>=10;
   async function create(e:FormEvent){
-    e.preventDefault(); if(!valid||sending)return; setSending(true);setSubmitError("");setCreated(null);
+    e.preventDefault(); if(!valid||sending)return; setSending(true);setSubmitError("");
     try {
-      const {data,error}=await supabase.functions.invoke("support-ticket-intake",{body:{fullName,email,category,subject,message,website:""}});
+      const {data,error}=await supabase.functions.invoke("support-ticket-intake",{body:{fullName,email,category,subject,message,website}});
       if(error)throw error;
       if(!data?.ok||!data?.ticketRef)throw new Error(data?.error||"The support request could not be submitted.");
       const ticket:Ticket={id:data.ticketRef,subject:subject.trim(),category,message:message.trim(),email:email.trim(),createdAt:data.createdAt||new Date().toISOString(),status:"Submitted"};
       const next=[ticket,...tickets]; if(storeList(TICKET_KEY,next))setTickets(next);
-      setCreated(ticket.id);setNotificationStatus(data.notification || "not_configured");setFullName("");setSubject("");setMessage("");
+      try { sessionStorage.setItem("monk:thank-you-context", JSON.stringify({ kind: "support", reference: ticket.id, notification: data.notification || "not_configured" })); } catch {}\n      navigate("/thank-you");
     } catch(error){setSubmitError(error instanceof Error?error.message:"Unable to submit your request. Please try again.");}
     finally{setSending(false);}
   }
@@ -97,7 +125,7 @@ function TicketListPage() {
       <label>Category *<select value={category} onChange={e=>setCategory(e.target.value)}><option>Technical issue</option><option>Account access</option><option>Billing or refund</option><option>Campus workspace</option><option>Business workspace</option><option>Privacy request</option><option>Security concern</option><option>Other</option></select></label>
       <label>Email address *<input required type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com"/></label>
       <label>Details *<textarea required minLength={10} maxLength={4000} rows={5} value={message} onChange={e=>setMessage(e.target.value)} placeholder="Steps to reproduce, expected result and what happened."/></label>
-      <button className="st-primary" disabled={!valid||sending}>{sending?<><RefreshCw size={16} className="st-spin"/> Submitting…</>:<><ClipboardList size={16}/> Submit ticket</>}</button>
+      <label className="st-honeypot" aria-hidden="true">Leave this field empty<input tabIndex={-1} autoComplete="off" value={website} onChange={e=>setWebsite(e.target.value)}/></label>\n      <button className="st-primary" disabled={!valid||sending}>{sending?<><RefreshCw size={16} className="st-spin"/> Submitting…</>:<><ClipboardList size={16}/> Submit ticket</>}</button>
       <p className="st-footnote">Do not enter passwords, access tokens, payment-card data or sensitive student records.</p>
     </form><section className="st-card"><div className="st-card-title"><Clock3/><div><h2>Your recent requests</h2><p>Reference copies stored in this browser.</p></div></div>
       {tickets.length? <div className="st-ticket-list">{tickets.map(t=><Link to={`/support/tickets/${encodeURIComponent(t.id)}`} key={t.id}><span className="st-ticket-id">{t.id}</span><strong>{t.subject}</strong><small>{t.category} · {new Date(t.createdAt).toLocaleString()}</small><span className="st-local-status">Submitted to MONK</span></Link>)}</div>:<div className="st-empty"><ClipboardList/><strong>No recent requests on this device</strong><p>Submit a support request to receive a reference number.</p></div>}
@@ -181,11 +209,11 @@ function SystemFallbackPage({kind}:{kind:"offline"|"maintenance"|"error"|"not-fo
 }
 
 export function isSupportTrustRoute(path:string) {
-  return ["/contact","/support/tickets","/status","/incidents","/security-center","/security/vulnerability-disclosure","/privacy-center","/cookies/preferences","/data-rights","/offline","/maintenance","/error"].includes(path) || /^\/support\/tickets\/[^/]+$/.test(path);
+  return ["/thank-you","/contact","/support/tickets","/status","/incidents","/security-center","/security/vulnerability-disclosure","/privacy-center","/cookies/preferences","/data-rights","/offline","/maintenance","/error","/thank-you"].includes(path) || /^\/support\/tickets\/[^/]+$/.test(path);
 }
 export default function SupportTrustPages() {
   const {pathname}=useLocation();
-  if(pathname==="/contact")return <ContactPage/>;
+  if(pathname==="/thank-you")return <ThankYouPage/>;\n  if(pathname==="/contact")return <ContactPage/>;
   if(pathname==="/support/tickets")return <TicketListPage/>;
   if(pathname.startsWith("/support/tickets/"))return <TicketDetailPage id={decodeURIComponent(pathname.split("/").pop()||"")}/>;
   if(pathname==="/status")return <StatusPage/>;
