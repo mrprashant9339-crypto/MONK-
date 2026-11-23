@@ -195,9 +195,13 @@ export default function App() {
           return;
         }
       }
-      setAuthMessage(mode === "signup" && !result.data.session
-        ? "Account created. Check your inbox, confirm your email, then sign in."
-        : "Authentication successful.");
+      if (mode === "signup") {
+        try { sessionStorage.setItem("monk:thank-you-context", JSON.stringify({ kind: "signup" })); } catch {}
+        if (result.data.session) setSession(result.data.session);
+        navigate("/thank-you");
+        return;
+      }
+      setAuthMessage("Authentication successful.");
       if (result.data.session) setSession(result.data.session);
     } catch (error) {
       setAuthMessage(error instanceof Error ? error.message : "Authentication request failed. Check your connection and try again.");
