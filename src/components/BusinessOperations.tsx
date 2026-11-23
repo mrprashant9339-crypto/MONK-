@@ -8,6 +8,7 @@ type Lead = {id:string;name:string;email:string|null;source:string;status:string
 type Contact = {id:string;first_name:string;last_name:string;email:string;title:string|null;created_at:string};
 type Company = {id:string;name:string;industry:string|null;domain:string|null;status:string};
 type Project = {id:string;name:string;status:string;created_at?:string};
+type Member = {member_id:string;user_id:string;email:string;full_name:string;role:string;status:string;created_at:string};
 
 const views: {name:View;icon:typeof Building2;eyebrow:string;title:string;description:string;kind:string}[]=[
 {name:"Command",icon:Sparkles,eyebrow:"BUSINESS CONTROL ROOM",title:"The whole business, in one view.",description:"A live operational snapshot from records already connected to this workspace.",kind:"command"},
@@ -30,6 +31,8 @@ export default function BusinessOperations({organizationId,initialView="Command"
  const [contacts,setContacts]=useState<Contact[]>([]);
  const [companies,setCompanies]=useState<Company[]>([]);
  const [projects,setProjects]=useState<Project[]>([]);
+ const [members,setMembers]=useState<Member[]>([]);
+ const [memberAccess,setMemberAccess]=useState<"available"|"restricted"|"unknown">("unknown");
  const [organizationName,setOrganizationName]=useState("");
  const [organizationVertical,setOrganizationVertical]=useState("");
  const [query,setQuery]=useState("");
@@ -43,16 +46,18 @@ export default function BusinessOperations({organizationId,initialView="Command"
   if(!supabase||!organizationId){setError("Connect an authenticated business workspace to load organization records.");return;}
   setLoading(true);setError("");
   try{
-   const [orgResult,leadResult,contactResult,companyResult,projectResult]=await Promise.all([
+   const [orgResult,leadResult,contactResult,companyResult,projectResult,memberResult]=await Promise.all([
     supabase.from("organizations").select("name,vertical").eq("id",organizationId).single(),
     supabase.from("leads").select("id,name,email,source,status,score,created_at").eq("organization_id",organizationId).is("deleted_at",null).order("created_at",{ascending:false}).limit(500),
     supabase.from("contacts").select("id,first_name,last_name,email,title,created_at").eq("organization_id",organizationId).is("deleted_at",null).order("created_at",{ascending:false}).limit(500),
     supabase.from("companies").select("id,name,industry,domain,status").eq("organization_id",organizationId).is("deleted_at",null).order("created_at",{ascending:false}).limit(500),
-    supabase.from("projects").select("id,name,status,created_at").eq("organization_id",organizationId).is("deleted_at",null).order("created_at",{ascending:false}).limit(500)
+    supabase.from("projects").select("id,name,status,created_at").eq("organization_id",organizationId).is("deleted_at",null).order("created_at",{ascending:false}).limit(500),
+    supabase.rpc("list_organization_members")
    ]);
    if(orgResult.error)throw orgResult.error;if(leadResult.error)throw leadResult.error;if(contactResult.error)throw contactResult.error;if(companyResult.error)throw companyResult.error;if(projectResult.error)throw projectResult.error;
    setOrganizationName(orgResult.data.name);setOrganizationVertical(orgResult.data.vertical);
    setLeads((leadResult.data??[]) as Lead[]);setContacts((contactResult.data??[]) as Contact[]);setCompanies((companyResult.data??[]) as Company[]);setProjects((projectResult.data??[]) as Project[]);
+   if(memberResult.error){setMembers([]);setMemberAccess("restricted");}else{setMembers((memberResult.data??[]) as Member[]);setMemberAccess("available");}
    setLastUpdated(new Date());
   }catch(cause){setError(cause instanceof Error?cause.message:"Business workspace records could not be loaded.");}
   finally{setLoading(false);}
@@ -97,7 +102,7 @@ export default function BusinessOperations({organizationId,initialView="Command"
    {noData&&<p className="bo-hint">This workspace has no business records yet. No example customers, revenue or orders have been inserted.</p>}
   </div>}
 
-  {view==="Organization"&&<div className="bo-organization-view"><div className="bo-section-title"><span className="bo-label">TENANT DIRECTORY</span><h3>Organization structure</h3><p>Organization identity is live. Branch, department and staff administration require their own secured records and role policies.</p></div><div className="bo-organization-grid"><article className="bo-org-card bo-org-primary"><span className="bo-org-emblem">M</span><div><small>ACTIVE ORGANIZATION</small><h3>{organizationName}</h3><p>{organizationVertical} workspace · Organization-scoped access</p></div><CheckCircle2/></article>{[{name:"Branches",icon:Building2,desc:"Multi-location business units, addresses and branch-level access."},{name:"Departments",icon:Layers3,desc:"Department ownership, reporting lines and cost-centre mapping."},{name:"Staff & roles",icon:Users,desc:"Member directory, staff assignments and role-scoped capabilities."}].map(item=><article className="bo-structure-card" key={item.name}><item.icon/><h4>{item.name}</h4><p>{item.desc}</p><span>Secure backend schema required</span></article>)}</div></div>}
+  {view==="Organization"&&<div className="bo-organization-view"><div className="bo-section-title"><span className="bo-label">TENANT DIRECTORY</span><h3>Organization structure</h3><p>Organization identity is live. Branch, department and staff administration require their own secured records and role policies.</p></div><div className="bo-organization-grid"><article className="bo-org-card bo-org-primary"><span className="bo-org-emblem">M</span><div><small>ACTIVE ORGANIZATION</small><h3>{organizationName}</h3><p>{organizationVertical} workspace · Organization-scoped access</p></div><CheckCircle2/></article>{[{name:"Branches",icon:Building2,desc:"Multi-location business units, addresses and branch-level access."},{name:"Departments",icon:Layers3,desc:"Department ownership, reporting lines and cost-centre mapping."}].map(item=><article className="bo-structure-card" key={item.name}><item.icon/><h4>{item.name}</h4><p>{item.desc}</p><span>Secure backend schema required</span></article>)}</div><section className="bo-members-panel"><header><div><span className="bo-label">AUTHORIZED DIRECTORY</span><h3>Organization members</h3><p>Visible only when your account has the existing member-list permission.</p></div><span>{memberAccess==="available"?members.length+" members":"Restricted"}</span></header>{memberAccess==="available"?(members.length?members.map(member=><article key={member.member_id}><span className="bo-member-avatar">{(member.full_name||member.email||"M").trim().slice(0,1).toUpperCase()}</span><div><b>{member.full_name||"Name not set"}</b><small>{member.role} · {member.status}</small></div><time>{new Date(member.created_at).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"})}</time></article>):<p className="bo-members-empty">No member records returned.</p>):<p className="bo-members-empty">Your account does not have permission to list organization members.</p>}</section></div>}
 
   {view==="Deals"&&<div className="bo-deals-view"><div className="bo-section-title"><span className="bo-label">LEAD-TO-DEAL JOURNEY</span><h3>Opportunity desk</h3><p>Existing prospects are live. Deal amount, close date, owner assignment and quote linkage are not inferred from lead fields.</p></div><div className="bo-deal-stats"><article><small>Prospects</small><b>{leads.length}</b></article><article><small>Qualified</small><b>{qualified}</b></article><article><small>Average score</small><b>{leads.length?avgScore+" / 100":"—"}</b></article></div>{renderRecords()}<div className="bo-backend-note"><ShieldCheck/><div><b>Deal objects are not yet enabled</b><p>Deal stages, commercial values, owner assignment, activities and quotations need dedicated tables, row-level security and permission-checked RPCs. The screen will not create a false deal from a lead.</p></div></div></div>}
 
