@@ -298,3 +298,25 @@ html{scroll-behavior:smooth;scroll-padding-top:88px}
 .review-placeholder p{margin:20px 0 10px;color:#514a44;font-family:Georgia,serif;font-size:19px;line-height:1.45}
 .review-placeholder small{color:#8b827b;font-size:10px;line-height:1.5}
 @media(max-width:760px){.review-placeholder-grid{grid-template-columns:1fr}.review-placeholder{min-height:142px}.reviews-section{padding:72px 20px}}
+
+/* PDF UI/UX audit follow-up: clearer audience routing and readable supporting copy. */
+.hero-product-promise{max-width:560px;margin:18px 0 10px;font-size:clamp(18px,2vw,23px);line-height:1.35;letter-spacing:-.55px;color:var(--mk-ink);font-weight:750}
+.hero-audience-actions{gap:12px}
+.hero-audience-actions .button-dark,.hero-audience-actions .button-light{min-height:52px;padding:10px 17px;display:inline-flex;align-items:center;gap:9px;border-radius:10px;font-size:13px;font-weight:750}
+.hero-audience-actions .button-light{background:#fff;color:var(--mk-ink);border:1px solid #e8dfe3}
+.hero-audience-actions button span{font-size:11px;font-weight:600;opacity:.78}
+.hero-audience-actions button:focus-visible,.public-header a:focus-visible,.public-header button:focus-visible,.public-footer a:focus-visible,.public-footer button:focus-visible{outline:3px solid var(--mk-pink-deep);outline-offset:3px}
+.hero-lede,.portal-hero-copy>p{font-size:15px;line-height:1.75}
+.section-kicker,.eyebrow-pill{font-size:11px}
+.hero-trust{font-size:12px}
+.hero-actions a{font-size:13px}
+.float-chip small{font-size:11px}
+.preview-top,.preview-welcome small,.preview-metrics small,.preview-schedule>span,.preview-schedule b,.preview-schedule small,.preview-notice span,.preview-notice b,.preview-disclaimer{font-size:11px}
+.feature-card p{font-size:13px;line-height:1.7}
+@media(max-width:640px){
+ .hero-product-promise{font-size:19px;line-height:1.4;margin-top:15px}
+ .hero-audience-actions{display:grid;grid-template-columns:1fr;gap:10px}
+ .hero-audience-actions button{width:100%;justify-content:space-between;min-height:52px}
+ .hero-lede,.portal-hero-copy>p{font-size:14px}
+ .hero-trust{font-size:11px}
+}
