@@ -87,7 +87,7 @@ test("robots.txt allows public crawling and points to the canonical sitemap", as
 test("every sitemap URL is a routable public page", async () => {
   const sitemap = await readFile(join(root, "public", "sitemap.xml"), "utf8");
   const urls = [...sitemap.matchAll(/<loc>(https:\/\/monk\.monster[^<]*)<\/loc>/g)].map(match => new URL(match[1]).pathname);
-  for (const path of urls) assert.equal(isApplicationRoute(path), true, \`sitemap route is not routed: \${path}\`);
+  for (const path of urls) assert.equal(isApplicationRoute(path), true, "sitemap route is not routed: " + path);
 });
 
 test("public route metadata provides distinct titles and descriptions", async () => {
