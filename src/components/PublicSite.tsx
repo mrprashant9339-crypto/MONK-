@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import type { MouseEvent, ReactNode } from "react";
+import type { FormEvent, MouseEvent, ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import "../public-site.css";
 import LegalPage, { CookieNotice } from "./LegalPages";
 import SupportTrustPages, { isSupportTrustRoute } from "./SupportTrustPages";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ArrowRight, ArrowUpRight, GraduationCap, Store, Users, BookOpen, ShieldCheck, BarChart3, CalendarDays, ClipboardList, Package, Receipt, Menu, X, CheckCircle2, MapPin, Search, Layers3, Workflow, ChevronRight, Mail, Github } from "lucide-react";
+import { ArrowRight, ArrowUpRight, GraduationCap, Store, Users, BookOpen, ShieldCheck, BarChart3, CalendarDays, ClipboardList, Package, Receipt, Menu, X, CheckCircle2, MapPin, Search, Layers3, Workflow, ChevronRight, Mail, Github, Instagram, Linkedin, Youtube } from "lucide-react";
 
 type Portal = "campus" | "business";
 const governmentColleges = [
@@ -67,23 +67,76 @@ function Reveal({ children, className = "" }: { children: ReactNode; className?:
 }
 function Footer() {
   const navigate = useNavigate();
+  const [newsletterEmail, setNewsletterEmail] = useState("");
   const go = (path: string) => (event: MouseEvent<HTMLAnchorElement>) => { event.preventDefault(); navigate(path); };
-  return <footer className="public-footer" aria-label="MONK website footer">
+  const requestNewsletter = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const subject = encodeURIComponent("MONK newsletter subscription request");
+    const body = encodeURIComponent("Please add this email address to MONK product updates:\n\n" + newsletterEmail.trim());
+    window.location.href = `mailto:admin@monk.monster?subject=${subject}&body=${body}`;
+  };
+  return <Reveal className="footer-reveal"><footer className="public-footer" aria-label="MONK website footer">
     <div className="footer-top-grid">
-      <section className="footer-brand-column"><a className="footer-brand-link" href="/" onClick={go("/")}><Brand /></a><p className="footer-tagline">Connecting Campus and Commerce.</p><span className="footer-overline">INDEPENDENTLY BUILT IN INDIA</span></section>
-      <nav className="footer-column" aria-label="Platform links"><h2>Platform</h2><a className="footer-link" href="/" onClick={go("/")}>Home</a><a className="footer-link" href="/campus" onClick={go("/campus")}>MONK Campus</a><a className="footer-link" href="/business" onClick={go("/business")}>MONK Business</a><a className="footer-link" href="/updates" onClick={go("/updates")}>Product updates</a></nav>
-      <nav className="footer-column" aria-label="Explore MONK"><h2>Explore</h2><a className="footer-link" href="/about" onClick={go("/about")}>About MONK</a><a className="footer-link" href="/documentation" onClick={go("/documentation")}>Documentation</a><a className="footer-link" href="/faq" onClick={go("/faq")}>Frequently asked questions</a><a className="footer-link" href="/contact" onClick={go("/contact")}>Contact support</a></nav>
-      <nav className="footer-column" aria-label="Policies"><h2>Policies</h2><a className="footer-link" href="/privacy" onClick={go("/privacy")}>Privacy</a><a className="footer-link" href="/terms" onClick={go("/terms")}>Terms</a><a className="footer-link" href="/cookies" onClick={go("/cookies")}>Cookies</a><a className="footer-link" href="/security" onClick={go("/security")}>Security</a></nav>
+      <section className="footer-brand-column">
+        <a className="footer-brand-link" href="/" onClick={go("/")}><Brand /></a>
+        <p className="footer-tagline">Connecting Campus and Commerce.</p>
+        <span className="footer-overline"><span className="footer-live-dot"/> INDEPENDENTLY BUILT IN INDIA</span>
+        <span className="footer-brand-stamp">MK / 001 <b>EST. 2026</b></span>
+      </section>
+      <nav className="footer-column" aria-label="Platform links"><h2>Platform</h2>
+        <a className="footer-link" href="/" onClick={go("/")}>Home</a>
+        <a className="footer-link" href="/campus" onClick={go("/campus")}>MONK Campus</a>
+        <a className="footer-link" href="/business" onClick={go("/business")}>MONK Business</a>
+        <a className="footer-link" href="/updates" onClick={go("/updates")}>Product updates</a>
+      </nav>
+      <nav className="footer-column" aria-label="Explore MONK"><h2>Explore</h2>
+        <a className="footer-link" href="/about" onClick={go("/about")}>About MONK</a>
+        <a className="footer-link" href="/documentation" onClick={go("/documentation")}>Documentation</a>
+        <a className="footer-link" href="/faq" onClick={go("/faq")}>Frequently asked questions</a>
+        <a className="footer-link" href="/contact" onClick={go("/contact")}>Contact support</a>
+      </nav>
+      <nav className="footer-column" aria-label="Policies"><h2>Policies</h2>
+        <a className="footer-link" href="/privacy" onClick={go("/privacy")}>Privacy</a>
+        <a className="footer-link" href="/terms" onClick={go("/terms")}>Terms</a>
+        <a className="footer-link" href="/cookies" onClick={go("/cookies")}>Cookies</a>
+        <a className="footer-link" href="/security" onClick={go("/security")}>Security</a>
+      </nav>
     </div>
     <section className="footer-feature-panel" aria-labelledby="footer-feature-title">
-      <div className="footer-panel-heading"><a className="footer-panel-wordmark" href="/" onClick={go("/")}>MONK<span>.</span></a><a className="footer-panel-cta" href="/contact" onClick={go("/contact")}>Work with MONK <ArrowUpRight size={15}/></a></div>
-      <div className="footer-panel-content"><span className="footer-panel-kicker">THE NEXT CHAPTER</span><h2 id="footer-feature-title">A better way to<br/><em>connect and create.</em></h2><p>Follow the product as MONK grows. Explore new releases, product notes and improvements.</p><a className="footer-panel-action" href="/updates" onClick={go("/updates")}>Explore product updates <ArrowRight size={16}/></a></div>
-      <div className="footer-panel-bottom"><p>Questions or ideas? <a href="mailto:admin@monk.monster">admin@monk.monster</a></p><a className="footer-github-link" href="https://github.com/mrprashant9339-crypto/MONK-" target="_blank" rel="noreferrer" aria-label="MONK on GitHub"><Github size={19}/> GitHub <ArrowUpRight size={13}/></a></div>
+      <div className="footer-panel-spark footer-spark-one" aria-hidden="true">✳</div>
+      <div className="footer-panel-spark footer-spark-two" aria-hidden="true">✦</div>
+      <div className="footer-panel-heading">
+        <a className="footer-panel-wordmark" href="/" onClick={go("/")}>MONK<span>.</span><sup>®</sup></a>
+        <a className="footer-panel-cta" href="/contact" onClick={go("/contact")}>Work with MONK <ArrowUpRight size={15}/></a>
+      </div>
+      <div className="footer-panel-content">
+        <span className="footer-panel-kicker">THE NEXT CHAPTER / 2026</span>
+        <h2 id="footer-feature-title">Ideas move<br/><em>everything forward.</em></h2>
+        <p>Product stories, useful updates and new releases from the MONK ecosystem. Stay in the loop as we build.</p>
+        <form className="footer-newsletter" onSubmit={requestNewsletter}>
+          <label className="sr-only" htmlFor="monk-newsletter-email">Your email address</label>
+          <input id="monk-newsletter-email" type="email" required maxLength={254} value={newsletterEmail} onChange={event=>setNewsletterEmail(event.target.value)} placeholder="Your email address" autoComplete="email"/>
+          <button type="submit" aria-label="Request MONK newsletter subscription"><ArrowRight size={20}/></button>
+        </form>
+        <p className="footer-newsletter-note">No spam. Your email app will open with a subscription request addressed to MONK.</p>
+      </div>
+      <div className="footer-panel-bottom">
+        <p>Have a question? <a href="mailto:admin@monk.monster">admin@monk.monster</a></p>
+        <div className="footer-socials" aria-label="MONK social links">
+          <a href="https://github.com/mrprashant9339-crypto/MONK-" target="_blank" rel="noreferrer" aria-label="MONK on GitHub"><Github size={19}/></a>
+          <span aria-label="Instagram profile coming soon" title="Instagram profile coming soon"><Instagram size={19}/></span>
+          <span aria-label="LinkedIn profile coming soon" title="LinkedIn profile coming soon"><Linkedin size={19}/></span>
+          <span aria-label="YouTube channel coming soon" title="YouTube channel coming soon"><Youtube size={19}/></span>
+        </div>
+      </div>
     </section>
     <div className="footer-project-note"><ShieldCheck size={16}/><p><strong>Independent project in development.</strong> Product previews and features may change. Public sample records are illustrative, not live customer data.</p></div>
-    <div className="footer-legal"><a href="/privacy" onClick={go("/privacy")}>Privacy policy</a><a href="/terms" onClick={go("/terms")}>Terms of service</a><a href="/cookies" onClick={go("/cookies")}>Cookie policy</a><button type="button" onClick={() => window.dispatchEvent(new Event("monk:open-cookie-settings"))}>Cookie settings</button><a href="/refunds" onClick={go("/refunds")}>Refunds</a><a href="/disclaimer" onClick={go("/disclaimer")}>Disclaimer</a><a href="/accessibility" onClick={go("/accessibility")}>Accessibility</a><a href="/data-rights" onClick={go("/data-rights")}>Data rights</a></div>
-    <div className="footer-bottom"><span>© {new Date().getFullYear()} MONK. All rights reserved.</span><span className="footer-bottom-note">Built independently in India</span></div>
-  </footer>;
+    <div className="footer-legal">
+      <a href="/privacy" onClick={go("/privacy")}>Privacy policy</a><a href="/terms" onClick={go("/terms")}>Terms of service</a><a href="/cookies" onClick={go("/cookies")}>Cookie policy</a>
+      <button type="button" onClick={() => window.dispatchEvent(new Event("monk:open-cookie-settings"))}>Cookie settings</button><a href="/refunds" onClick={go("/refunds")}>Refunds</a><a href="/disclaimer" onClick={go("/disclaimer")}>Disclaimer</a><a href="/accessibility" onClick={go("/accessibility")}>Accessibility</a><a href="/data-rights" onClick={go("/data-rights")}>Data rights</a>
+    </div>
+    <div className="footer-bottom"><span>© {new Date().getFullYear()} MONK. All rights reserved.</span><span className="footer-bottom-note">Built independently in India <b>·</b> Designed to move ideas forward</span></div>
+  </footer></Reveal>;
 }
 
 function AboutPage() {
