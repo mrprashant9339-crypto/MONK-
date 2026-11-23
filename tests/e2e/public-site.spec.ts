@@ -171,3 +171,25 @@ test("plain HTTP redirects to the HTTPS canonical origin", async ({ request }) =
   expect([301, 302, 307, 308]).toContain(response.status());
   expect(response.headers().location).toMatch(/^https:\/\//);
 });
+
+test("internal links across public pages resolve to real pages or assets", async ({ page }) => {
+  const hrefs = new Set<string>();
+  for (const route of publicRoutes) {
+    await page.goto(route);
+    const currentOrigin = new URL(page.url()).origin;
+    const links = await page.locator("a[href]").evaluateAll(anchors =>
+      anchors.map(anchor => (anchor as HTMLAnchorElement).href)
+    );
+    for (const href of links) {
+      const url = new URL(href, page.url());
+      if (url.origin !== currentOrigin) continue;
+      if (url.pathname === new URL(page.url()).pathname && url.hash) continue;
+      hrefs.add(url.pathname + url.search);
+    }
+  }
+  const origin = new URL(page.url()).origin;
+  for (const href of hrefs) {
+    const response = await page.request.get(new URL(href, origin).toString());
+    expect(response.status(), `broken internal link: ${href}`).toBeLessThan(400);
+  }
+});
