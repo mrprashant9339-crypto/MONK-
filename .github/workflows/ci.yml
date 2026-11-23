@@ -2,9 +2,10 @@ name: MONK CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, frontend-first-complete]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
