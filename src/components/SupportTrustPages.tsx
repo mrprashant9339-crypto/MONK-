@@ -46,10 +46,14 @@ function ThankYouPage() {
       sessionStorage.removeItem("monk:thank-you-context");
       const parsed = JSON.parse(raw);
       if (parsed?.kind !== "support" && parsed?.kind !== "signup") return null;
+      sessionStorage.setItem("monk:thank-you-conversion", parsed.kind);
       return parsed;
     } catch { return null; }
   });
   const signup = context?.kind === "signup";
+  useEffect(() => {
+    if (context) window.dispatchEvent(new Event("monk:thank-you-ready"));
+  }, [context]);
   return <Shell eyebrow="SUBMISSION CONFIRMATION" title={!context ? "No recent submission found." : signup ? "Check your inbox to continue." : "Your request is on its way."} intro={!context ? "This page confirms a successful submission. No recent submission is associated with this browser session." : signup ? "Your MONK account request has been received. If email verification is enabled, open the message from MONK and confirm your email before signing in." : "The MONK support service confirmed that your request was stored. Keep the reference below for follow-up."}>
     <section className="st-card st-thank-you-card">
       <span className="st-icon"><CheckCircle2/></span>
@@ -184,10 +188,12 @@ function PrivacyCenterPage() {
 
 function CookiePreferencesPage() {
   const [analytics,setAnalytics]=useState(false);const [saved,setSaved]=useState(false);const [loaded,setLoaded]=useState(false);
+  const measurementId = import.meta.env.VITE_GA4_MEASUREMENT_ID as string | undefined;
+  const validMeasurementId = Boolean(measurementId && /^G-[A-Z0-9]{10}$/i.test(measurementId) && measurementId !== "G-XXXXXXXXXX");
   useEffect(()=>{try{const v=JSON.parse(localStorage.getItem("monk-cookie-preferences-v1")||"{}");setAnalytics(v.analytics===true);}catch{setAnalytics(false);}setLoaded(true);},[]);
-  function save(value:boolean){try{localStorage.setItem("monk-cookie-preferences-v1",JSON.stringify({necessary:true,analytics:value,updatedAt:new Date().toISOString(),version:1}));setAnalytics(value);setSaved(true);}catch{setSaved(false);}}
-  return <Shell eyebrow="COOKIE PREFERENCES" title="You control optional browser preferences." intro="Essential storage supports sign-in and basic site operation. Optional analytics are not connected in the current public frontend; this setting records your preference only.">
-    <section className="st-card st-cookie"><div className="st-cookie-row"><div><h2>Essential storage</h2><p>Required for authentication and basic operation. Always active.</p></div><span className="st-required">Required</span></div><div className="st-cookie-row"><div><h2>Optional analytics</h2><p>Preference only. No analytics provider is currently active.</p></div><label className="st-switch"><input type="checkbox" checked={analytics} onChange={e=>{setAnalytics(e.target.checked);setSaved(false);}}/><span/></label></div><button className="st-primary" disabled={!loaded} onClick={()=>save(analytics)}>Save preferences</button>{saved&&<p className="st-success"><CheckCircle2 size={16}/> Your preference was saved in this browser.</p>}<p className="st-footnote">Clearing browser storage may reset these preferences. Read the <Link to="/cookies">cookie policy</Link>.</p></section>
+  function save(value:boolean){try{localStorage.setItem("monk-cookie-preferences-v1",JSON.stringify({necessary:true,analytics:value,updatedAt:new Date().toISOString(),version:2}));setAnalytics(value);setSaved(true);window.dispatchEvent(new Event("monk:cookie-preferences-changed"));}catch{setSaved(false);}}
+  return <Shell eyebrow="COOKIE PREFERENCES" title="You control optional browser preferences." intro={validMeasurementId ? "Essential storage supports sign-in and basic operation. Google Analytics 4 loads only if you explicitly enable optional analytics." : "Essential storage supports sign-in and basic site operation. A consent-gated Google Analytics 4 integration is prepared, but no valid Measurement ID is configured, so analytics remains inactive."}>
+    <section className="st-card st-cookie"><div className="st-cookie-row"><div><h2>Essential storage</h2><p>Required for authentication and basic operation. Always active.</p></div><span className="st-required">Required</span></div><div className="st-cookie-row"><div><h2>Optional analytics</h2><p>{validMeasurementId ? "Google Analytics 4; loads only after explicit consent." : "Preference is saved, but analytics remains inactive until a valid GA4 Measurement ID is configured."}</p></div><label className="st-switch"><input type="checkbox" checked={analytics} onChange={e=>{setAnalytics(e.target.checked);setSaved(false);}}/><span/></label></div><button className="st-primary" disabled={!loaded} onClick={()=>save(analytics)}>Save preferences</button>{saved&&<p className="st-success"><CheckCircle2 size={16}/> Your preference was saved in this browser.</p>}<p className="st-footnote">Clearing browser storage may reset these preferences. Read the <Link to="/cookies">cookie policy</Link>.</p></section>
   </Shell>;
 }
 
