@@ -129,3 +129,26 @@ test("thank-you page is private and excluded from the sitemap", async () => {
   assert.ok(worker.includes('"/thank-you"'));
   assert.ok(worker.includes('"/thank-you", "/support/tickets"'));
 });
+
+test("server-side support intake enforces honeypot and rate limits", async () => {
+  const source = await readFile(join(root, "supabase", "functions", "support-ticket-intake", "index.ts"), "utf8");
+  assert.match(source, /clean\(body\.website,\s*200\)/);
+  assert.match(source, /validEmail\(email\)/);
+  assert.match(source, /p_limit:\s*5/);
+  assert.match(source, /message\.length\s*<\s*10/);
+  const supportPages = await readFile(join(root, "src", "components", "SupportTrustPages.tsx"), "utf8");
+  assert.match(supportPages, /st-honeypot/);
+  assert.match(supportPages, /website\}\}\)/);
+});
+
+test("GA4 is loaded only after analytics consent and a real measurement ID", async () => {
+  const source = await readFile(join(root, "src", "components", "LegalPages.tsx"), "utf8");
+  assert.match(source, /G-XXXXXXXXXX/);
+  assert.match(source, /if \(!validMeasurementId \|\| !measurementId\) return/);
+  assert.match(source, /if \(!analytics\)/);
+  assert.match(source, /googletagmanager\.com\/gtag\/js/);
+  const privacy = await readFile(join(root, "src", "components", "LegalPages.tsx"), "utf8");
+  assert.match(privacy, /no valid Measurement ID is configured/);
+  assert.match(privacy, /sessionStorage/);
+  assert.match(privacy, /localStorage/);
+});
