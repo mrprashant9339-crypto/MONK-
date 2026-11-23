@@ -50,7 +50,7 @@ function ThankYouPage() {
     } catch { return null; }
   });
   const signup = context?.kind === "signup";
-  return <Shell eyebrow="SUBMISSION CONFIRMATION" title={signup ? "Check your inbox to continue." : "Your request is on its way."} intro={signup ? "Your MONK account request has been received. If email verification is enabled, open the message from MONK and confirm your email before signing in." : "The MONK support service confirmed that your request was stored. Keep the reference below for follow-up."}>
+  return <Shell eyebrow="SUBMISSION CONFIRMATION" title={!context ? "No recent submission found." : signup ? "Check your inbox to continue." : "Your request is on its way."} intro={!context ? "This page confirms a successful submission. No recent submission is associated with this browser session." : signup ? "Your MONK account request has been received. If email verification is enabled, open the message from MONK and confirm your email before signing in." : "The MONK support service confirmed that your request was stored. Keep the reference below for follow-up."}>
     <section className="st-card st-thank-you-card">
       <span className="st-icon"><CheckCircle2/></span>
       <h2>{context ? (signup ? "Next step: verify your email" : "Support request received") : "No recent submission found"}</h2>
