@@ -98,6 +98,10 @@ test("Phase 6 business UI includes all operational views and reduced-motion supp
   assert.match(component, /business_fulfill_order/);
   assert.match(component, /business_record_payment/);
   assert.match(component, /business_create_journal_entry/);
+  assert.match(component, /has_org_permission/);
+  assert.match(component, /availableViews/);
+  assert.match(component, /orderLines\.map/);
+  assert.match(component, /business\.finance\.manage/);
   assert.match(styles, /prefers-reduced-motion/);
   assert.match(styles, /bol-art-deals/);
   assert.match(styles, /bol-art-finance/);
