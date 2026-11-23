@@ -169,3 +169,33 @@ test("cookie preferences page uses the shared consent record version", async () 
   assert.match(support, /monk:cookie-preferences-changed/);
   assert.doesNotMatch(support, /No analytics provider is currently active/);
 });
+
+test("FAQ answers are grounded in current published product and policy details", async () => {
+  const source = await readFile(join(root, "src", "components", "PublicSite.tsx"), "utf8");
+  const faq = source.slice(source.indexOf('faq: { kicker:'), source.indexOf('\n  }[page]'));
+  assert.match(faq, /official college portal/);
+  assert.match(faq, /not a complete live admission directory/);
+  assert.match(faq, /does not offer a paid subscription/);
+  assert.match(faq, /email draft/);
+  assert.equal((faq.match(/title:/g) || []).length, 8);
+});
+
+test("reviews section contains placeholders only and no fabricated customer claims", async () => {
+  const source = await readFile(join(root, "src", "components", "PublicSite.tsx"), "utf8");
+  const reviews = source.slice(source.indexOf('className="reviews-section"'), source.indexOf('className="closing-cta"', source.indexOf('className="reviews-section"')));
+  assert.match(reviews, /No customer reviews are published yet/);
+  assert.match(reviews, /REVIEW PLACEHOLDER 01/);
+  assert.match(reviews, /REVIEW PLACEHOLDER 02/);
+  assert.match(reviews, /REVIEW PLACEHOLDER 03/);
+  assert.doesNotMatch(reviews, /five stars|★★★★★|customer name|verified buyer/i);
+});
+
+test("built public assets contain no insecure HTTP resource URLs", async () => {
+  const dist = join(root, "dist");
+  const files = await walk(dist);
+  for (const file of files) {
+    if (!/\.(?:html|css|js|mjs|json|svg)$/i.test(file)) continue;
+    const source = await readFile(file, "utf8");
+    assert.doesNotMatch(source, /(?:src|href)\s*=\s*["']http:\/\/|url\(\s*["']?http:\/\//i, `insecure HTTP resource in ${file}`);
+  }
+});
