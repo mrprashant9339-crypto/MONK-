@@ -76,7 +76,8 @@ function ContactPage() {
       const {data,error}=await supabase.functions.invoke("support-ticket-intake",{body:{fullName:name,email,category:topic,subject:topic,message,website}});
       if(error) throw error;
       if(!data?.ok || !data?.ticketRef) throw new Error(data?.error || "Your request could not be submitted.");
-      try { sessionStorage.setItem("monk:thank-you-context", JSON.stringify({ kind: "support", reference: data.ticketRef, notification: data.notification || "not_configured" })); } catch {}\n      navigate("/thank-you");
+      try { sessionStorage.setItem("monk:thank-you-context", JSON.stringify({ kind: "support", reference: data.ticketRef, notification: data.notification || "not_configured" })); } catch {}
+      navigate("/thank-you");
     } catch(error) { setSubmitError(error instanceof Error ? error.message : "Unable to submit your request. Please contact admin@monk.monster."); }
     finally { setSending(false); }
   }
@@ -112,7 +113,8 @@ function TicketListPage() {
       if(!data?.ok||!data?.ticketRef)throw new Error(data?.error||"The support request could not be submitted.");
       const ticket:Ticket={id:data.ticketRef,subject:subject.trim(),category,message:message.trim(),email:email.trim(),createdAt:data.createdAt||new Date().toISOString(),status:"Submitted"};
       const next=[ticket,...tickets]; if(storeList(TICKET_KEY,next))setTickets(next);
-      try { sessionStorage.setItem("monk:thank-you-context", JSON.stringify({ kind: "support", reference: ticket.id, notification: data.notification || "not_configured" })); } catch {}\n      navigate("/thank-you");
+      try { sessionStorage.setItem("monk:thank-you-context", JSON.stringify({ kind: "support", reference: ticket.id, notification: data.notification || "not_configured" })); } catch {}
+      navigate("/thank-you");
     } catch(error){setSubmitError(error instanceof Error?error.message:"Unable to submit your request. Please try again.");}
     finally{setSending(false);}
   }
@@ -125,7 +127,8 @@ function TicketListPage() {
       <label>Category *<select value={category} onChange={e=>setCategory(e.target.value)}><option>Technical issue</option><option>Account access</option><option>Billing or refund</option><option>Campus workspace</option><option>Business workspace</option><option>Privacy request</option><option>Security concern</option><option>Other</option></select></label>
       <label>Email address *<input required type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com"/></label>
       <label>Details *<textarea required minLength={10} maxLength={4000} rows={5} value={message} onChange={e=>setMessage(e.target.value)} placeholder="Steps to reproduce, expected result and what happened."/></label>
-      <label className="st-honeypot" aria-hidden="true">Leave this field empty<input tabIndex={-1} autoComplete="off" value={website} onChange={e=>setWebsite(e.target.value)}/></label>\n      <button className="st-primary" disabled={!valid||sending}>{sending?<><RefreshCw size={16} className="st-spin"/> Submitting…</>:<><ClipboardList size={16}/> Submit ticket</>}</button>
+      <label className="st-honeypot" aria-hidden="true">Leave this field empty<input tabIndex={-1} autoComplete="off" value={website} onChange={e=>setWebsite(e.target.value)}/></label>
+      <button className="st-primary" disabled={!valid||sending}>{sending?<><RefreshCw size={16} className="st-spin"/> Submitting…</>:<><ClipboardList size={16}/> Submit ticket</>}</button>
       <p className="st-footnote">Do not enter passwords, access tokens, payment-card data or sensitive student records.</p>
     </form><section className="st-card"><div className="st-card-title"><Clock3/><div><h2>Your recent requests</h2><p>Reference copies stored in this browser.</p></div></div>
       {tickets.length? <div className="st-ticket-list">{tickets.map(t=><Link to={`/support/tickets/${encodeURIComponent(t.id)}`} key={t.id}><span className="st-ticket-id">{t.id}</span><strong>{t.subject}</strong><small>{t.category} · {new Date(t.createdAt).toLocaleString()}</small><span className="st-local-status">Submitted to MONK</span></Link>)}</div>:<div className="st-empty"><ClipboardList/><strong>No recent requests on this device</strong><p>Submit a support request to receive a reference number.</p></div>}
@@ -213,7 +216,8 @@ export function isSupportTrustRoute(path:string) {
 }
 export default function SupportTrustPages() {
   const {pathname}=useLocation();
-  if(pathname==="/thank-you")return <ThankYouPage/>;\n  if(pathname==="/contact")return <ContactPage/>;
+  if(pathname==="/thank-you")return <ThankYouPage/>;
+  if(pathname==="/contact")return <ContactPage/>;
   if(pathname==="/support/tickets")return <TicketListPage/>;
   if(pathname.startsWith("/support/tickets/"))return <TicketDetailPage id={decodeURIComponent(pathname.split("/").pop()||"")}/>;
   if(pathname==="/status")return <StatusPage/>;
