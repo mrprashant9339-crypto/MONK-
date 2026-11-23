@@ -127,3 +127,13 @@ test("unknown production URLs return an actual HTTP 404", async ({ request }) =>
   expect(response.status()).toBe(404);
   expect(await response.text()).toContain("ERROR 404");
 });
+
+test("route-specific titles and social preview tags are served before hydration", async ({ page }) => {
+  await page.goto("/campus");
+  await expect(page).toHaveTitle("MONK Campus — College & Institution Workspaces");
+  await expect(page.locator('meta[property="og:title"]')).toHaveAttribute("content", "MONK Campus — College & Institution Workspaces");
+  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", "https://monk.monster/brand/monk-share-placeholder.svg");
+  await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute("content", "summary_large_image");
+  await page.goto("/business");
+  await expect(page).toHaveTitle("MONK Business — Business Operations Workspace");
+});
