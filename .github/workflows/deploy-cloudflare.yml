@@ -44,6 +44,8 @@ jobs:
         run: npm run test:release
 
       - name: Local Chromium end-to-end tests
+        env:
+          VITE_GA4_MEASUREMENT_ID: ${{ secrets.VITE_GA4_MEASUREMENT_ID }}
         run: npm run test:e2e
 
       - name: Deploy static assets to Cloudflare Worker
@@ -56,6 +58,7 @@ jobs:
       - name: Live production Chromium tests
         env:
           MONK_BASE_URL: https://monk.monster
+          VITE_GA4_MEASUREMENT_ID: ${{ secrets.VITE_GA4_MEASUREMENT_ID }}
         run: npm run test:e2e
 
       - name: Upload deployment browser reports
