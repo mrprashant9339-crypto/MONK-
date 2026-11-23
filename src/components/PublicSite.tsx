@@ -65,6 +65,27 @@ function updatePublicPageMetadata(pathname: string) {
     document.head.appendChild(canonical);
   }
   canonical.href = `https://monk.monster${path === "/" ? "/" : path}`;
+  const setProperty = (property: string, content: string) => {
+    let element = document.head.querySelector<HTMLMetaElement>(`meta[property="${property}"]`);
+    if (!element) {
+      element = document.createElement("meta");
+      element.setAttribute("property", property);
+      document.head.appendChild(element);
+    }
+    element.content = content;
+  };
+  setProperty("og:title", metadata.title);
+  setProperty("og:description", metadata.description);
+  setProperty("og:url", canonical.href);
+  setProperty("og:image", "https://monk.monster/brand/monk-share-placeholder.svg");
+  setProperty("og:image:width", "1200");
+  setProperty("og:image:height", "630");
+  setProperty("og:image:alt", "MONK Campus and Business workspaces — share image placeholder");
+  setMeta("twitter:card", "summary_large_image");
+  setMeta("twitter:title", metadata.title);
+  setMeta("twitter:description", metadata.description);
+  setMeta("twitter:image", "https://monk.monster/brand/monk-share-placeholder.svg");
+  setMeta("twitter:image:alt", "MONK Campus and Business workspaces — share image placeholder");
 }
 
 const governmentColleges = [
