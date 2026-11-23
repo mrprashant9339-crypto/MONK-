@@ -1,5 +1,5 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { Activity, ArrowDownToLine, ArrowUpRight, Boxes, Building2, CalendarClock, Check, ChevronDown, CircleDollarSign, ClipboardList, FileText, Layers3, Package, PieChart, Plus, RefreshCw, Search, ShieldCheck, Sparkles, Target, Users, Wallet } from "lucide-react";
+import { Activity, ArrowDownToLine, ArrowUpRight, Boxes, Building2, CalendarClock, Check, CircleDollarSign, ClipboardList, FileText, Package, PieChart, Plus, RefreshCw, Search, ShieldCheck, Sparkles, Wallet } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import "../business-operations-live.css";
 
