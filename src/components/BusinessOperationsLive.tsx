@@ -147,7 +147,17 @@ export default function BusinessOperationsLive({organizationId,initialView="Comm
   const csv=[keys,...rows.map(row=>keys.map(k=>String(row[k]??"")))].map(line=>line.map(v=>{const first=v.trimStart()[0];const safe=first&&"=+-@".includes(first)?"'"+v:v;return '"'+safe.split('"').join('""')+'"';}).join(",")).join("\r\n");
   const url=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));const a=document.createElement("a");a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();window.setTimeout(()=>URL.revokeObjectURL(url),1000);
  }
- const records=(rows:Row[],keys:string[],empty:string)=>rows.length?<div className="bol-table-wrap"><table className="bol-table"><thead><tr>{keys.map(k=><th key={k}>{label(k)}</th>}</tr></thead><tbody>{rows.map(row=><tr key={row.id||row.code}>{keys.map(k=><td key={k}>{k==="amount"||k==="total"||k==="unit_price"||k==="unit_cost"||k==="outstanding"?money(Number(row[k]),row.currency||currency):k==="created_at"||k==="due_date"||k==="expected_close_date"||k==="order_date"||k==="entry_date"?date(row[k]):k==="status"||k==="stage"||k==="kind"||k==="account_type"?<span className="bol-tag">{label(row[k])}</span>:String(row[k]??"—")}</td>)}</tr>)}</tbody></table></div>:<div className="bol-empty"><Sparkles/><b>Nothing here yet</b><span>{empty}</span></div>;
+ const records=(rows:Row[],keys:string[],empty:string)=>{
+  if(!rows.length)return <div className="bol-empty"><Sparkles/><b>Nothing here yet</b><span>{empty}</span></div>;
+  return <div className="bol-table-wrap"><table className="bol-table"><thead><tr>{keys.map(k=><th key={k}>{label(k)}</th>)}</tr></thead><tbody>{rows.map(row=><tr key={row.id||row.code}>{keys.map(k=>{
+   const value=row[k];
+   if(["amount","total","unit_price","unit_cost","outstanding","total_debit","total_credit","net_movement"].includes(k))return <td key={k}>{money(Number(value),row.currency||currency)}</td>;
+   if(["created_at","due_date","expected_close_date","order_date","entry_date","received_at","last_movement_at"].includes(k))return <td key={k}>{date(value)}</td>;
+   if(["status","stage","kind","account_type","product_type","movement_type","payment_method"].includes(k))return <td key={k}><span className="bol-tag">{label(value)}</span></td>;
+   if(typeof value==="boolean")return <td key={k}>{value?"Yes":"No"}</td>;
+   return <td key={k}>{String(value??"—")}</td>;
+  })}</tr>)}</tbody></table></div>;
+ };
 
  if(!organizationId)return <section className={"bol-page bol-view-"+view.toLowerCase()}><div className="bol-empty"><ShieldCheck/><b>Business organization required</b><span>Sign in and select a Business workspace first.</span></div></section>;
  return <section className="bol-page">
