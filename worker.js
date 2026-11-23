@@ -21,7 +21,7 @@ export default {
     const url = new URL(request.url);
     const path = normalizedPath(url.pathname);
     if ((request.method === "GET" || request.method === "HEAD") && isApplicationRoute(path)) {
-      const appUrl = new URL("/index.html", url);
+      const appUrl = new URL("/", url);
       return env.ASSETS.fetch(new Request(appUrl, request));
     }
     return env.ASSETS.fetch(request);
