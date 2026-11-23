@@ -349,7 +349,7 @@ grant execute on function public.business_adjust_inventory(uuid,uuid,text,numeri
 create or replace function public.business_create_order(
  p_company_id uuid,p_contact_id uuid,p_currency text,p_notes text,p_items jsonb
 ) returns uuid language plpgsql set search_path=public,pg_temp as $$
-declare org_id uuid:=public.current_organization_id(); order_id uuid; order_no text; subtotal numeric(18,2):=0; taxes numeric(18,2):=0; item jsonb; qty numeric; price numeric; rate numeric; sub numeric; tax numeric; product_row public.business_products;
+declare org_id uuid:=public.current_organization_id(); order_id uuid; order_no text; v_subtotal numeric(18,2):=0; v_taxes numeric(18,2):=0; item jsonb; qty numeric; price numeric; rate numeric; sub numeric; tax numeric; product_row public.business_products;
 begin
  if auth.uid() is null or org_id is null or not public.has_org_permission(org_id,'business.order.manage') then raise exception 'Permission denied' using errcode='42501'; end if;
  if jsonb_typeof(p_items)<>'array' or jsonb_array_length(p_items)<1 or jsonb_array_length(p_items)>100 then raise exception 'Provide between 1 and 100 order items' using errcode='22023'; end if;
@@ -366,12 +366,12 @@ begin
    select * into product_row from public.business_products where id=(item->>'product_id')::uuid and organization_id=org_id and deleted_at is null;
    if product_row.id is null then raise exception 'Product not found in this organization' using errcode='P0002'; end if;
   end if;
-  sub:=round(qty*price,2); tax:=round(sub*rate/100,2); subtotal:=subtotal+sub; taxes:=taxes+tax;
+  sub:=round(qty*price,2); tax:=round(sub*rate/100,2); v_subtotal:=v_subtotal+sub; v_taxes:=v_taxes+tax;
   insert into public.business_order_items(organization_id,order_id,product_id,description,quantity,unit_price,tax_rate,line_subtotal,tax_amount,line_total)
   values(org_id,order_id,nullif(item->>'product_id','')::uuid,coalesce(nullif(trim(item->>'description'),''),product_row.name,'Custom item'),qty,price,rate,sub,tax,sub+tax);
   product_row:=null;
  end loop;
- update public.business_orders set subtotal=subtotal,tax_total=taxes,total=subtotal+taxes where id=order_id and organization_id=org_id;
+ update public.business_orders set subtotal=v_subtotal,tax_total=v_taxes,total=v_subtotal+v_taxes where id=order_id and organization_id=org_id;
  return order_id;
 end; $$;
 revoke all on function public.business_create_order(uuid,uuid,text,text,jsonb) from public,anon;
@@ -462,9 +462,9 @@ create trigger business_posted_journal_line_guard before update or delete on pub
 
 create or replace view public.business_finance_trial_balance with (security_invoker=true) as
 select a.organization_id,a.id as account_id,a.code,a.name,a.account_type,a.currency,
- coalesce(sum(l.debit),0)::numeric(18,2) as total_debit,
- coalesce(sum(l.credit),0)::numeric(18,2) as total_credit,
- coalesce(sum(l.debit-l.credit),0)::numeric(18,2) as net_movement
+ coalesce(sum(case when e.status='posted' then l.debit else 0 end),0)::numeric(18,2) as total_debit,
+ coalesce(sum(case when e.status='posted' then l.credit else 0 end),0)::numeric(18,2) as total_credit,
+ coalesce(sum(case when e.status='posted' then l.debit-l.credit else 0 end),0)::numeric(18,2) as net_movement
 from public.business_finance_accounts a
 left join public.business_journal_lines l on l.account_id=a.id and l.organization_id=a.organization_id
 left join public.business_journal_entries e on e.id=l.journal_entry_id and e.organization_id=l.organization_id and e.status='posted'
