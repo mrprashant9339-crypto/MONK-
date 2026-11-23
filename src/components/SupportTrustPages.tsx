@@ -73,18 +73,18 @@ function ContactPage() {
 
 function TicketListPage() {
   const [tickets,setTickets]=useState<Ticket[]>(()=>readList<Ticket>(TICKET_KEY));
-  const [subject,setSubject]=useState(""); const [category,setCategory]=useState("Technical issue"); const [email,setEmail]=useState(""); const [message,setMessage]=useState(""); const [created,setCreated]=useState<string|null>(null);
+  const [fullName,setFullName]=useState(""); const [subject,setSubject]=useState(""); const [category,setCategory]=useState("Technical issue"); const [email,setEmail]=useState(""); const [message,setMessage]=useState(""); const [created,setCreated]=useState<string|null>(null);
   const [sending,setSending]=useState(false); const [notificationStatus,setNotificationStatus]=useState<string|null>(null); const [submitError,setSubmitError]=useState("");
   const valid=subject.trim().length>=4 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && message.trim().length>=10;
   async function create(e:FormEvent){
     e.preventDefault(); if(!valid||sending)return; setSending(true);setSubmitError("");setCreated(null);
     try {
-      const {data,error}=await supabase.functions.invoke("support-ticket-intake",{body:{fullName:"Support requester",email,category,subject,message,website:""}});
+      const {data,error}=await supabase.functions.invoke("support-ticket-intake",{body:{fullName,email,category,subject,message,website:""}});
       if(error)throw error;
       if(!data?.ok||!data?.ticketRef)throw new Error(data?.error||"The support request could not be submitted.");
       const ticket:Ticket={id:data.ticketRef,subject:subject.trim(),category,message:message.trim(),email:email.trim(),createdAt:data.createdAt||new Date().toISOString(),status:"Submitted"};
       const next=[ticket,...tickets]; if(storeList(TICKET_KEY,next))setTickets(next);
-      setCreated(ticket.id);setNotificationStatus(data.notification || "not_configured");setSubject("");setMessage("");
+      setCreated(ticket.id);setNotificationStatus(data.notification || "not_configured");setFullName("");setSubject("");setMessage("");
     } catch(error){setSubmitError(error instanceof Error?error.message:"Unable to submit your request. Please try again.");}
     finally{setSending(false);}
   }
@@ -92,7 +92,7 @@ function TicketListPage() {
     {created&&<div className="st-success-panel" role="status"><strong>Support request received.</strong><p>Reference: <strong>{created}</strong>. Keep this number for follow-up.</p><p>{notificationStatus==="sent"?"A notification email was sent to the support inbox.":notificationStatus==="failed"?"The request is saved, but the support notification email failed. Use the published email or WhatsApp route for urgent follow-up.":"The request is saved on the support server. Email alerts are not configured, so use the published email or WhatsApp route for urgent follow-up."}</p></div>}
     {submitError&&<div className="st-alert" role="alert">{submitError}</div>}
     <div className="st-grid st-ticket-grid"><form className="st-card st-form" onSubmit={create}><div className="st-card-title"><ClipboardList/><div><h2>Submit a support request</h2><p>You will receive a reference number after successful submission.</p></div></div>
-      <label>Subject *<input required minLength={4} maxLength={120} value={subject} onChange={e=>setSubject(e.target.value)} placeholder="Briefly describe the issue"/></label>
+      <label>Your name *<input required minLength={2} maxLength={80} autoComplete="name" value={fullName} onChange={e=>setFullName(e.target.value)} placeholder="Full name"/></label>\n      <label>Subject *<input required minLength={4} maxLength={120} value={subject} onChange={e=>setSubject(e.target.value)} placeholder="Briefly describe the issue"/></label>
       <label>Category *<select value={category} onChange={e=>setCategory(e.target.value)}><option>Technical issue</option><option>Account access</option><option>Billing or refund</option><option>Campus workspace</option><option>Business workspace</option><option>Privacy request</option><option>Security concern</option><option>Other</option></select></label>
       <label>Email address *<input required type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com"/></label>
       <label>Details *<textarea required minLength={10} maxLength={4000} rows={5} value={message} onChange={e=>setMessage(e.target.value)} placeholder="Steps to reproduce, expected result and what happened."/></label>
