@@ -30,7 +30,16 @@ test("public routes render the application without a blank screen", async ({ pag
   }
 });
 
-test("extended homepage sections, app preview and footer render", async ({ page }) => {\n  await page.goto("/");\n  await expect(page.locator(".brand-marquee")).toBeVisible();\n  await expect(page.getByRole("heading", { name: /different work/i })).toBeVisible();\n  await expect(page.locator(".product-ui-window")).toBeVisible();\n  await expect(page.locator(".site-scroll-progress")).toBeAttached();\n  await expect(page.locator("footer .footer-feature-panel")).toBeVisible();\n});\n\ntest("reference-inspired footer panel renders and footer navigation opens About", async ({ page }) => {
+test("extended homepage sections, app preview and footer render", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator(".brand-marquee")).toBeVisible();
+  await expect(page.getByRole("heading", { name: /different work/i })).toBeVisible();
+  await expect(page.locator(".product-ui-window")).toBeVisible();
+  await expect(page.locator(".site-scroll-progress")).toBeAttached();
+  await expect(page.locator("footer .footer-feature-panel")).toBeVisible();
+});
+
+test("reference-inspired footer panel renders and footer navigation opens About", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator("footer .footer-feature-panel")).toBeVisible();
   await expect(page.locator("footer .footer-panel-wordmark")).toContainText("MONK");
