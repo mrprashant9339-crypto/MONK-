@@ -113,6 +113,22 @@ export default function App() {
   }, [organizationVertical, active]);
 
   useEffect(() => {
+    if (location.pathname === "/login") {
+      document.title = "Log in or Sign up — MONK";
+      const description = document.head.querySelector<HTMLMetaElement>('meta[name="description"]');
+      if (description) description.content = "Sign in or create a MONK workspace account for your organization.";
+      const robots = document.head.querySelector<HTMLMetaElement>('meta[name="robots"]');
+      if (robots) robots.content = "noindex, nofollow";
+      const canonical = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+      if (canonical) canonical.href = "https://monk.monster/login";
+    } else if (session) {
+      document.title = "Workspace Dashboard — MONK";
+      const robots = document.head.querySelector<HTMLMetaElement>('meta[name="robots"]');
+      if (robots) robots.content = "noindex, nofollow";
+    }
+  }, [location.pathname, session]);
+
+  useEffect(() => {
     const params = new URLSearchParams(location.search);
     const mode = params.get("mode");
     if (mode === "login" || mode === "signup") setAuthMode(mode);
