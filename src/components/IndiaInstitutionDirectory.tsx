@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { FormEvent } from "react";
 import { ArrowUpRight, ChevronLeft, ChevronRight, MapPin, Search, ShieldCheck } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import {
@@ -37,7 +38,7 @@ function safeHttpUrl(value: string | null): string | null {
   if (!value) return null;
   try {
     const parsed = new URL(value);
-    return parsed.protocol === "https:" || parsed.protocol === "http:" ? parsed.href : null;
+    return (parsed.protocol === "https:" || parsed.protocol === "http:") && !parsed.username && !parsed.password ? parsed.href : null;
   } catch {
     return null;
   }
@@ -61,6 +62,7 @@ function verificationLabel(state: Institution["verification_state"]): string {
 }
 
 export default function IndiaInstitutionDirectory() {
+  const requestSequence = useRef(0);
   const [queryInput, setQueryInput] = useState("");
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("");
@@ -103,6 +105,7 @@ export default function IndiaInstitutionDirectory() {
   }, []);
 
   const load = useCallback(async () => {
+    const sequence = ++requestSequence.current;
     setBusy(true);
     setError("");
     try {
@@ -136,18 +139,22 @@ export default function IndiaInstitutionDirectory() {
         .range(from, from + PAGE_SIZE - 1);
 
       if (queryError) throw queryError;
+      if (sequence !== requestSequence.current) return;
       setRows((data ?? []) as Institution[]);
       setTotal(count ?? 0);
     } catch (cause) {
-      setRows([]);
-      setTotal(0);
-      setError(cause instanceof Error ? cause.message : "The institution directory could not be loaded.");
+      if (sequence === requestSequence.current) {
+        setRows([]);
+        setTotal(0);
+        setError(cause instanceof Error ? cause.message : "The institution directory could not be loaded.");
+      }
     } finally {
-      setBusy(false);
+      if (sequence === requestSequence.current) setBusy(false);
     }
   }, [category, stateCode, ownership, query, page]);
 
   useEffect(() => { void load(); }, [load]);
+  useEffect(() => () => { requestSequence.current += 1; }, []);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const currentCategory = useMemo(
@@ -161,7 +168,7 @@ export default function IndiaInstitutionDirectory() {
     ).slice(0, 5);
   }, [currentCategory]);
 
-  function submitSearch(event: React.FormEvent<HTMLFormElement>) {
+  function submitSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setPage(0);
     setQuery(queryInput.trim());
