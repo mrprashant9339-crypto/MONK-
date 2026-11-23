@@ -193,3 +193,22 @@ test("internal links across public pages resolve to real pages or assets", async
     expect(response.status(), `broken internal link: ${href}`).toBeLessThan(400);
   }
 });
+
+
+test("homepage gives colleges and businesses distinct primary paths", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("heading", { name: /College operations and business workflows/i })).toBeVisible();
+  await expect(page.getByRole("button", { name: /I run a college.*Explore Campus/i })).toBeVisible();
+  await expect(page.getByRole("button", { name: /I run a business.*Explore Business/i })).toBeVisible();
+  await page.getByRole("button", { name: /I run a college.*Explore Campus/i }).click();
+  await expect(page).toHaveURL(/\/campus$/);
+  await page.goto("/");
+  await page.getByRole("button", { name: /I run a business.*Explore Business/i }).click();
+  await expect(page).toHaveURL(/\/business$/);
+});
+
+test("signup legacy path redirects to the canonical signup flow", async ({ request }) => {
+  const response = await request.get("/signup", { maxRedirects: 0 });
+  expect(response.status()).toBe(302);
+  expect(response.headers().location).toContain("/login?mode=signup");
+});
