@@ -86,7 +86,7 @@ export default function SalesWorkspace({organizationId}:{organizationId:string|n
 
   function exportLeads() {
     const rows=[["Name","Email","Phone","Source","Status","Score","Created"],...filteredLeads.map(lead=>[lead.name,lead.email??"",lead.phone??"",lead.source,lead.status,String(lead.score),lead.created_at])];
-    const csv=rows.map(row=>row.map(value=>{const cell=String(value);const safe=/^[\\s]*[=+@-]/.test(cell)?"\u0027"+cell:cell;return '"' + safe.replace(/"/g,'""') + '"';}).join(",")).join("\r\n");
+    const csv=rows.map(row=>row.map(value=>{const cell=String(value);const first=cell.trimStart()[0];const safe=first&&"=+-@".includes(first)?"\u0027"+cell:cell;return '"' + safe.replace(/"/g,'""') + '"';}).join(",")).join("\r\n");
     const url=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
     const anchor=document.createElement("a");anchor.href=url;anchor.download="monk-sales-leads.csv";document.body.appendChild(anchor);anchor.click();anchor.remove();window.setTimeout(()=>URL.revokeObjectURL(url),1000);
   }
