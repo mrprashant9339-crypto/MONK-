@@ -207,8 +207,9 @@ test("homepage gives colleges and businesses distinct primary paths", async ({ p
   await expect(page).toHaveURL(/\/business$/);
 });
 
-test("signup legacy path redirects to the canonical signup flow", async ({ request }) => {
-  const response = await request.get("/signup", { maxRedirects: 0 });
-  expect(response.status()).toBe(302);
-  expect(response.headers().location).toContain("/login?mode=signup");
+test("direct signup path opens the canonical account creation screen", async ({ page }) => {
+  await page.goto("/signup");
+  await expect(page).toHaveURL(/\/login\?mode=signup$/);
+  await expect(page.getByRole("button", { name: /create account/i })).toBeVisible();
+  await expect(page.getByRole("checkbox")).toBeVisible();
 });
