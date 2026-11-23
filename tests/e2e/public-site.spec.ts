@@ -120,3 +120,10 @@ test("contact form submits to the server-side support intake and shows a referen
   await page.getByRole("button", { name: /Submit support request/i }).click();
   await expect(page.getByRole("status")).toContainText("MONK-20261123-AB12CD34");
 });
+
+test("unknown production URLs return an actual HTTP 404", async ({ request }) => {
+  test.skip(!process.env.MONK_BASE_URL, "Real Worker HTTP status is checked in the production deployment job.");
+  const response = await request.get("/this-monk-page-should-not-exist-404-check");
+  expect(response.status()).toBe(404);
+  expect(await response.text()).toContain("ERROR 404");
+});
