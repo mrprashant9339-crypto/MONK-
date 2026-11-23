@@ -221,3 +221,76 @@ test("Campus directory provides India-wide institution filters and published-rec
   await expect(directory.locator(".national-directory-summary")).toContainText(/published institution record/i);
   await expect(directory.locator("form button[type=submit]")).toBeVisible();
 });
+
+test("support ticket form submits through the intake API and stores only a receipt reference", async ({ page }) => {
+  let submitted: Record<string, unknown> | null = null;
+
+  await page.route("**/functions/v1/support-ticket-intake", async (route) => {
+    const request = route.request();
+    const origin = request.headers().origin ?? "*";
+    if (request.method() === "OPTIONS") {
+      await route.fulfill({
+        status: 200,
+        headers: {
+          "access-control-allow-origin": origin,
+          "access-control-allow-methods": "POST, OPTIONS",
+          "access-control-allow-headers": request.headers()["access-control-request-headers"] ?? "authorization, apikey, content-type, x-client-info",
+          "access-control-max-age": "86400",
+          vary: "Origin"
+        },
+        body: "ok"
+      });
+      return;
+    }
+
+    submitted = request.postDataJSON() as Record<string, unknown>;
+    await route.fulfill({
+      status: 201,
+      headers: {
+        "access-control-allow-origin": origin,
+        "access-control-allow-headers": "authorization, apikey, content-type, x-client-info",
+        "content-type": "application/json",
+        vary: "Origin"
+      },
+      body: JSON.stringify({
+        ok: true,
+        ticketRef: "MONK-2026-TEST",
+        createdAt: "2026-11-23T00:00:00.000Z",
+        notification: "sent"
+      })
+    });
+  });
+
+  await page.goto("/support/tickets");
+  await page.getByLabel(/full name/i).fill("Test User");
+  await page.getByLabel(/subject/i).fill("Test support request");
+  await page.getByLabel(/category/i).selectOption("Campus workspace");
+  await page.getByLabel(/email address/i).fill("test@example.com");
+  await page.getByLabel(/details/i).fill("This is a browser test of the support intake submission.");
+  await expect(page.getByRole("button", { name: /submit support request/i })).toBeEnabled();
+  await page.getByRole("button", { name: /submit support request/i }).click();
+
+  await expect(page.getByRole("status")).toContainText("MONK-2026-TEST");
+  expect(submitted).toMatchObject({
+    fullName: "Test User",
+    email: "test@example.com",
+    category: "Campus workspace",
+    subject: "Test support request"
+  });
+  expect(submitted?.website).toBe("");
+
+  const receipt = await page.evaluate(() => JSON.parse(localStorage.getItem("monk-support-tickets-v1") || "[]"));
+  expect(receipt).toHaveLength(1);
+  expect(receipt[0]).toMatchObject({
+    id: "MONK-2026-TEST",
+    ticketRef: "MONK-2026-TEST",
+    status: "Submitted"
+  });
+  expect(receipt[0]).not.toHaveProperty("message");
+  expect(receipt[0]).not.toHaveProperty("email");
+  expect(receipt[0]).not.toHaveProperty("fullName");
+
+  await page.goto("/support/tickets/MONK-2026-TEST");
+  await expect(page.getByText(/submission received; live tracking unavailable/i)).toBeVisible();
+  await expect(page.getByText(/support inbox notified/i)).toBeVisible();
+});
