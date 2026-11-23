@@ -79,7 +79,7 @@ This inventory distinguishes implemented foundations, previews, planned surfaces
 | CRM | Partial functional module; business vertical |
 | Sales | Partial / module-specific coverage |
 | Education | Partial functional module; education vertical |
-| Documents | Placeholder / integration pending |
+| Documents | Functional local-first frontend preview | Search, drag/drop and file picker; temporary in-memory queue, download/remove; no server upload or persistence until secure storage is connected |
 | Analytics | Placeholder / aggregation pending |
 | Finance | Placeholder / finance module pending |
 | Marketplace | Placeholder / integration catalog pending |
