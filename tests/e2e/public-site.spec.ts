@@ -92,3 +92,19 @@ test("manifest and favicon are served by the production preview", async ({ reque
   expect(favicon.status()).toBe(200);
   expect(await favicon.text()).toContain("<svg");
 });
+
+test("contact form submits to the server-side support intake and shows a reference", async ({ page }) => {
+  await page.route("https://yucwackrbekwaxiyuobt.supabase.co/functions/v1/support-ticket-intake", async route => {
+    await route.fulfill({
+      status: 201,
+      contentType: "application/json",
+      body: JSON.stringify({ ok: true, ticketRef: "MONK-20261123-AB12CD34", createdAt: "2026-11-23T12:00:00.000Z", notification: "not_configured" })
+    });
+  });
+  await page.goto("/contact");
+  await page.getByLabel(/Your name/i).fill("Test User");
+  await page.getByLabel(/Email address/i).fill("test@example.com");
+  await page.getByLabel(/Message/i).fill("I need help with my MONK workspace account.");
+  await page.getByRole("button", { name: /Submit support request/i }).click();
+  await expect(page.getByRole("status")).toContainText("MONK-20261123-AB12CD34");
+});
