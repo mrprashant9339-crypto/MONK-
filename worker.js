@@ -175,6 +175,9 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const path = normalizedPath(url.pathname);
+    if ((request.method === "GET" || request.method === "HEAD") && path === "/signup") {
+      return Response.redirect(new URL("/login?mode=signup", url), 302);
+    }
     if (request.method === "GET" && isApplicationRoute(path)) {
       const appUrl = new URL("/", url);
       const response = await env.ASSETS.fetch(new Request(appUrl, request));
