@@ -41,8 +41,8 @@ This inventory distinguishes implemented foundations, previews, planned surfaces
 | Route | Current state | Notes |
 |---|---|---|
 | /contact | Implemented frontend handoff | Opens a prepared email; does not claim server receipt |
-| /support/tickets | Implemented local draft | Browser-local ticket drafts only |
-| /support/tickets/:id | Implemented local draft detail | Reads current browser storage |
+| /support/tickets | Server-side intake connected | Public form calls the rate-limited `support-ticket-intake` Edge Function; successful references are stored locally with minimal metadata. No server-side status/reply lookup yet |
+| /support/tickets/:id | Submission receipt / local draft detail | Shows locally retained submission reference or legacy draft; does not claim live ticket status |
 | /status | Transparency page | Monitoring is unavailable; no uptime claim |
 | /incidents | Transparency page | No authoritative incident feed connected |
 | /security-center | Implemented | Security navigation and safe reporting guidance |
