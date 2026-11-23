@@ -141,12 +141,18 @@ test("route-specific titles and social preview tags are served before hydration"
   await expect(page).toHaveTitle("MONK Business — Business Operations Workspace");
 });
 
-test("optional analytics do not load before consent or without a real GA4 ID", async ({ page }) => {
+test("GA4 loads only after consent and only when a real Measurement ID is configured", async ({ page }) => {
+  const measurementId = process.env.VITE_GA4_MEASUREMENT_ID;
+  const validMeasurementId = Boolean(measurementId && /^G-[A-Z0-9]{10}$/i.test(measurementId) && measurementId !== "G-XXXXXXXXXX");
   await page.goto("/");
   await expect(page.locator(".cookie-notice")).toBeVisible();
   await expect(page.locator('script[src*="googletagmanager.com"]')).toHaveCount(0);
   await page.getByRole("button", { name: "Accept optional" }).click();
-  await expect(page.locator('script[src*="googletagmanager.com"]')).toHaveCount(0);
+  if (validMeasurementId) {
+    await expect(page.locator(`script[src*="googletagmanager.com/gtag/js?id=${measurementId}"]`)).toHaveCount(1);
+  } else {
+    await expect(page.locator('script[src*="googletagmanager.com"]')).toHaveCount(0);
+  }
 });
 
 test("FAQ contains current answers and reviews are explicitly unpublished placeholders", async ({ page }) => {
