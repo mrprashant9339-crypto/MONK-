@@ -148,3 +148,20 @@ test("optional analytics do not load before consent or without a real GA4 ID", a
   await page.getByRole("button", { name: "Accept optional" }).click();
   await expect(page.locator('script[src*="googletagmanager.com"]')).toHaveCount(0);
 });
+
+test("FAQ contains current answers and reviews are explicitly unpublished placeholders", async ({ page }) => {
+  await page.goto("/faq");
+  await expect(page.getByText(/Is MONK a registered company or official college portal/i)).toBeVisible();
+  await expect(page.getByText(/Is the college directory a complete India-wide directory/i)).toBeVisible();
+  await page.goto("/");
+  await expect(page.getByRole("heading", { name: /Real experiences/i })).toBeVisible();
+  await expect(page.getByText(/No customer reviews are published yet/i)).toBeVisible();
+  await expect(page.getByText("REVIEW PLACEHOLDER 01")).toBeVisible();
+});
+
+test("plain HTTP redirects to the HTTPS canonical origin", async ({ request }) => {
+  test.skip(!process.env.MONK_BASE_URL, "HTTP-to-HTTPS redirect is checked only against production.");
+  const response = await request.get("http://monk.monster", { maxRedirects: 0 });
+  expect([301, 302, 307, 308]).toContain(response.status());
+  expect(response.headers().location).toMatch(/^https:\/\//);
+});
