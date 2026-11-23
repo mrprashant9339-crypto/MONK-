@@ -320,3 +320,6 @@ html{scroll-behavior:smooth;scroll-padding-top:88px}
  .hero-lede,.portal-hero-copy>p{font-size:14px}
  .hero-trust{font-size:11px}
 }
+
+/* Keep the decorative ticker still when keyboard users focus within it. */
+.brand-marquee:focus-within .brand-marquee-track{animation-play-state:paused}
