@@ -6,8 +6,9 @@ import {
   AlertTriangle, LockKeyhole, Copy, Activity, Bug, ClipboardList, Home, Server
 } from "lucide-react";
 import "../support-trust.css";
+import { supabase } from "../lib/supabase";
 
-type Ticket = { id: string; subject: string; category: string; message: string; email: string; createdAt: string; status: "Saved locally"; };
+type Ticket = { id: string; subject: string; category: string; message: string; email: string; createdAt: string; status: "Submitted"; };
 const TICKET_KEY = "monk-support-tickets-v1";
 const REQUEST_KEY = "monk-privacy-requests-v1";
 const readList = <T,>(key: string): T[] => {
@@ -37,18 +38,32 @@ function Shell({ eyebrow, title, intro, children }: { eyebrow: string; title: st
 }
 
 function ContactPage() {
-  const [name,setName]=useState(""); const [email,setEmail]=useState(""); const [topic,setTopic]=useState("General enquiry"); const [message,setMessage]=useState(""); const [copied,setCopied]=useState(false);
-  const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && name.trim().length>=2 && message.trim().length>=10;
-  function submit(e:FormEvent) { e.preventDefault(); if(!valid) return; const subject=encodeURIComponent(`MONK — ${topic}`); const body=encodeURIComponent(`Name: ${name}\nEmail: ${email}\nTopic: ${topic}\n\n${message}`); window.location.href=`mailto:${emailAddress}?subject=${subject}&body=${body}`; }
-  return <Shell eyebrow="CONTACT SUPPORT" title="A clear path to the right help." intro="Send a project, account, privacy or security enquiry. The form prepares an email in your mail app; it does not silently submit or claim that a ticket has been received.">
+  const [name,setName]=useState(""); const [email,setEmail]=useState(""); const [topic,setTopic]=useState("General enquiry"); const [message,setMessage]=useState(""); const [website,setWebsite]=useState("");
+  const [copied,setCopied]=useState(false); const [sending,setSending]=useState(false); const [submittedRef,setSubmittedRef]=useState<string|null>(null); const [submitError,setSubmitError]=useState("");
+  const valid = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email) && name.trim().length>=2 && message.trim().length>=10;
+  async function submit(e:FormEvent) {
+    e.preventDefault(); if(!valid || sending) return;
+    setSending(true); setSubmitError(""); setSubmittedRef(null);
+    try {
+      const {data,error}=await supabase.functions.invoke("support-ticket-intake",{body:{fullName:name,email,category:topic,subject:topic,message,website}});
+      if(error) throw error;
+      if(!data?.ok || !data?.ticketRef) throw new Error(data?.error || "Your request could not be submitted.");
+      setSubmittedRef(data.ticketRef); setName(""); setEmail(""); setMessage(""); setWebsite("");
+    } catch(error) { setSubmitError(error instanceof Error ? error.message : "Unable to submit your request. Please use the published email or WhatsApp route."); }
+    finally { setSending(false); }
+  }
+  return <Shell eyebrow="CONTACT SUPPORT" title="A clear path to the right help." intro="Submit a support request directly to MONK. A reference number is shown after the server confirms that your request has been stored.">
+    {submittedRef&&<div className="st-success-panel" role="status"><strong>Support request received.</strong><p>Your reference number is <strong>{submittedRef}</strong>. Keep it for future correspondence.</p></div>}
+    {submitError&&<div className="st-alert" role="alert">{submitError}</div>}
     <div className="st-grid st-contact-grid"><form className="st-card st-form" onSubmit={submit}>
       <div className="st-card-title"><MessageSquare/><div><h2>Write to the MONK team</h2><p>Required fields are marked with an asterisk.</p></div></div>
       <label>Your name *<input required minLength={2} maxLength={80} autoComplete="name" value={name} onChange={e=>setName(e.target.value)} placeholder="Full name"/></label>
       <label>Email address *<input required type="email" autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com"/></label>
       <label>What is this about? *<select value={topic} onChange={e=>setTopic(e.target.value)}><option>General enquiry</option><option>Account access</option><option>Workspace or product issue</option><option>Privacy or data request</option><option>Security vulnerability</option><option>Accessibility issue</option></select></label>
       <label>Message *<textarea required minLength={10} maxLength={4000} rows={6} value={message} onChange={e=>setMessage(e.target.value)} placeholder="Describe what you need help with. Do not include passwords, OTPs, API keys or sensitive student records."/></label>
+      <label className="st-honeypot" aria-hidden="true">Leave this field empty<input tabIndex={-1} autoComplete="off" value={website} onChange={e=>setWebsite(e.target.value)}/></label>
       <div className="st-note"><ShieldCheck size={17}/> Never send passwords, one-time passcodes, full payment-card details or unnecessary identity documents.</div>
-      <button className="st-primary" type="submit" disabled={!valid}><Mail size={16}/> Prepare support email <ArrowUpRight size={16}/></button>
+      <button className="st-primary" type="submit" disabled={!valid||sending}>{sending?<><RefreshCw size={16} className="st-spin"/> Submitting securely…</>:<><Mail size={16}/> Submit support request <ArrowUpRight size={16}/></>}</button>
     </form><aside className="st-card st-side-card"><span className="st-icon"><LifeBuoy/></span><h2>Other support routes</h2>
       <Link to="/support/tickets"><ClipboardList/> Support tickets <ArrowRight/></Link><a href="https://wa.me/919288435641" target="_blank" rel="noreferrer"><MessageSquare/> WhatsApp support <ArrowUpRight/></a><Link to="/security-center"><ShieldCheck/> Security center <ArrowRight/></Link><Link to="/privacy-center"><LockKeyhole/> Privacy center <ArrowRight/></Link><Link to="/status"><Activity/> Service status <ArrowRight/></Link>
       <div className="st-divider"/><p className="st-small">Prefer email? Use the published support address.</p><div className="st-email"><a href={`mailto:${emailAddress}`}>{emailAddress}</a><button type="button" aria-label="Copy support email" onClick={()=>{void navigator.clipboard?.writeText(emailAddress);setCopied(true);}}><Copy size={15}/></button></div>{copied&&<small className="st-success">Email address copied when clipboard permission is available.</small>}
@@ -59,27 +74,40 @@ function ContactPage() {
 function TicketListPage() {
   const [tickets,setTickets]=useState<Ticket[]>(()=>readList<Ticket>(TICKET_KEY));
   const [subject,setSubject]=useState(""); const [category,setCategory]=useState("Technical issue"); const [email,setEmail]=useState(""); const [message,setMessage]=useState(""); const [created,setCreated]=useState<string|null>(null);
-  const valid=subject.trim().length>=4 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && message.trim().length>=10;
-  function create(e:FormEvent){e.preventDefault();if(!valid)return;const ticket:Ticket={id:`LOCAL-${Date.now().toString(36).toUpperCase()}`,subject:subject.trim(),category,message:message.trim(),email:email.trim(),createdAt:new Date().toISOString(),status:"Saved locally"};const next=[ticket,...tickets];if(storeList(TICKET_KEY,next)){setTickets(next);setCreated(ticket.id);setSubject("");setMessage("");}else setCreated("storage-error");}
-  return <Shell eyebrow="SUPPORT TICKETS" title="Keep every support request organized." intro="Create and review ticket drafts on this device. Until a support backend is connected, these records are private local drafts—not tickets delivered to MONK.">
-    {created&&<div className={created==="storage-error"?"st-alert":"st-success-panel"} role="status">{created==="storage-error"?"This browser could not save the ticket. Check available device storage.":<>Local ticket draft created: <strong>{created}</strong>. It has not been sent to support.</>}</div>}
-    <div className="st-grid st-ticket-grid"><form className="st-card st-form" onSubmit={create}><div className="st-card-title"><ClipboardList/><div><h2>Create a ticket draft</h2><p>Use a working email address for your own reference.</p></div></div>
+  const [sending,setSending]=useState(false); const [submitError,setSubmitError]=useState("");
+  const valid=subject.trim().length>=4 && /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email) && message.trim().length>=10;
+  async function create(e:FormEvent){
+    e.preventDefault(); if(!valid||sending)return; setSending(true);setSubmitError("");setCreated(null);
+    try {
+      const {data,error}=await supabase.functions.invoke("support-ticket-intake",{body:{fullName:"Support requester",email,category,subject,message,website:""}});
+      if(error)throw error;
+      if(!data?.ok||!data?.ticketRef)throw new Error(data?.error||"The support request could not be submitted.");
+      const ticket:Ticket={id:data.ticketRef,subject:subject.trim(),category,message:message.trim(),email:email.trim(),createdAt:data.createdAt||new Date().toISOString(),status:"Submitted"};
+      const next=[ticket,...tickets]; if(storeList(TICKET_KEY,next))setTickets(next);
+      setCreated(ticket.id);setSubject("");setMessage("");
+    } catch(error){setSubmitError(error instanceof Error?error.message:"Unable to submit your request. Please try again.");}
+    finally{setSending(false);}
+  }
+  return <Shell eyebrow="SUPPORT TICKETS" title="Keep every support request organized." intro="Submit a request to MONK's server-side support queue. This browser keeps a local reference copy; it is not the authoritative ticket database.">
+    {created&&<div className="st-success-panel" role="status"><strong>Support request received.</strong><p>Reference: <strong>{created}</strong>. Keep this number for follow-up.</p></div>}
+    {submitError&&<div className="st-alert" role="alert">{submitError}</div>}
+    <div className="st-grid st-ticket-grid"><form className="st-card st-form" onSubmit={create}><div className="st-card-title"><ClipboardList/><div><h2>Submit a support request</h2><p>You will receive a reference number after successful submission.</p></div></div>
       <label>Subject *<input required minLength={4} maxLength={120} value={subject} onChange={e=>setSubject(e.target.value)} placeholder="Briefly describe the issue"/></label>
       <label>Category *<select value={category} onChange={e=>setCategory(e.target.value)}><option>Technical issue</option><option>Account access</option><option>Billing or refund</option><option>Campus workspace</option><option>Business workspace</option><option>Privacy request</option><option>Security concern</option><option>Other</option></select></label>
       <label>Email address *<input required type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com"/></label>
       <label>Details *<textarea required minLength={10} maxLength={4000} rows={5} value={message} onChange={e=>setMessage(e.target.value)} placeholder="Steps to reproduce, expected result and what happened."/></label>
-      <button className="st-primary" disabled={!valid}><ClipboardList size={16}/> Save ticket draft</button>
-      <p className="st-footnote">Local-only storage. Do not enter sensitive personal data, passwords, tokens or student records.</p>
-    </form><section className="st-card"><div className="st-card-title"><Clock3/><div><h2>Your saved drafts</h2><p>Only drafts stored in this browser are shown.</p></div></div>
-      {tickets.length? <div className="st-ticket-list">{tickets.map(t=><Link to={`/support/tickets/${encodeURIComponent(t.id)}`} key={t.id}><span className="st-ticket-id">{t.id}</span><strong>{t.subject}</strong><small>{t.category} · {new Date(t.createdAt).toLocaleString()}</small><span className="st-local-status">Saved on this device</span></Link>)}</div>:<div className="st-empty"><ClipboardList/><strong>No saved ticket drafts</strong><p>Create a draft to keep the issue details on this device.</p></div>}
+      <button className="st-primary" disabled={!valid||sending}>{sending?<><RefreshCw size={16} className="st-spin"/> Submitting…</>:<><ClipboardList size={16}/> Submit ticket</>}</button>
+      <p className="st-footnote">Do not enter passwords, access tokens, payment-card data or sensitive student records.</p>
+    </form><section className="st-card"><div className="st-card-title"><Clock3/><div><h2>Your recent requests</h2><p>Reference copies stored in this browser.</p></div></div>
+      {tickets.length? <div className="st-ticket-list">{tickets.map(t=><Link to={`/support/tickets/${encodeURIComponent(t.id)}`} key={t.id}><span className="st-ticket-id">{t.id}</span><strong>{t.subject}</strong><small>{t.category} · {new Date(t.createdAt).toLocaleString()}</small><span className="st-local-status">Submitted to MONK</span></Link>)}</div>:<div className="st-empty"><ClipboardList/><strong>No recent requests on this device</strong><p>Submit a support request to receive a reference number.</p></div>}
     </section></div>
   </Shell>;
 }
 
 function TicketDetailPage({id}:{id:string}) {
   const ticket=useMemo(()=>readList<Ticket>(TICKET_KEY).find(t=>t.id===id),[id]);
-  return <Shell eyebrow="TICKET DETAILS" title={ticket?ticket.subject:"Ticket draft not found"} intro="This view displays locally saved information only. There is no server-side ticket status or support conversation yet.">
-    {ticket?<section className="st-card st-detail"><div className="st-detail-top"><span className="st-ticket-id">{ticket.id}</span><span className="st-local-status">Saved on this device</span></div><dl><div><dt>Category</dt><dd>{ticket.category}</dd></div><div><dt>Contact email</dt><dd>{ticket.email}</dd></div><div><dt>Created</dt><dd>{new Date(ticket.createdAt).toLocaleString()}</dd></div><div><dt>Status</dt><dd>Local draft · Not submitted</dd></div></dl><h2>Issue description</h2><p className="st-message">{ticket.message}</p><a className="st-primary st-link-button" href={`mailto:${emailAddress}?subject=${encodeURIComponent("Support: "+ticket.subject)}&body=${encodeURIComponent(ticket.message+"\n\nReference: "+ticket.id)}`}><Mail size={16}/> Send by email <ArrowUpRight size={16}/></a></section>:<section className="st-card st-empty"><AlertTriangle/><h2>We could not find this local ticket</h2><p>It may have been cleared from browser storage or saved on another device.</p><Link className="st-primary st-link-button" to="/support/tickets">Back to support tickets <ArrowRight size={16}/></Link></section>}
+  return <Shell eyebrow="TICKET DETAILS" title={ticket?ticket.subject:"Reference copy not found"} intro="This page shows the reference copy saved in this browser. The support request itself is stored server-side; live status tracking is not enabled yet.">
+    {ticket?<section className="st-card st-detail"><div className="st-detail-top"><span className="st-ticket-id">{ticket.id}</span><span className="st-local-status">Submitted to MONK</span></div><dl><div><dt>Category</dt><dd>{ticket.category}</dd></div><div><dt>Contact email</dt><dd>{ticket.email}</dd></div><div><dt>Created</dt><dd>{new Date(ticket.createdAt).toLocaleString()}</dd></div><div><dt>Status</dt><dd>Received by support intake</dd></div></dl><h2>Issue description</h2><p className="st-message">{ticket.message}</p><a className="st-primary st-link-button" href={`mailto:${emailAddress}?subject=${encodeURIComponent("Support follow-up: "+ticket.id)}&body=${encodeURIComponent("Reference: "+ticket.id+"\\n"+ticket.message)}`}><Mail size={16}/> Follow up by email <ArrowUpRight size={16}/></a></section>:<section className="st-card st-empty"><AlertTriangle/><h2>Reference copy unavailable</h2><p>The request may still exist on the MONK support server. Contact support and include your reference number if you have it.</p><a className="st-secondary" href={`mailto:${emailAddress}`}>Contact support <ArrowRight size={16}/></a></section>}
   </Shell>;
 }
 
