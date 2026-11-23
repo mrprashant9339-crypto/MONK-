@@ -1,5 +1,5 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { Activity, ArrowDownRight, ArrowUpRight, Building2, Check, ChevronDown, CircleDollarSign, Download, Filter, Mail, Plus, RefreshCw, Search, Sparkles, Target, Users, X } from "lucide-react";
+import { Activity, ArrowUpRight, Building2, Check, ChevronDown, Download, Filter, Mail, Plus, RefreshCw, Search, Sparkles, Target, Users, X } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import "./sales-workspace.css";
 
