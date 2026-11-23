@@ -8,11 +8,6 @@ declare
   table_name text;
   policy_name text;
   policy_row record;
-  required_policies constant text[][] := array[
-    array['education_attendance_records','education_attendance_records_parent_read'],
-    array['education_documents','education_documents_parent_read'],
-    array['education_results','education_results_parent_read']
-  ];
 begin
   foreach table_name in array array[
     'education_guardians',
@@ -51,9 +46,13 @@ begin
     raise exception 'Guardian-link SELECT policy must bind guardian_id to the authenticated guardian profile';
   end if;
 
-  foreach policy_row in
+  for policy_row in
     select *
-    from unnest(required_policies) as p(table_name, policy_name)
+    from (values
+      ('education_attendance_records','education_attendance_records_parent_read'),
+      ('education_documents','education_documents_parent_read'),
+      ('education_results','education_results_parent_read')
+    ) as p(table_name, policy_name)
   loop
     select lower(coalesce(p.qual, ''))
       into policy_sql
