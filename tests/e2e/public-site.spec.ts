@@ -3,6 +3,7 @@ import { expect, test } from "@playwright/test";
 const publicRoutes = [
   "/",
   "/about",
+  "/signup",
   "/documentation",
   "/updates",
   "/faq",
@@ -42,8 +43,8 @@ test("footer navigation opens the About page", async ({ page }) => {
   await expect(page.getByRole("heading", { name: /two focused workspaces/i })).toBeVisible();
 });
 
-test("signup requires explicit terms and privacy acknowledgement", async ({ page }) => {
-  await page.goto("/login?mode=signup");
+test("canonical signup route and legacy query alias open the same registration flow", async ({ page }) => {
+  await page.goto("/signup");
   const checkbox = page.getByRole("checkbox");
   await expect(checkbox).toBeVisible();
   const createAccount = page.getByRole("button", { name: /create account/i });
@@ -52,6 +53,9 @@ test("signup requires explicit terms and privacy acknowledgement", async ({ page
   await expect(createAccount).toBeEnabled();
   await expect(page.getByRole("link", { name: /terms of service/i })).toBeVisible();
   await expect(page.getByRole("link", { name: /privacy policy/i })).toBeVisible();
+  await page.goto("/login?mode=signup");
+  await expect(page.getByRole("checkbox")).toBeVisible();
+  await expect(page.getByRole("button", { name: /create account/i })).toBeDisabled();
 });
 
 test("public pages remain usable at a narrow mobile viewport", async ({ page }) => {
