@@ -1,7 +1,7 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { Activity, ArrowUpRight, Building2, Check, ChevronDown, Download, Filter, Mail, Plus, RefreshCw, Search, Sparkles, Target, Users, X } from "lucide-react";
 import { supabase } from "../lib/supabase";
-import "./sales-workspace.css";
+import "../sales-workspace.css";
 
 type Lead = { id:string; name:string; email:string|null; phone:string|null; source:string; status:string; score:number; created_at:string };
 type Contact = { id:string; first_name:string; last_name:string; email:string; phone:string|null; title:string|null; created_at:string };
