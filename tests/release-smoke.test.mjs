@@ -67,3 +67,35 @@ test("Cloudflare serves the Vite build with SPA route fallback", async () => {
   assert.match(config, /"directory"\s*:\s*"\.\/dist"/);
   assert.match(config, /"not_found_handling"\s*:\s*"single-page-application"/);
 });
+
+test("Phase 6 business migrations define tenant-scoped commerce and finance workflows", async () => {
+  const foundation = await readFile(join(root, "supabase", "migrations", "20261123033736_phase_6_business_operations.sql"), "utf8");
+  const fulfilment = await readFile(join(root, "supabase", "migrations", "20261123033825_phase_6_order_fulfilment_and_billing_controls.sql"), "utf8");
+  for (const table of ["business_branches","business_departments","business_deals","business_activities","business_products","business_warehouses","business_inventory_movements","business_orders","business_order_items","business_invoices","business_invoice_items","business_payments","business_finance_accounts","business_journal_entries","business_journal_lines"]) {
+    assert.match(foundation, new RegExp("create table if not exists public\\." + table));
+  }
+  assert.match(foundation, /enable row level security/);
+  assert.match(foundation, /revoke all on public\\.%I from anon/);
+  assert.match(foundation, /security_invoker=true/);
+  assert.match(foundation, /business_create_order/);
+  assert.match(foundation, /business_record_payment/);
+  assert.match(foundation, /business_create_journal_entry/);
+  assert.match(fulfilment, /business_fulfill_order/);
+  assert.match(fulfilment, /business_cancel_order/);
+  assert.match(fulfilment, /business_void_invoice/);
+  assert.match(fulfilment, /for update/);
+});
+
+test("Phase 6 business UI includes all operational views and reduced-motion support", async () => {
+  const component = await readFile(join(root, "src", "components", "BusinessOperationsLive.tsx"), "utf8");
+  const styles = await readFile(join(root, "src", "business-operations-live.css"), "utf8");
+  for (const view of ["Command","Organization","Deals","Activities","Products","Inventory","Orders","Invoices","Finance","Reports"]) {
+    assert.match(component, new RegExp('name:"' + view + '"'));
+  }
+  assert.match(component, /business_fulfill_order/);
+  assert.match(component, /business_record_payment/);
+  assert.match(component, /business_create_journal_entry/);
+  assert.match(styles, /prefers-reduced-motion/);
+  assert.match(styles, /bol-art-deals/);
+  assert.match(styles, /bol-art-finance/);
+});
