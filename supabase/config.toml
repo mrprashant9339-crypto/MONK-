@@ -1,0 +1,5 @@
+# Edge Function execution configuration.
+# Public support intake intentionally verifies requests in-handler (strict Origin, validation,
+# honeypot and database-backed rate limit). All other functions retain JWT verification.
+[functions.support-ticket-intake]
+verify_jwt = false
