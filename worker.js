@@ -160,6 +160,9 @@ function withRouteMetadata(response, path) {
       .replace(/<meta name="twitter:card" content="[^"]*"\s*\/?>/i, '<meta name="twitter:card" content="summary_large_image" />');
     const headers = new Headers(response.headers);
     headers.set("Cache-Control", "public, max-age=0, s-maxage=300");
+    headers.delete("Content-Length");
+    headers.delete("Content-Encoding");
+    headers.delete("ETag");
     return new Response(patched, { status: response.status, statusText: response.statusText, headers });
   });
 }
