@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Activity, ArrowDownRight, ArrowUpRight, Boxes, Building2, CalendarClock, CheckCircle2, ChevronRight, CircleDollarSign, ClipboardList, Download, FileText, Filter, Layers3, Package, PieChart, Plus, RefreshCw, Search, ShieldCheck, Sparkles, Users, Wallet } from "lucide-react";
+import { Activity, ArrowUpRight, Boxes, Building2, CalendarClock, CheckCircle2, ChevronRight, CircleDollarSign, ClipboardList, Download, FileText, Layers3, Package, PieChart, RefreshCw, Search, ShieldCheck, Sparkles, Target, Users, Wallet } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import "./business-operations.css";
 
