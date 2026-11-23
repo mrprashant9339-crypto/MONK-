@@ -115,10 +115,14 @@ export function CookieNotice() {
   const [visible, setVisible] = useState(false);
   const [manage, setManage] = useState(false);
   const [analytics, setAnalytics] = useState(false);
+  const location = useLocation();
+  const measurementId = import.meta.env.VITE_GA4_MEASUREMENT_ID as string | undefined;
+  const validMeasurementId = Boolean(measurementId && /^G-[A-Z0-9]{10}$/i.test(measurementId) && measurementId !== "G-XXXXXXXXXX");
+
   useEffect(() => {
     try {
       const saved = localStorage.getItem("monk-cookie-preferences-v1");
-      if (!saved) { setVisible(true); }
+      if (!saved) setVisible(true);
       else {
         const parsed = JSON.parse(saved) as { analytics?: boolean };
         setAnalytics(parsed.analytics === true);
@@ -136,8 +140,38 @@ export function CookieNotice() {
     window.addEventListener("monk:open-cookie-settings", openSettings);
     return () => window.removeEventListener("monk:open-cookie-settings", openSettings);
   }, []);
+
+  useEffect(() => {
+    if (!validMeasurementId || !measurementId) return;
+    const gaWindow = window as Window & { dataLayer?: unknown[]; gtag?: (...args: unknown[]) => void };
+    if (!analytics) {
+      Object.assign(window, { [`ga-disable-${measurementId}`]: true });
+      gaWindow.gtag?.("consent", "update", { analytics_storage: "denied" });
+      return;
+    }
+    Object.assign(window, { [`ga-disable-${measurementId}`]: false });
+    if (!gaWindow.gtag) {
+      gaWindow.dataLayer = gaWindow.dataLayer ?? [];
+      gaWindow.gtag = (...args: unknown[]) => { gaWindow.dataLayer?.push(args); };
+      const script = document.createElement("script");
+      script.async = true;
+      script.src = `https://www.googletagmanager.com/gtag/js?id=${measurementId}`;
+      script.dataset.monkGa4 = measurementId;
+      document.head.appendChild(script);
+      gaWindow.gtag("js", new Date());
+      gaWindow.gtag("config", measurementId, { anonymize_ip: true, send_page_view: false });
+    }
+    gaWindow.gtag("consent", "update", { analytics_storage: "granted" });
+  }, [analytics, measurementId, validMeasurementId]);
+
+  useEffect(() => {
+    if (!analytics || !validMeasurementId) return;
+    const gaWindow = window as Window & { gtag?: (...args: unknown[]) => void };
+    gaWindow.gtag?.("event", "page_view", { page_path: location.pathname + location.search, page_title: document.title });
+  }, [analytics, location.pathname, location.search, validMeasurementId]);
+
   function saveChoice(allowAnalytics: boolean) {
-    const preference = { necessary: true, analytics: allowAnalytics, updatedAt: new Date().toISOString(), version: 1 };
+    const preference = { necessary: true, analytics: allowAnalytics, updatedAt: new Date().toISOString(), version: 2 };
     try { localStorage.setItem("monk-cookie-preferences-v1", JSON.stringify(preference)); } catch {}
     setAnalytics(allowAnalytics);
     setVisible(false);
@@ -147,10 +181,10 @@ export function CookieNotice() {
   return <aside className="cookie-notice" aria-label="Cookie preferences" role="dialog" aria-modal="false">
     <div className="cookie-copy">
       <strong>Cookie preferences</strong>
-      <p>MONK uses essential storage for sign-in and site preferences. Optional analytics are currently not connected. You can reject optional analytics or save your choice for future use. <Link to="/cookies">Cookie policy</Link>.</p>
+      <p>MONK uses essential storage for sign-in and site preferences. {validMeasurementId ? "Optional Google Analytics 4 loads only after you accept analytics." : "Optional analytics are not active in this release because no valid GA4 Measurement ID is configured."} This opt-in choice is shown to all visitors, including visitors in the EU, UK and Switzerland. <Link to="/cookies">Cookie policy</Link>.</p>
       {manage && <div className="cookie-options">
         <label><input type="checkbox" checked disabled /> <span><b>Essential storage</b><small>Required for authentication and basic site operation.</small></span></label>
-        <label><input type="checkbox" checked={analytics} onChange={event => setAnalytics(event.target.checked)} /> <span><b>Optional analytics</b><small>Preference only; no analytics provider is currently active.</small></span></label>
+        <label><input type="checkbox" checked={analytics} onChange={event => setAnalytics(event.target.checked)} /> <span><b>Optional analytics</b><small>{validMeasurementId ? "Google Analytics 4; loads only after explicit consent." : "Preference is saved, but analytics will remain inactive until a valid ID is configured."}</small></span></label>
       </div>}
     </div>
     <div className="cookie-actions">
