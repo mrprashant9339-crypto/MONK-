@@ -198,3 +198,26 @@ test("login exposes password recovery and email verification routes", async ({ p
   await expect(page.getByRole("link", { name: /resend email verification/i })).toBeVisible();
   await expect(page.getByRole("link", { name: /account security \/ mfa/i })).toBeVisible();
 });
+
+test("Campus directory provides India-wide institution filters and published-record search", async ({ page }) => {
+  await page.goto("/campus", { waitUntil: "domcontentloaded" });
+  const directory = page.locator("#college-directory");
+  await expect(directory).toBeVisible();
+  await expect(directory.getByRole("heading", { name: /explore institutions/i })).toBeVisible();
+
+  const category = directory.getByLabel("Category");
+  const region = directory.getByLabel("State / Union Territory");
+  const ownership = directory.getByLabel("Ownership");
+  await expect(category.locator("option")).toContainText(["All categories", "Engineering & Technology", "Medical Colleges", "Law Colleges"]);
+  await expect(region.locator("option")).toContainText(["All India", "Andaman and Nicobar Islands", "Bihar"]);
+  await expect(ownership.locator("option")).toContainText(["All ownership types", "Central Government", "Private"]);
+
+  await category.selectOption("engineering");
+  await region.selectOption("BR");
+  await ownership.selectOption("private");
+  const search = directory.getByRole("searchbox", { name: "Search institutions" });
+  await search.fill("IIT");
+  await search.press("Enter");
+  await expect(directory.locator(".national-directory-summary")).toContainText(/published institution record/i);
+  await expect(directory.locator("form button[type=submit]")).toBeVisible();
+});
