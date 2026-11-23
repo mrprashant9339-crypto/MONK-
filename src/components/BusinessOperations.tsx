@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Activity, ArrowUpRight, Boxes, Building2, CalendarClock, CheckCircle2, ChevronRight, CircleDollarSign, ClipboardList, Download, FileText, Layers3, Package, PieChart, RefreshCw, Search, ShieldCheck, Sparkles, Target, Users, Wallet } from "lucide-react";
 import { supabase } from "../lib/supabase";
-import "./business-operations.css";
+import "../business-operations.css";
 
 type View = "Command" | "Organization" | "Deals" | "Activities" | "Products" | "Inventory" | "Orders" | "Invoices" | "Finance" | "Reports";
 type Lead = {id:string;name:string;email:string|null;source:string;status:string;score:number;created_at:string};
