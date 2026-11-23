@@ -121,3 +121,11 @@ test("every authored image element has an alt attribute", async () => {
     }
   }
 });
+
+test("thank-you page is private and excluded from the sitemap", async () => {
+  const sitemap = await readFile(join(root, "public", "sitemap.xml"), "utf8");
+  assert.doesNotMatch(sitemap, /thank-you/);
+  const worker = await readFile(join(root, "worker.js"), "utf8");
+  assert.ok(worker.includes('"/thank-you"'));
+  assert.ok(worker.includes('"/thank-you", "/support/tickets"'));
+});
