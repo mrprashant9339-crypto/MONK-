@@ -172,10 +172,10 @@ test("account recovery and verification pages provide safe, usable forms", async
   await expect(page.getByRole("button", { name: /send recovery email/i })).toBeEnabled();
 
   await page.goto("/reset-password");
-  await page.getByLabel("New password").fill("StrongPassword123");
-  await page.getByLabel("Confirm new password").fill("DifferentPassword123");
+  await page.getByRole("textbox", { name: "New password", exact: true }).fill("StrongPassword123");
+  await page.getByRole("textbox", { name: "Confirm new password", exact: true }).fill("DifferentPassword123");
   await expect(page.getByRole("button", { name: /update password/i })).toBeDisabled();
-  await page.getByLabel("Confirm new password").fill("StrongPassword123");
+  await page.getByRole("textbox", { name: "Confirm new password", exact: true }).fill("StrongPassword123");
   await expect(page.getByRole("button", { name: /update password/i })).toBeEnabled();
 
   await page.goto("/verify-email");
