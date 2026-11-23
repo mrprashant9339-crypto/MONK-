@@ -111,7 +111,11 @@ const PAGE_METADATA = {
     "title": "Accessibility — MONK",
     "description": "Read the MONK accessibility statement and ways to report an accessibility issue."
   },
-  "/thank-you": {\n    "title": "Submission received — MONK",\n    "description": "Your MONK submission has been received. Review the next steps and keep your reference number if one was provided."\n  },\n  "/login": {
+  "/thank-you": {
+    "title": "Submission received — MONK",
+    "description": "Your MONK submission has been received. Review the next steps and keep your reference number if one was provided."
+  },
+  "/login": {
     "title": "Log in or Sign up — MONK",
     "description": "Sign in or create a MONK workspace account for your organization."
   }
