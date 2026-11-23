@@ -3,7 +3,7 @@ const PUBLIC_ROUTES = new Set([
   "/contact", "/support/tickets", "/status", "/incidents", "/security-center",
   "/security/vulnerability-disclosure", "/privacy-center", "/cookies/preferences",
   "/data-rights", "/offline", "/maintenance", "/error", "/privacy", "/terms",
-  "/cookies", "/refunds", "/disclaimer", "/security", "/accessibility"
+  "/cookies", "/refunds", "/disclaimer", "/security", "/accessibility", "/thank-you"
 ]);
 
 const PAGE_METADATA = {
@@ -111,7 +111,7 @@ const PAGE_METADATA = {
     "title": "Accessibility — MONK",
     "description": "Read the MONK accessibility statement and ways to report an accessibility issue."
   },
-  "/login": {
+  "/thank-you": {\n    "title": "Submission received — MONK",\n    "description": "Your MONK submission has been received. Review the next steps and keep your reference number if one was provided."\n  },\n  "/login": {
     "title": "Log in or Sign up — MONK",
     "description": "Sign in or create a MONK workspace account for your organization."
   }
@@ -145,7 +145,7 @@ function withRouteMetadata(response, path) {
   const title = escapeHtml(metadata.title);
   const description = escapeHtml(metadata.description);
   const canonical = "https://monk.monster" + (path === "/" ? "/" : path);
-  const noindex = ["/login", "/support/tickets", "/privacy-center", "/cookies/preferences", "/status", "/offline", "/maintenance", "/error"].includes(path) || /^\/support\/tickets\//.test(path);
+  const noindex = ["/login", "/thank-you", "/support/tickets", "/privacy-center", "/cookies/preferences", "/status", "/offline", "/maintenance", "/error"].includes(path) || /^\/support\/tickets\//.test(path);
   return response.text().then(html => {
     const patched = html
       .replace(/<title>[\s\S]*?<\/title>/i, "<title>" + title + "</title>")
