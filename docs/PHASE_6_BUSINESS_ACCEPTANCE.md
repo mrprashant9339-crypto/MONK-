@@ -36,8 +36,8 @@
 - No seed customers, orders, payments, stock counts, revenue or finance balances have been fabricated.
 
 ## Scope boundaries
-- Branch/dept screens currently create and list; full member-to-department assignment and branch-level permissions remain future hardening.
-- Orders UI currently creates a single catalog line per order; the database RPC accepts multiple lines for future multi-line UI.
+- Branch/dept screens currently create and list; full member-to-department assignment and branch-level permissions remain future hardening. Navigation and write controls are permission-aware for owner, admin, manager, sales and auditor roles.
+- Orders UI supports multiple catalog lines per order; the database RPC validates and persists each line transactionally.
 - No GST return filing, e-invoicing network integration, payment gateway, bank reconciliation, credit notes/refunds, supplier procurement, warehouse transfer, stock reservation or tax advisory workflow is claimed.
 - Deal pipeline is separate from CRM leads; explicit lead-to-deal conversion UX remains future work.
 - The journal module is a general double-entry foundation, not a certified accounting/tax package.
