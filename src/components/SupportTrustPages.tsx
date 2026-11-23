@@ -40,7 +40,7 @@ function Shell({ eyebrow, title, intro, children }: { eyebrow: string; title: st
 function ContactPage() {
   const [name,setName]=useState(""); const [email,setEmail]=useState(""); const [topic,setTopic]=useState("General enquiry"); const [message,setMessage]=useState(""); const [website,setWebsite]=useState("");
   const [copied,setCopied]=useState(false); const [sending,setSending]=useState(false); const [submittedRef,setSubmittedRef]=useState<string|null>(null); const [submitError,setSubmitError]=useState("");
-  const valid = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email) && name.trim().length>=2 && message.trim().length>=10;
+  const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && name.trim().length>=2 && message.trim().length>=10;
   async function submit(e:FormEvent) {
     e.preventDefault(); if(!valid || sending) return;
     setSending(true); setSubmitError(""); setSubmittedRef(null);
@@ -75,7 +75,7 @@ function TicketListPage() {
   const [tickets,setTickets]=useState<Ticket[]>(()=>readList<Ticket>(TICKET_KEY));
   const [subject,setSubject]=useState(""); const [category,setCategory]=useState("Technical issue"); const [email,setEmail]=useState(""); const [message,setMessage]=useState(""); const [created,setCreated]=useState<string|null>(null);
   const [sending,setSending]=useState(false); const [submitError,setSubmitError]=useState("");
-  const valid=subject.trim().length>=4 && /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email) && message.trim().length>=10;
+  const valid=subject.trim().length>=4 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && message.trim().length>=10;
   async function create(e:FormEvent){
     e.preventDefault(); if(!valid||sending)return; setSending(true);setSubmitError("");setCreated(null);
     try {
