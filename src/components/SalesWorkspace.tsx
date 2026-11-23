@@ -71,22 +71,24 @@ export default function SalesWorkspace({organizationId}:{organizationId:string|n
     event.preventDefault();
     if (!supabase || !organizationId || !leadName.trim()) return;
     setSaving(true); setError(""); setNotice("");
-    const {error:rpcError}=await supabase.rpc("create_lead",{
-      lead_name:leadName.trim(),lead_email:leadEmail.trim()||null,lead_phone:leadPhone.trim()||null,
-      lead_source:leadSource,lead_notes:leadNotes.trim()||null
-    });
-    setSaving(false);
-    if(rpcError){setError(rpcError.message);return;}
-    setLeadName("");setLeadEmail("");setLeadPhone("");setLeadNotes("");setShowLeadForm(false);
-    setNotice("Lead created in the active organization.");
-    await load();
+    try {
+      const {error:rpcError}=await supabase.rpc("create_lead",{
+        lead_name:leadName.trim(),lead_email:leadEmail.trim()||null,lead_phone:leadPhone.trim()||null,
+        lead_source:leadSource,lead_notes:leadNotes.trim()||null
+      });
+      if(rpcError){setError(rpcError.message);return;}
+      setLeadName("");setLeadEmail("");setLeadPhone("");setLeadNotes("");setShowLeadForm(false);
+      setNotice("Lead created in the active organization.");
+      await load();
+    } catch(cause) { setError(cause instanceof Error?cause.message:"Lead could not be saved. Please retry."); }
+    finally { setSaving(false); }
   }
 
   function exportLeads() {
     const rows=[["Name","Email","Phone","Source","Status","Score","Created"],...filteredLeads.map(lead=>[lead.name,lead.email??"",lead.phone??"",lead.source,lead.status,String(lead.score),lead.created_at])];
-    const csv=rows.map(row=>row.map(value=>'"'+String(value).replace(/"/g,'""')+'"').join(",")).join("\r\n");
+    const csv=rows.map(row=>row.map(value=>{const cell=String(value);const safe=/^[\\s]*[=+@-]/.test(cell)?"\u0027"+cell:cell;return '"\u0027+safe.replace(/"/g,'""')+'"';}).join(",")).join("\r\n");
     const url=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
-    const anchor=document.createElement("a");anchor.href=url;anchor.download="monk-sales-leads.csv";anchor.click();URL.revokeObjectURL(url);
+    const anchor=document.createElement("a");anchor.href=url;anchor.download="monk-sales-leads.csv";document.body.appendChild(anchor);anchor.click();anchor.remove();window.setTimeout(()=>URL.revokeObjectURL(url),1000);
   }
 
   if (!organizationId) return <section className="sales-empty"><Target/><h2>Choose a business workspace</h2><p>Sales records are available after a business organization is connected.</p></section>;
