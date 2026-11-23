@@ -28,3 +28,18 @@
 
 .footer-legal button{border:0;background:transparent;padding:0;color:#d8d0da;font:inherit;font-size:10px;cursor:pointer}
 .footer-legal button:hover{color:var(--mk-footer-accent)}
+
+/* Compact, readable consent controls on narrow screens. */
+.cookie-notice{max-width:900px;gap:16px;padding:14px 16px}
+.cookie-notice p{font-size:12px;line-height:1.55}
+.cookie-notice button{min-height:42px;font-size:12px;padding:10px 14px}
+.cookie-actions{gap:7px}
+@media(max-width:620px){
+ .cookie-notice{left:8px;right:8px;bottom:8px;max-height:min(48vh,390px);overflow-y:auto;padding:12px;gap:10px}
+ .cookie-notice p{font-size:12px;line-height:1.5}
+ .cookie-notice strong{font-size:13px}
+ .cookie-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%;gap:8px}
+ .cookie-actions button{min-height:44px;padding:9px 8px;font-size:12px}
+ .cookie-actions button:last-child{grid-column:1/-1}
+ .cookie-options small{font-size:11px}
+}
