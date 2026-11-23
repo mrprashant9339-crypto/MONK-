@@ -294,3 +294,47 @@ test("support ticket form submits through the intake API and stores only a recei
   await expect(page.getByText(/submission received; live tracking unavailable/i)).toBeVisible();
   await expect(page.getByText(/support inbox notified/i)).toBeVisible();
 });
+
+test("support intake failures show the backend rejection and do not save a receipt", async ({ page }) => {
+  await page.route("**/functions/v1/support-ticket-intake", async (route) => {
+    const request = route.request();
+    const origin = request.headers().origin ?? "*";
+    if (request.method() === "OPTIONS") {
+      await route.fulfill({
+        status: 200,
+        headers: {
+          "access-control-allow-origin": origin,
+          "access-control-allow-methods": "POST, OPTIONS",
+          "access-control-allow-headers": request.headers()["access-control-request-headers"] ?? "authorization, apikey, content-type, x-client-info",
+          "access-control-max-age": "86400",
+          vary: "Origin"
+        },
+        body: "ok"
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 429,
+      headers: {
+        "access-control-allow-origin": origin,
+        "access-control-allow-headers": "authorization, apikey, content-type, x-client-info",
+        "content-type": "application/json",
+        vary: "Origin"
+      },
+      body: JSON.stringify({ error: "Too many requests from this connection. Please try again later." })
+    });
+  });
+
+  await page.goto("/support/tickets");
+  await page.getByLabel(/full name/i).fill("Test User");
+  await page.getByLabel(/subject/i).fill("Rate limit test");
+  await page.getByLabel(/category/i).selectOption("Technical issue");
+  await page.getByLabel(/email address/i).fill("test@example.com");
+  await page.getByLabel(/details/i).fill("This request should be rejected by the server-side rate limit.");
+  await page.getByRole("button", { name: /submit support request/i }).click();
+
+  await expect(page.getByRole("alert")).toContainText("Too many requests from this connection");
+  await expect(page.getByRole("button", { name: /submit support request/i })).toBeEnabled();
+  const receipt = await page.evaluate(() => JSON.parse(localStorage.getItem("monk-support-tickets-v1") || "[]"));
+  expect(receipt).toHaveLength(0);
+});
