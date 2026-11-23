@@ -143,8 +143,8 @@ Deno.serve(async (req: Request) => {
         notificationStatus = "failed";
         console.error("Support notification request failed:", mailError);
       }
-      await admin.from("support_tickets").update({ notification_status: notificationStatus }).eq("id", ticket.id);
     }
+    await admin.from("support_tickets").update({ notification_status: notificationStatus }).eq("id", ticket.id);
 
     return json({
       ok: true,
