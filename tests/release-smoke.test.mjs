@@ -75,7 +75,7 @@ test("Phase 6 business migrations define tenant-scoped commerce and finance work
     assert.match(foundation, new RegExp("create table if not exists public\\." + table));
   }
   assert.match(foundation, /enable row level security/);
-  assert.match(foundation, /revoke all on public\\.%I from anon/);
+  assert.match(foundation, /revoke all on public\.%I from anon/);
   assert.match(foundation, /security_invoker=true/);
   assert.match(foundation, /business_create_order/);
   assert.match(foundation, /business_record_payment/);
