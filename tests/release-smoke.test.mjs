@@ -78,24 +78,24 @@ test("Cloudflare serves the Vite build through the Worker and real 404 page", as
 
 test("robots.txt allows public crawling and points to the canonical sitemap", async () => {
   const robots = await readFile(join(root, "public", "robots.txt"), "utf8");
-  assert.match(robots, /User-agent:\\s*\\*/);
-  assert.match(robots, /Allow:\\s*\\//);
-  assert.match(robots, /Sitemap:\\s*https:\\/\\/monk\\.monster\\/sitemap\\.xml/);
-  assert.doesNotMatch(robots, /Disallow:\\s*\\//);
+  assert.match(robots, /User-agent:\s*\*/);
+  assert.match(robots, /Allow:\s*\//);
+  assert.match(robots, /Sitemap:\s*https:\/\/monk\.monster\/sitemap\.xml/);
+  assert.doesNotMatch(robots, /Disallow:\s*\//);
 });
 
 test("every sitemap URL is a routable public page", async () => {
   const sitemap = await readFile(join(root, "public", "sitemap.xml"), "utf8");
-  const urls = [...sitemap.matchAll(/<loc>(https:\\/\\/monk\\.monster[^<]*)<\\/loc>/g)].map(match => new URL(match[1]).pathname);
-  for (const path of urls) assert.equal(isApplicationRoute(path), true, `sitemap route is not routed: ${path}`);
+  const urls = [...sitemap.matchAll(/<loc>(https:\/\/monk\.monster[^<]*)<\/loc>/g)].map(match => new URL(match[1]).pathname);
+  for (const path of urls) assert.equal(isApplicationRoute(path), true, \`sitemap route is not routed: \${path}\`);
 });
 
 test("public route metadata provides distinct titles and descriptions", async () => {
   const source = await readFile(join(root, "src", "components", "PublicSite.tsx"), "utf8");
   assert.match(source, /PUBLIC_PAGE_METADATA/);
   const metadataBlock = source.slice(source.indexOf("const PUBLIC_PAGE_METADATA"), source.indexOf("function updatePublicPageMetadata"));
-  const titles = [...metadataBlock.matchAll(/title:\\s*"([^"]+)"/g)].map(match => match[1]);
-  const descriptions = [...metadataBlock.matchAll(/description:\\s*"([^"]+)"/g)].map(match => match[1]);
+  const titles = [...metadataBlock.matchAll(/title:\s*"([^"]+)"/g)].map(match => match[1]);
+  const descriptions = [...metadataBlock.matchAll(/description:\s*"([^"]+)"/g)].map(match => match[1]);
   assert.ok(titles.length >= 20, "expected route-specific page titles");
   assert.equal(new Set(titles).size, titles.length, "page titles must be unique");
   assert.equal(new Set(descriptions).size, descriptions.length, "page descriptions must be unique");
