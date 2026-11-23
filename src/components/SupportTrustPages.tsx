@@ -72,8 +72,19 @@ function TicketListPage() {
         fullName:fullName.trim(),email:email.trim(),category,subject:subject.trim(),message:message.trim(),website
       }});
       const response=data as {ok?:boolean;ticketRef?:string;createdAt?:string;notification?:string;error?:string}|null;
-      if(invokeError||!response?.ok||!response.ticketRef){
-        throw new Error(response?.error??invokeError?.message??"Support intake did not return a ticket reference. Please try again.");
+      if(invokeError){
+        let reason=invokeError.message;
+        const context=(invokeError as {context?:unknown}).context;
+        if(context instanceof Response){
+          try{
+            const payload=await context.clone().json() as {error?:unknown};
+            if(typeof payload.error==="string"&&payload.error.length<=240)reason=payload.error;
+          }catch{/* Fall back to the SDK's safe error message. */}
+        }
+        throw new Error(reason);
+      }
+      if(!response?.ok||!response.ticketRef){
+        throw new Error(response?.error??"Support intake did not return a ticket reference. Please try again.");
       }
       const ticket:Ticket={id:response.ticketRef,ticketRef:response.ticketRef,subject:subject.trim(),category,createdAt:response.createdAt??new Date().toISOString(),status:"Submitted",notification:response.notification};
       const next=[ticket,...tickets.filter(existing=>existing.id!==ticket.id)];
