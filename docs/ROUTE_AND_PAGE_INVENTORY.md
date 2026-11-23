@@ -8,7 +8,7 @@ This inventory distinguishes implemented foundations, previews, planned surfaces
 |---|---|---|
 | / | Implemented | Public home and Campus/Business entry paths |
 | /about | Implemented | Project identity and development status |
-| /campus | Implemented preview | College data is illustrative and incomplete; national directory verification remains separate work |
+| /campus | Public page + live directory UI implemented | India-wide search reads published records from `monk_directory_institutions`; filters cover categories, all states/UTs and ownership. Production currently has 0 published records; regulator-source permission and dataset verification remain pending |
 | /business | Implemented preview | Fictional local business workflow |
 | /features | Frontend implemented | Filterable catalogue; feature maturity is labelled |
 | /solutions | Frontend implemented | Campus, education groups, local business and startup use cases |
@@ -94,7 +94,7 @@ This inventory distinguishes implemented foundations, previews, planned surfaces
 - Actual status monitoring, incident ingestion, support ticket delivery and privacy request submission.
 - Backend pricing, subscription checkout and billing entitlements.
 - Real customer case studies or independently verified outcomes.
-- Complete national college directory population and source verification.
+- Complete national institution directory population and source verification; the all-India search UI is implemented, but published records remain empty until source permissions and verification are approved.
 
 ## Inventory maintenance rules
 
