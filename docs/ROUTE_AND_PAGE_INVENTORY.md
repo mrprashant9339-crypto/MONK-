@@ -76,8 +76,8 @@ This inventory distinguishes implemented foundations, previews, planned surfaces
 | Tasks | Implemented foundation |
 | Team | Implemented foundation |
 | Activity | Implemented foundation |
-| CRM | Partial functional module; business vertical |
-| Sales | Partial / module-specific coverage |
+| CRM | Partial functional module; business vertical | Existing lead/contact/company CRUD screens; Sales now has its own dedicated workspace and design |
+| Sales | Advanced frontend workspace implemented; live data-backed foundation | Dedicated overview, dynamic status pipeline, people and company directories, lead creation via existing RPC, CSV export; no deal values, forecasts, quote/invoice or financial workflows yet |
 | Education | Partial functional module; education vertical |
 | Documents | Functional local-first frontend preview | Search, drag/drop and file picker; temporary in-memory queue, download/remove; no server upload or persistence until secure storage is connected |
 | Analytics | Placeholder / aggregation pending |
