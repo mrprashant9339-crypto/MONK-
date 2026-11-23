@@ -138,7 +138,17 @@ export function CookieNotice() {
       setVisible(true);
     };
     window.addEventListener("monk:open-cookie-settings", openSettings);
-    return () => window.removeEventListener("monk:open-cookie-settings", openSettings);
+    const syncPreferences = () => {
+      try {
+        const saved = localStorage.getItem("monk-cookie-preferences-v1");
+        setAnalytics(saved ? (JSON.parse(saved) as { analytics?: boolean }).analytics === true : false);
+      } catch { setAnalytics(false); }
+    };
+    window.addEventListener("monk:cookie-preferences-changed", syncPreferences);
+    return () => {
+      window.removeEventListener("monk:open-cookie-settings", openSettings);
+      window.removeEventListener("monk:cookie-preferences-changed", syncPreferences);
+    };
   }, []);
 
   useEffect(() => {
@@ -162,6 +172,24 @@ export function CookieNotice() {
       gaWindow.gtag("config", measurementId, { anonymize_ip: true, send_page_view: false });
     }
     gaWindow.gtag("consent", "update", { analytics_storage: "granted" });
+    const flushConversion = () => {
+      try {
+        const preferences = JSON.parse(localStorage.getItem("monk-cookie-preferences-v1") || "{}") as { analytics?: boolean };
+        const pending = sessionStorage.getItem("monk:thank-you-conversion");
+        if (!preferences.analytics || !pending) return;
+        if (pending !== "support" && pending !== "signup") {
+          sessionStorage.removeItem("monk:thank-you-conversion");
+          return;
+        }
+        gaWindow.gtag?.("event", pending === "signup" ? "sign_up" : "generate_lead", {
+          method: pending === "signup" ? "email" : "support_form"
+        });
+        sessionStorage.removeItem("monk:thank-you-conversion");
+      } catch {}
+    };
+    window.addEventListener("monk:thank-you-ready", flushConversion);
+    flushConversion();
+    return () => window.removeEventListener("monk:thank-you-ready", flushConversion);
   }, [analytics, measurementId, validMeasurementId]);
 
   useEffect(() => {
