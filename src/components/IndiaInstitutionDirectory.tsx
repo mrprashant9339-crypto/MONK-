@@ -163,8 +163,9 @@ export default function IndiaInstitutionDirectory() {
   );
   const sourceLinks = useMemo(() => {
     if (!currentCategory) return REGULATORY_SOURCES.slice(0, 6);
+    const categoryDomains: readonly string[] = currentCategory.domains;
     return REGULATORY_SOURCES.filter((source) =>
-      source.domains.some((domain) => currentCategory.domains.includes(domain))
+      source.domains.some((domain) => categoryDomains.includes(domain))
     ).slice(0, 5);
   }, [currentCategory]);
 
