@@ -199,3 +199,12 @@ test("built public assets contain no insecure HTTP resource URLs", async () => {
     assert.doesNotMatch(source, /(?:src|href)\s*=\s*["']http:\/\/|url\(\s*["']?http:\/\//i, `insecure HTTP resource in ${file}`);
   }
 });
+
+test("privacy policy describes current collection rather than hypothetical future services", async () => {
+  const source = await readFile(join(root, "src", "components", "LegalPages.tsx"), "utf8");
+  const privacy = source.slice(source.indexOf('"/privacy":'), source.indexOf('"/terms":'));
+  assert.match(privacy, /support request details/);
+  assert.match(privacy, /hashed network identifier/);
+  assert.match(privacy, /no valid GA4 Measurement ID is configured/);
+  assert.doesNotMatch(privacy, /When paid checkout is introduced|Newsletter email addresses will be processed|If analytics, newsletter or payment services are added/);
+});
