@@ -38,6 +38,7 @@ export default function AuthExperience() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [callbackSession, setCallbackSession] = useState(false);
 
   useEffect(() => {
     setMode(initialMode);
@@ -52,10 +53,21 @@ export default function AuthExperience() {
   useEffect(() => {
     if (!supabase) return;
     let alive = true;
-    let completing = false;
-    const finishCallback = async () => {
-      if (!alive || completing) return;
-      completing = true;
+    supabase.auth.getSession().then(({ data }) => {
+      if (alive && data.session && location.pathname === "/auth/callback") setCallbackSession(true);
+    });
+    const { data } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!alive) return;
+      if (event === "PASSWORD_RECOVERY") setMode("reset");
+      if (session && location.pathname === "/auth/callback") setCallbackSession(true);
+    });
+    return () => { alive = false; data.subscription.unsubscribe(); };
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!supabase || !callbackSession || location.pathname !== "/auth/callback") return;
+    let alive = true;
+    void (async () => {
       try {
         const raw = sessionStorage.getItem("monk:oauth-consent");
         if (raw) {
@@ -82,18 +94,10 @@ export default function AuthExperience() {
       } catch (caught) {
         if (alive) setError(caught instanceof Error ? caught.message : "Google account setup could not be completed.");
         await supabase.auth.signOut();
-      } finally { completing = false; }
-    };
-    supabase.auth.getSession().then(({ data: sessionData }) => {
-      if (alive && sessionData.session && location.pathname === "/auth/callback") void finishCallback();
-    });
-    const { data } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!alive) return;
-      if (event === "PASSWORD_RECOVERY") setMode("reset");
-      if (session && location.pathname === "/auth/callback") void finishCallback();
-    });
-    return () => { alive = false; data.subscription.unsubscribe(); };
-  }, [location.pathname, navigate]);
+      }
+    })();
+    return () => { alive = false; };
+  }, [callbackSession, location.pathname, navigate]);
 
   const roles = vertical === "education"
     ? [{ value: "student", label: "Student" }, { value: "parent", label: "Parent / Guardian" }, { value: "teacher", label: "Teacher / Faculty" }, { value: "hod", label: "Head of Department (HOD)" }, { value: "principal", label: "Principal" }, { value: "institution", label: "College / Institution administrator" }]
