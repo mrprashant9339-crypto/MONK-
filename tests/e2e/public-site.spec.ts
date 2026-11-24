@@ -209,8 +209,8 @@ test("homepage gives colleges and businesses distinct primary paths", async ({ p
 
 test("direct signup path opens the canonical account creation screen", async ({ page }) => {
   await page.goto("/signup");
-  await expect(page).toHaveURL(/\/login\?mode=signup$/);
-  await expect(page.getByRole("button", { name: /create account/i })).toBeVisible();
+  await expect(page).toHaveURL(/\/signup$/);
+  await expect(page.getByRole("button", { name: /create secure account/i })).toBeVisible();
   await expect(page.getByRole("checkbox")).toBeVisible();
 });
 
@@ -262,8 +262,8 @@ test("login, password recovery and password reset routes load the shared auth ex
   await page.goto("/forgot-password");
   await expect(page.getByRole("button", { name: /send reset link/i })).toBeVisible();
   await page.goto("/reset-password");
-  await expect(page.getByLabel(/new password/i)).toBeVisible();
-  await expect(page.getByLabel(/confirm password/i)).toBeVisible();
+  await expect(page.locator('.authx-form input[placeholder="At least 12 characters"]')).toBeVisible();
+  await expect(page.locator('.authx-form input[placeholder="Enter password again"]')).toBeVisible();
 });
 
 test("Campus and Business signup preserve their selected workspace vertical and role choices", async ({ page }) => {
