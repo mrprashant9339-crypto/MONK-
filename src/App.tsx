@@ -125,8 +125,6 @@ export default function App() {
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const mode = params.get("mode");
-    if (mode === "login" || mode === "signup") setAuthMode(mode);
     const vertical = params.get("vertical");
     if (vertical === "education" || vertical === "business") setOrganizationVertical(vertical);
   }, [location.search]);
