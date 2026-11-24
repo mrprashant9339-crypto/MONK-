@@ -1,5 +1,5 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { Building2, Globe2, MapPin, Phone, RefreshCw, Save } from "lucide-react";
+import { Building2, RefreshCw, Save } from "lucide-react";
 import { supabase } from "../lib/supabase";
 
 type Profile = {
