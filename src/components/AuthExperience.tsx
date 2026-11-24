@@ -71,7 +71,10 @@ export default function AuthExperience() {
           if (consentError) throw consentError;
           sessionStorage.removeItem("monk:oauth-consent");
         }
-        if (alive) {\n          const invite = new URLSearchParams(window.location.search).get("invite");\n          navigate(invite ? "/#invite=" + encodeURIComponent(invite) : "/", { replace: true });\n        }
+        if (alive) {
+          const invite = new URLSearchParams(window.location.search).get("invite");
+          navigate(invite ? "/#invite=" + encodeURIComponent(invite) : "/", { replace: true });
+        }
       } catch (caught) {
         if (alive) setError(caught instanceof Error ? caught.message : "Google account setup could not be completed.");
         await supabase.auth.signOut();
@@ -182,7 +185,11 @@ export default function AuthExperience() {
       if (mode === "signup") {
         try { sessionStorage.setItem("monk:oauth-consent", JSON.stringify({ terms: TERMS_VERSION, privacy: PRIVACY_VERSION, vertical, role })); } catch {}
       }
-      const inviteToken = new URLSearchParams(window.location.hash.replace(/^#/, "")).get("invite");\n      const callbackUrl = new URL(window.location.origin + "/auth/callback");\n      callbackUrl.searchParams.set("vertical", vertical);\n      if (inviteToken) callbackUrl.searchParams.set("invite", inviteToken);\n      const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      const inviteToken = new URLSearchParams(window.location.hash.replace(/^#/, "")).get("invite");
+      const callbackUrl = new URL(window.location.origin + "/auth/callback");
+      callbackUrl.searchParams.set("vertical", vertical);
+      if (inviteToken) callbackUrl.searchParams.set("invite", inviteToken);
+      const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           redirectTo: callbackUrl.toString(),
@@ -242,7 +249,8 @@ export default function AuthExperience() {
         ) : (
           <>
             {(mode === "login" || mode === "signup") && <button className="authx-google" type="button" onClick={() => void googleSignIn()} disabled={busy}><span className="authx-google-mark">G</span> Continue with Google <ArrowRight size={16}/></button>}
-            {mode === "login" && <label className="authx-consent authx-google-consent"><input type="checkbox" checked={accepted} onChange={e => setAccepted(e.target.checked)}/><span>By continuing with Google, I agree to the <a href="/terms" target="_blank" rel="noreferrer">Terms of Service</a> and acknowledge the <a href="/privacy" target="_blank" rel="noreferrer">Privacy Policy</a>.</span></label>}\n            {(mode === "login" || mode === "signup") && <div className="authx-divider"><span>or continue with email</span></div>}
+            {mode === "login" && <label className="authx-consent authx-google-consent"><input type="checkbox" checked={accepted} onChange={e => setAccepted(e.target.checked)}/><span>By continuing with Google, I agree to the <a href="/terms" target="_blank" rel="noreferrer">Terms of Service</a> and acknowledge the <a href="/privacy" target="_blank" rel="noreferrer">Privacy Policy</a>.</span></label>}
+            {(mode === "login" || mode === "signup") && <div className="authx-divider"><span>or continue with email</span></div>}
             <form className="authx-form" onSubmit={submit}>
               {isSignup && <>
                 <label>Full name<input autoComplete="name" value={fullName} onChange={e => setFullName(e.target.value)} maxLength={100} required placeholder="Your full name"/></label>
