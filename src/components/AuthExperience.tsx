@@ -6,7 +6,7 @@ import "./auth-experience.css";
 
 type Vertical = "education" | "business";
 type Mode = "login" | "signup" | "forgot" | "reset" | "pending";
-type IntendedRole = "student" | "parent" | "teacher" | "institution" | "owner" | "manager" | "staff";
+type IntendedRole = "student" | "parent" | "teacher" | "hod" | "principal" | "institution" | "owner" | "admin" | "manager" | "sales" | "contributor" | "auditor" | "client" | "vendor" | "staff";
 
 const TERMS_VERSION = "2026-11-22";
 const PRIVACY_VERSION = "2026-11-22";
@@ -270,7 +270,7 @@ export default function AuthExperience() {
               {isSignup && <>
                 <label>Full name<input autoComplete="name" value={fullName} onChange={e => setFullName(e.target.value)} maxLength={100} required placeholder="Your full name"/></label>
                 <label>Phone number <span className="authx-optional">Optional</span><input type="tel" autoComplete="tel" value={phone} onChange={e => setPhone(e.target.value)} maxLength={20} placeholder="+91"/></label>
-                <label>{vertical === "education" ? "I am registering as" : "Your role"}<select value={role} onChange={e => setRole(e.target.value as IntendedRole)}>{roles.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
+                <fieldset className="authx-role-field"><legend>{vertical === "education" ? "Choose your account type" : "Choose your workspace role"}</legend><div className="authx-role-grid" role="radiogroup" aria-label={vertical === "education" ? "Campus account type" : "Business workspace role"}>{roles.map((item, index) => <button className={"authx-role-option" + (role === item.value ? " is-selected" : "")} key={item.value} type="button" role="radio" aria-checked={role === item.value} onClick={() => setRole(item.value as IntendedRole)}><span className="authx-role-number">{String(index + 1).padStart(2, "0")}</span><span className="authx-role-label">{item.label}</span><span className="authx-role-check"><CheckCircle2 size={15}/></span></button>)}</div></fieldset>
                 <p className="authx-hint">{vertical === "education" ? "Student, parent and faculty access is verified against institution records or a valid invitation. Selecting a role here does not grant permissions." : "Workspace permissions are granted by the organization owner or an authorized administrator after verification."}</p>
               </>}
               {mode !== "reset" && <label>Email address<input type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} required maxLength={254} placeholder="you@example.com"/></label>}
