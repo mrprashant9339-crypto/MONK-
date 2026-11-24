@@ -112,6 +112,7 @@ function TicketListPage() {
   const [tickets,setTickets]=useState<Ticket[]>(()=>readList<Ticket>(TICKET_KEY));
   const [fullName,setFullName]=useState(""); const [subject,setSubject]=useState(""); const [category,setCategory]=useState("Technical issue"); const [email,setEmail]=useState(""); const [message,setMessage]=useState(""); const [website,setWebsite]=useState("");
   const [sending,setSending]=useState(false); const [submitError,setSubmitError]=useState("");
+  const [captchaToken,setCaptchaToken]=useState(""); const [captchaResetKey,setCaptchaResetKey]=useState(0);
   const valid=fullName.trim().length>=2 && subject.trim().length>=4 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && message.trim().length>=10;
   async function create(e:FormEvent){
     e.preventDefault(); if(!valid||sending)return; if(!captchaToken){setSubmitError("Complete the security verification before submitting.");return;} setSending(true);setSubmitError("");
