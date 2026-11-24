@@ -38,7 +38,6 @@ export default function AuthExperience() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
-  const [sessionReady, setSessionReady] = useState(false);
 
   useEffect(() => {
     setMode(initialMode);
@@ -53,20 +52,38 @@ export default function AuthExperience() {
   useEffect(() => {
     if (!supabase) return;
     let alive = true;
-    supabase.auth.getSession().then(({ data }) => {
-      if (!alive) return;
-      if (data.session && location.pathname === "/auth/callback") {
-        setSessionReady(true);
-        navigate("/", { replace: true });
-      }
+    let completing = false;
+    const finishCallback = async () => {
+      if (!alive || completing) return;
+      completing = true;
+      try {
+        const raw = sessionStorage.getItem("monk:oauth-consent");
+        if (raw) {
+          const consent = JSON.parse(raw) as { terms: string; privacy: string; vertical: Vertical; role: IntendedRole };
+          const { error: metadataError } = await supabase.auth.updateUser({ data: {
+            vertical: consent.vertical, intended_role: consent.role,
+            terms_version: consent.terms, privacy_version: consent.privacy
+          }});
+          if (metadataError) throw metadataError;
+          const { error: consentError } = await supabase.rpc("record_legal_consent", {
+            p_terms_version: consent.terms, p_privacy_version: consent.privacy
+          });
+          if (consentError) throw consentError;
+          sessionStorage.removeItem("monk:oauth-consent");
+        }
+        if (alive) navigate("/", { replace: true });
+      } catch (caught) {
+        if (alive) setError(caught instanceof Error ? caught.message : "Google account setup could not be completed.");
+        await supabase.auth.signOut();
+      } finally { completing = false; }
+    };
+    supabase.auth.getSession().then(({ data: sessionData }) => {
+      if (alive && sessionData.session && location.pathname === "/auth/callback") void finishCallback();
     });
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
       if (!alive) return;
       if (event === "PASSWORD_RECOVERY") setMode("reset");
-      if (session && location.pathname === "/auth/callback") {
-        setSessionReady(true);
-        navigate("/", { replace: true });
-      }
+      if (session && location.pathname === "/auth/callback") void finishCallback();
     });
     return () => { alive = false; data.subscription.unsubscribe(); };
   }, [location.pathname, navigate]);
