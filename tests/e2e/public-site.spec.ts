@@ -55,7 +55,7 @@ test("signup requires explicit terms and privacy acknowledgement", async ({ page
   await page.goto("/login?mode=signup");
   const checkbox = page.getByRole("checkbox");
   await expect(checkbox).toBeVisible();
-  const createAccount = page.getByRole("button", { name: /create account/i });
+  const createAccount = page.getByRole("button", { name: /create secure account/i });
   await expect(createAccount).toBeDisabled();
   await checkbox.check();
   await expect(createAccount).toBeEnabled();
@@ -249,4 +249,29 @@ test("public header controls expose a visible keyboard focus indicator", async (
   expect(focusStyle).not.toBeNull();
   expect(focusStyle!.outlineStyle).not.toBe("none");
   expect(focusStyle!.outlineWidth).not.toBe("0px");
+});
+
+
+test("login, password recovery and password reset routes load the shared auth experience", async ({ page }) => {
+  for (const route of ["/login?vertical=education", "/forgot-password", "/reset-password", "/auth/callback?vertical=business"]) {
+    const response = await page.goto(route);
+    expect(response?.status()).toBe(200);
+    await expect(page.locator(".authx-card")).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  }
+  await page.goto("/forgot-password");
+  await expect(page.getByRole("button", { name: /send reset link/i })).toBeVisible();
+  await page.goto("/reset-password");
+  await expect(page.getByLabel(/new password/i)).toBeVisible();
+  await expect(page.getByLabel(/confirm password/i)).toBeVisible();
+});
+
+test("Campus and Business signup preserve their selected workspace vertical and role choices", async ({ page }) => {
+  await page.goto("/login?mode=signup&vertical=education");
+  await expect(page.getByText("MONK Campus")).toBeVisible();
+  await expect(page.getByLabel(/I am registering as/i)).toHaveValue("student");
+  await expect(page.getByText(/does not grant permissions/i)).toBeVisible();
+  await page.goto("/login?mode=signup&vertical=business");
+  await expect(page.getByText("MONK Business")).toBeVisible();
+  await expect(page.getByLabel(/Your role/i)).toHaveValue("owner");
 });
