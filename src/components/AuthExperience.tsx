@@ -73,13 +73,13 @@ export default function AuthExperience() {
         const { data: currentUserData, error: currentUserError } = await supabase.auth.getUser();
         if (currentUserError) throw currentUserError;
         const currentMetadata = currentUserData.user?.user_metadata ?? {};
-        const consent = raw
+        const consent: { terms: string; privacy: string; vertical?: Vertical; role?: IntendedRole } | null = raw
           ? JSON.parse(raw) as { terms: string; privacy: string; vertical: Vertical; role: IntendedRole }
           : typeof currentMetadata.terms_version === "string" && typeof currentMetadata.privacy_version === "string"
             ? { terms: currentMetadata.terms_version, privacy: currentMetadata.privacy_version }
             : null;
         if (consent) {
-          if (raw) {
+          if (raw && consent.vertical && consent.role) {
             const existingRole = currentMetadata.intended_role;
             const { error: metadataError } = await supabase.auth.updateUser({ data: {
               vertical: consent.vertical,
