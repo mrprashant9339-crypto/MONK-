@@ -70,22 +70,29 @@ export default function AuthExperience() {
     void (async () => {
       try {
         const raw = sessionStorage.getItem("monk:oauth-consent");
-        if (raw) {
-          const consent = JSON.parse(raw) as { terms: string; privacy: string; vertical: Vertical; role: IntendedRole };
-          const { data: currentUserData, error: currentUserError } = await supabase.auth.getUser();
-          if (currentUserError) throw currentUserError;
-          const existingRole = currentUserData.user?.user_metadata?.intended_role;
-          const { error: metadataError } = await supabase.auth.updateUser({ data: {
-            vertical: consent.vertical,
-            intended_role: typeof existingRole === "string" ? existingRole : consent.role,
-            terms_version: consent.terms, privacy_version: consent.privacy
-          }});
-          if (metadataError) throw metadataError;
+        const { data: currentUserData, error: currentUserError } = await supabase.auth.getUser();
+        if (currentUserError) throw currentUserError;
+        const currentMetadata = currentUserData.user?.user_metadata ?? {};
+        const consent = raw
+          ? JSON.parse(raw) as { terms: string; privacy: string; vertical: Vertical; role: IntendedRole }
+          : typeof currentMetadata.terms_version === "string" && typeof currentMetadata.privacy_version === "string"
+            ? { terms: currentMetadata.terms_version, privacy: currentMetadata.privacy_version }
+            : null;
+        if (consent) {
+          if (raw) {
+            const existingRole = currentMetadata.intended_role;
+            const { error: metadataError } = await supabase.auth.updateUser({ data: {
+              vertical: consent.vertical,
+              intended_role: typeof existingRole === "string" ? existingRole : consent.role,
+              terms_version: consent.terms, privacy_version: consent.privacy
+            }});
+            if (metadataError) throw metadataError;
+          }
           const { error: consentError } = await supabase.rpc("record_legal_consent", {
             p_terms_version: consent.terms, p_privacy_version: consent.privacy
           });
           if (consentError) throw consentError;
-          sessionStorage.removeItem("monk:oauth-consent");
+          if (raw) sessionStorage.removeItem("monk:oauth-consent");
         }
         if (alive) {
           const invite = new URLSearchParams(window.location.search).get("invite");
