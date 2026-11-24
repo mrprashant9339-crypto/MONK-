@@ -276,7 +276,7 @@ export default function App() {
   const intendedRole = typeof session?.user.user_metadata?.intended_role === "string" ? session.user.user_metadata.intended_role : "";
   const mustJoinExistingWorkspace = organizationVertical === "education"
     ? ["student", "parent", "teacher", "hod", "principal"].includes(intendedRole)
-    : ["admin", "manager", "sales", "accounts", "operations", "staff", "contributor", "client", "vendor"].includes(intendedRole);
+    : ["admin", "manager", "sales", "accounts", "operations", "staff", "contributor", "auditor", "client", "vendor"].includes(intendedRole);
 
   if (isSupabaseConfigured && session && workspaceReady && !organizationId && mustJoinExistingWorkspace) return (
     <main className="auth-page"><section className="auth-card">
