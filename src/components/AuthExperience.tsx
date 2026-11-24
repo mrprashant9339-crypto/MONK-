@@ -256,7 +256,7 @@ export default function AuthExperience() {
         </div>
 
         {mode === "pending" ? (
-          <div className="authx-pending"><span><Mail size={24}/></span><h2>Verification email sent</h2><p>{message || "Open the confirmation link sent to your email address. The link returns you to MONK securely."}</p>
+          <div className="authx-pending"><span><Mail size={24}/></span><h2>Verification email sent</h2><p>{message || "Open the confirmation link sent to your email address. The link returns you to MONK securely."}</p>{error && <p className="authx-alert" role="alert">{error}</p>}
             <label>Email address<input type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" /></label>
             <button className="authx-secondary" type="button" onClick={() => void resendVerification()} disabled={busy || !email.trim() || resendCooldown > 0}>{busy ? "Sending…" : resendCooldown > 0 ? "Resend available in " + resendCooldown + "s" : "Resend verification email"}</button>
             <button className="authx-link" type="button" onClick={() => changeMode("login")}>Return to sign in</button>
