@@ -124,12 +124,14 @@ export default function AuthExperience() {
     if (!supabase) { setError("Authentication is not configured. Please contact MONK support."); return; }
     setBusy(true); setError(""); setMessage("");
     try {
-      if (!captchaToken) throw new Error("Complete the security verification before continuing.");
+      const requiresCaptcha = mode === "signup" || mode === "login" || mode === "forgot";
+      if (requiresCaptcha && !captchaToken) throw new Error("Complete the security verification before continuing.");
       const currentCaptchaToken = captchaToken;
       if (mode === "forgot") {
         if (!email.trim()) throw new Error("Enter the email address linked to your MONK account.");
         const { error: requestError } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
-          redirectTo: window.location.origin + "/reset-password"
+          redirectTo: window.location.origin + "/reset-password",
+          captchaToken: currentCaptchaToken
         });
         if (requestError) throw requestError;
         setMessage("If an account exists for this address, a password-reset email has been sent. Check your inbox and spam folder.");
@@ -158,6 +160,7 @@ export default function AuthExperience() {
           password,
           options: {
             emailRedirectTo: (() => { const url = new URL(window.location.origin + "/auth/callback"); url.searchParams.set("vertical", vertical); const invite = new URLSearchParams(window.location.hash.replace(/^#/, "")).get("invite"); if (invite) url.searchParams.set("invite", invite); return url.toString(); })(),
+            captchaToken: currentCaptchaToken,
             data: {
               full_name: fullName.trim(),
               phone: phone.trim() || null,
@@ -186,13 +189,15 @@ export default function AuthExperience() {
       }
       if (!email.trim() || !password) throw new Error("Enter your email address and password.");
       const { error: loginError } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(), password
+        email: email.trim().toLowerCase(), password, captchaToken: currentCaptchaToken
       });
       if (loginError) throw loginError;
       navigate("/", { replace: true });
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Authentication failed. Please try again.");
     } finally {
+      setCaptchaToken("");
+      setCaptchaResetKey(value => value + 1);
       setBusy(false);
     }
   }
