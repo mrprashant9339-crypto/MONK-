@@ -1,10 +1,9 @@
 import { useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import {
-  ArrowLeft, ArrowRight, ArrowUpRight, Bell, BookOpen, BriefcaseBusiness, Building2,
-  CalendarDays, Check, CheckCircle2, ChevronDown, CircleHelp, ClipboardList, CreditCard,
-  FileCheck2, FileText, GraduationCap, LayoutDashboard, LockKeyhole, Mail, Menu,
-  Package, Plus, Search, Settings, ShieldCheck, ShoppingBag, ShoppingCart, Sparkles,
-  Users, Wallet, X
+  ArrowRight, ArrowUpRight, BookOpen, BriefcaseBusiness, Building2, Check, CheckCircle2,
+  CreditCard, FileCheck2, FileText, GraduationCap, LockKeyhole, Menu, Package, Plus,
+  Settings, ShieldCheck, ShoppingBag, ShoppingCart, Sparkles, Users, Wallet, X
 } from "lucide-react";
 import "./design-preview.css";
 
@@ -46,7 +45,7 @@ const screens: Screen[] = [
 const roles = ["Student","Parent / Guardian","Teacher","School / College Admin","Business Owner","Employee / Team Member"];
 const money = (n:number) => "₹"+n.toLocaleString("en-IN");
 function Mark(){return <span className="dp-mark">M</span>}
-function Button({children,kind="dark",onClick}:{children:React.ReactNode;kind?:"dark"|"light"|"pink";onClick?:()=>void}){return <button className={"dp-button "+kind} onClick={onClick}>{children}</button>}
+function Button({children,kind="dark",onClick}:{children:ReactNode;kind?:"dark"|"light"|"pink";onClick?:()=>void}){return <button className={"dp-button "+kind} onClick={onClick}>{children}</button>}
 function Field({label,placeholder,type="text"}:{label:string;placeholder?:string;type?:string}){return <label className="dp-field"><span>{label}</span><input type={type} placeholder={placeholder??label}/></label>}
 function Metric({label,value,sub}:{label:string;value:string;sub:string}){return <article className="dp-metric"><span>{label}</span><strong>{value}</strong><small>{sub}</small></article>}
 function Table({headers,rows}:{headers:string[];rows:string[][]}){return <div className="dp-table-wrap"><table className="dp-table"><thead><tr>{headers.map(h=><th key={h}>{h}</th>)}</tr></thead><tbody>{rows.map((r,i)=><tr key={i}>{r.map((v,j)=><td key={j}>{j===r.length-1?<span className="dp-status">{v}</span>:v}</td>)}</tr>)}</tbody></table></div>}
