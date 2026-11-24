@@ -16,4 +16,4 @@ The notification centre reuses `public.notifications`; it does not introduce a s
 - If the database migration has not been applied, the list remains available but live updates/read actions may return an error.
 
 ## Deployment
-Apply `supabase/migrations/20261124170000_notifications_read_state_and_realtime.sql` to the linked Supabase project through the normal reviewed migration process before enabling this feature in production.
+Migration `20261124174718_notifications_read_state_and_realtime.sql` has been applied to Supabase project `yucwackrbekwaxiyuobt` and verified: the scoped UPDATE policy exists and `public.notifications` is included in `supabase_realtime`.
