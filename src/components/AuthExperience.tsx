@@ -8,8 +8,8 @@ type Vertical = "education" | "business";
 type Mode = "login" | "signup" | "forgot" | "reset" | "pending";
 type IntendedRole = "student" | "parent" | "teacher" | "institution" | "owner" | "manager" | "staff";
 
-const TERMS_VERSION = "2026-11-24";
-const PRIVACY_VERSION = "2026-11-24";
+const TERMS_VERSION = "2026-11-22";
+const PRIVACY_VERSION = "2026-11-22";
 
 function safeVertical(value: string | null): Vertical {
   return value === "education" ? "education" : "business";
@@ -71,7 +71,7 @@ export default function AuthExperience() {
           if (consentError) throw consentError;
           sessionStorage.removeItem("monk:oauth-consent");
         }
-        if (alive) navigate("/", { replace: true });
+        if (alive) {\n          const invite = new URLSearchParams(window.location.search).get("invite");\n          navigate(invite ? "/#invite=" + encodeURIComponent(invite) : "/", { replace: true });\n        }
       } catch (caught) {
         if (alive) setError(caught instanceof Error ? caught.message : "Google account setup could not be completed.");
         await supabase.auth.signOut();
@@ -89,8 +89,8 @@ export default function AuthExperience() {
   }, [location.pathname, navigate]);
 
   const roles = vertical === "education"
-    ? [{ value: "student", label: "Student" }, { value: "parent", label: "Parent / Guardian" }, { value: "teacher", label: "Teacher / Faculty" }, { value: "institution", label: "College / Institution administrator" }]
-    : [{ value: "owner", label: "Business owner" }, { value: "manager", label: "Manager" }, { value: "staff", label: "Employee / Staff" }];
+    ? [{ value: "student", label: "Student" }, { value: "parent", label: "Parent / Guardian" }, { value: "teacher", label: "Teacher / Faculty" }, { value: "hod", label: "Head of Department (HOD)" }, { value: "principal", label: "Principal" }, { value: "institution", label: "College / Institution administrator" }]
+    : [{ value: "owner", label: "Business owner" }, { value: "manager", label: "Manager" }, { value: "sales", label: "Sales" }, { value: "accounts", label: "Accounts" }, { value: "operations", label: "Operations" }, { value: "staff", label: "Employee / Staff" }, { value: "client", label: "Client" }, { value: "vendor", label: "Vendor" }];
 
   function changeMode(next: Mode) {
     setError(""); setMessage(""); setMode(next);
@@ -176,16 +176,16 @@ export default function AuthExperience() {
 
   async function googleSignIn() {
     if (!supabase) { setError("Authentication is not configured."); return; }
-    if (mode === "signup" && !accepted) { setError("Accept the Terms of Service and Privacy Policy before continuing with Google."); return; }
+    if (!accepted) { setError("Accept the Terms of Service and Privacy Policy before continuing with Google."); return; }
     setBusy(true); setError("");
     try {
       if (mode === "signup") {
         try { sessionStorage.setItem("monk:oauth-consent", JSON.stringify({ terms: TERMS_VERSION, privacy: PRIVACY_VERSION, vertical, role })); } catch {}
       }
-      const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      const inviteToken = new URLSearchParams(window.location.hash.replace(/^#/, "")).get("invite");\n      const callbackUrl = new URL(window.location.origin + "/auth/callback");\n      callbackUrl.searchParams.set("vertical", vertical);\n      if (inviteToken) callbackUrl.searchParams.set("invite", inviteToken);\n      const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: window.location.origin + "/auth/callback?vertical=" + vertical,
+          redirectTo: callbackUrl.toString(),
           queryParams: { access_type: "offline", prompt: "select_account" }
         }
       });
@@ -242,7 +242,7 @@ export default function AuthExperience() {
         ) : (
           <>
             {(mode === "login" || mode === "signup") && <button className="authx-google" type="button" onClick={() => void googleSignIn()} disabled={busy}><span className="authx-google-mark">G</span> Continue with Google <ArrowRight size={16}/></button>}
-            {(mode === "login" || mode === "signup") && <div className="authx-divider"><span>or continue with email</span></div>}
+            {mode === "login" && <label className="authx-consent authx-google-consent"><input type="checkbox" checked={accepted} onChange={e => setAccepted(e.target.checked)}/><span>By continuing with Google, I agree to the <a href="/terms" target="_blank" rel="noreferrer">Terms of Service</a> and acknowledge the <a href="/privacy" target="_blank" rel="noreferrer">Privacy Policy</a>.</span></label>}\n            {(mode === "login" || mode === "signup") && <div className="authx-divider"><span>or continue with email</span></div>}
             <form className="authx-form" onSubmit={submit}>
               {isSignup && <>
                 <label>Full name<input autoComplete="name" value={fullName} onChange={e => setFullName(e.target.value)} maxLength={100} required placeholder="Your full name"/></label>
