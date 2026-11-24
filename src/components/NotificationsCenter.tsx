@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Bell, CheckCheck, Clock3, ExternalLink, LoaderCircle } from "lucide-react";
 import { supabase } from "../lib/supabase";
-import "./notifications.css";
+import "../notifications.css";
 
 type NotificationRecord = {
   id: string;
