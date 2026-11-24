@@ -8,6 +8,7 @@ import WorkspaceManagement from "./components/WorkspaceManagement";
 import EducationManagement from "./components/EducationManagement";
 import CRMManagement from "./components/CRMManagement";
 import AuthExperience from "./components/AuthExperience";
+import NotificationsCenter from "./components/NotificationsCenter";
 
 type Project = { id: string; name: string; code: string; description?: string | null; due_date?: string | null; visibility?: "internal" | "client_visible"; status?: "draft" | "active" | "at_risk" | "in_review" | "completed" };
 type Task = { id: string; title: string; status: "todo" | "in_progress" | "blocked" | "review" | "done"; priority: "low" | "medium" | "high" | "urgent"; due_date: string | null; project_id: string };
@@ -330,7 +331,7 @@ export default function App() {
         </div>
       </aside>
       <main className="main">
-        <header className="topbar"><div className="crumb"><span className="crumb-mark">M</span> Workspace <span>/</span> {active}</div><div className="top-actions"><button className="icon-btn" aria-label="Search"><Search size={18} /></button><button className="icon-btn" aria-label="Notifications"><Bell size={18} /></button><div className="top-avatar">P</div></div></header>
+        <header className="topbar"><div className="crumb"><span className="crumb-mark">M</span> Workspace <span>/</span> {active}</div><div className="top-actions"><button className="icon-btn" aria-label="Search"><Search size={18} /></button>{organizationId && session ? <NotificationsCenter organizationId={organizationId} userId={session.user.id} /> : <button className="icon-btn" aria-label="Notifications" disabled><Bell size={18} /></button>}<div className="top-avatar">P</div></div></header>
         <div className="content">
           <div className="welcome-row"><div><p className="eyebrow"><Sparkles size={13} /> THE OPERATING SYSTEM FOR YOUR WORK</p><h1>{active === "Overview" ? "One workspace. Entire operation." : active === "Tasks" ? "Turn plans into progress." : active === "Focus" ? "Protect your focus." : `${active}, in one place.`}<span>.</span></h1><p className="muted">{active === "Overview" ? "Projects, customers, people and execution — connected in one calm workspace." : `Bring your ${active.toLowerCase()} workflow into the MONK workspace.`}</p></div>{(["Overview","Tasks","Focus"].includes(active)) && <button className="primary" onClick={() => { setActive("Tasks"); window.setTimeout(() => document.getElementById("new-task")?.focus(), 0); }}><Plus size={17} /> New task</button>}</div>
           {!isSupabaseConfigured && <div className="config-banner"><Zap size={17} /><span><b>Preview mode</b> — add Supabase environment variables to enable persistent tasks and authentication.</span></div>}
