@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import "../support-trust.css";
 import { supabase } from "../lib/supabase";
+import TurnstileWidget from "./TurnstileWidget";
 
 type Ticket = { id: string; subject: string; category: string; message: string; email: string; createdAt: string; status: "Submitted"; };
 const TICKET_KEY = "monk-support-tickets-v1";
@@ -73,18 +74,19 @@ function ContactPage() {
   const navigate = useNavigate();
   const [name,setName]=useState(""); const [email,setEmail]=useState(""); const [topic,setTopic]=useState("General enquiry"); const [message,setMessage]=useState(""); const [website,setWebsite]=useState("");
   const [copied,setCopied]=useState(false); const [sending,setSending]=useState(false); const [submitError,setSubmitError]=useState("");
+  const [captchaToken,setCaptchaToken]=useState(""); const [captchaResetKey,setCaptchaResetKey]=useState(0);
   const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && name.trim().length>=2 && message.trim().length>=10;
   async function submit(e:FormEvent) {
     e.preventDefault(); if(!valid || sending) return;
     setSending(true); setSubmitError("");
     try {
-      const {data,error}=await supabase.functions.invoke("support-ticket-intake",{body:{fullName:name,email,category:topic,subject:topic,message,website}});
+      const {data,error}=await supabase.functions.invoke("support-ticket-intake",{body:{fullName:name,email,category:topic,subject:topic,message,website,captchaToken}});
       if(error) throw error;
       if(!data?.ok || !data?.ticketRef) throw new Error(data?.error || "Your request could not be submitted.");
       try { sessionStorage.setItem("monk:thank-you-context", JSON.stringify({ kind: "support", reference: data.ticketRef, notification: data.notification || "not_configured" })); } catch {}
       navigate("/thank-you");
     } catch(error) { setSubmitError(error instanceof Error ? error.message : "Unable to submit your request. Please contact admin@monk.monster."); }
-    finally { setSending(false); }
+    finally { setCaptchaToken(""); setCaptchaResetKey(value=>value+1); setSending(false); }
   }
   return <Shell eyebrow="CONTACT SUPPORT" title="A clear path to the right help." intro="Submit a support request directly to MONK. A reference number is shown after the server confirms that your request has been stored.">
     {submitError&&<div className="st-alert" role="alert">{submitError}</div>}
@@ -96,7 +98,8 @@ function ContactPage() {
       <label>Message *<textarea required minLength={10} maxLength={4000} rows={6} value={message} onChange={e=>setMessage(e.target.value)} placeholder="Describe what you need help with. Do not include passwords, OTPs, API keys or sensitive student records."/></label>
       <label className="st-honeypot" aria-hidden="true">Leave this field empty<input tabIndex={-1} autoComplete="off" value={website} onChange={e=>setWebsite(e.target.value)}/></label>
       <div className="st-note"><ShieldCheck size={17}/> Never send passwords, one-time passcodes, full payment-card details or unnecessary identity documents.</div>
-      <button className="st-primary" type="submit" disabled={!valid||sending}>{sending?<><RefreshCw size={16} className="st-spin"/> Submitting securely…</>:<><Mail size={16}/> Submit support request <ArrowUpRight size={16}/></>}</button>
+      <TurnstileWidget resetKey={captchaResetKey} onToken={setCaptchaToken} onError={()=>setSubmitError("Security verification could not load. Refresh the page and try again.")}/>
+      <button className="st-primary" type="submit" disabled={!valid||!captchaToken||sending}>{sending?<><RefreshCw size={16} className="st-spin"/> Submitting securely…</>:<><Mail size={16}/> Submit support request <ArrowUpRight size={16}/></>}</button>
     </form><aside className="st-card st-side-card"><span className="st-icon"><LifeBuoy/></span><h2>Other support routes</h2>
       <Link to="/support/tickets"><ClipboardList/> Support tickets <ArrowRight/></Link><a href="" target="_blank" rel="noreferrer"><MessageSquare/> Email support <ArrowUpRight/></a><Link to="/security-center"><ShieldCheck/> Security center <ArrowRight/></Link><Link to="/privacy-center"><LockKeyhole/> Privacy center <ArrowRight/></Link><Link to="/status"><Activity/> Service status <ArrowRight/></Link>
       <div className="st-divider"/><p className="st-small">Prefer email? Use the published support address.</p><div className="st-email"><a href={`mailto:${emailAddress}`}>{emailAddress}</a><button type="button" aria-label="Copy support email" onClick={()=>{void navigator.clipboard?.writeText(emailAddress);setCopied(true);}}><Copy size={15}/></button></div>{copied&&<small className="st-success">Email address copied when clipboard permission is available.</small>}
@@ -111,9 +114,9 @@ function TicketListPage() {
   const [sending,setSending]=useState(false); const [submitError,setSubmitError]=useState("");
   const valid=fullName.trim().length>=2 && subject.trim().length>=4 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && message.trim().length>=10;
   async function create(e:FormEvent){
-    e.preventDefault(); if(!valid||sending)return; setSending(true);setSubmitError("");
+    e.preventDefault(); if(!valid||sending)return; if(!captchaToken){setSubmitError("Complete the security verification before submitting.");return;} setSending(true);setSubmitError("");
     try {
-      const {data,error}=await supabase.functions.invoke("support-ticket-intake",{body:{fullName,email,category,subject,message,website}});
+      const {data,error}=await supabase.functions.invoke("support-ticket-intake",{body:{fullName,email,category,subject,message,website,captchaToken}});
       if(error)throw error;
       if(!data?.ok||!data?.ticketRef)throw new Error(data?.error||"The support request could not be submitted.");
       const ticket:Ticket={id:data.ticketRef,subject:subject.trim(),category,message:message.trim(),email:email.trim(),createdAt:data.createdAt||new Date().toISOString(),status:"Submitted"};
@@ -121,7 +124,7 @@ function TicketListPage() {
       try { sessionStorage.setItem("monk:thank-you-context", JSON.stringify({ kind: "support", reference: ticket.id, notification: data.notification || "not_configured" })); } catch {}
       navigate("/thank-you");
     } catch(error){setSubmitError(error instanceof Error?error.message:"Unable to submit your request. Please try again.");}
-    finally{setSending(false);}
+    finally{setCaptchaToken("");setCaptchaResetKey(value=>value+1);setSending(false);}
   }
   return <Shell eyebrow="SUPPORT TICKETS" title="Keep every support request organized." intro="Submit a request to MONK's server-side support queue. This browser keeps a local reference copy; it is not the authoritative ticket database.">
     {submitError&&<div className="st-alert" role="alert">{submitError}</div>}
@@ -132,7 +135,7 @@ function TicketListPage() {
       <label>Email address *<input required type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com"/></label>
       <label>Details *<textarea required minLength={10} maxLength={4000} rows={5} value={message} onChange={e=>setMessage(e.target.value)} placeholder="Steps to reproduce, expected result and what happened."/></label>
       <label className="st-honeypot" aria-hidden="true">Leave this field empty<input tabIndex={-1} autoComplete="off" value={website} onChange={e=>setWebsite(e.target.value)}/></label>
-      <button className="st-primary" disabled={!valid||sending}>{sending?<><RefreshCw size={16} className="st-spin"/> Submitting…</>:<><ClipboardList size={16}/> Submit ticket</>}</button>
+      <TurnstileWidget resetKey={captchaResetKey} onToken={setCaptchaToken} onError={()=>setSubmitError("Security verification could not load. Refresh the page and try again.")}/><button className="st-primary" disabled={!valid||!captchaToken||sending}>{sending?<><RefreshCw size={16} className="st-spin"/> Submitting…</>:<><ClipboardList size={16}/> Submit ticket</>}</button>
       <p className="st-footnote">Do not enter passwords, access tokens, payment-card data or sensitive student records.</p>
     </form><section className="st-card"><div className="st-card-title"><Clock3/><div><h2>Your recent requests</h2><p>Reference copies stored in this browser.</p></div></div>
       {tickets.length? <div className="st-ticket-list">{tickets.map(t=><Link to={`/support/tickets/${encodeURIComponent(t.id)}`} key={t.id}><span className="st-ticket-id">{t.id}</span><strong>{t.subject}</strong><small>{t.category} · {new Date(t.createdAt).toLocaleString()}</small><span className="st-local-status">Submitted to MONK</span></Link>)}</div>:<div className="st-empty"><ClipboardList/><strong>No recent requests on this device</strong><p>Submit a support request to receive a reference number.</p></div>}
