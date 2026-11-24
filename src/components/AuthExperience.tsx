@@ -186,7 +186,7 @@ export default function AuthExperience() {
     if (!accepted) { setError("Accept the Terms of Service and Privacy Policy before continuing with Google."); return; }
     setBusy(true); setError("");
     try {
-      if (mode === "signup") {
+      if (mode === "signup" || mode === "login") {
         try { sessionStorage.setItem("monk:oauth-consent", JSON.stringify({ terms: TERMS_VERSION, privacy: PRIVACY_VERSION, vertical, role })); } catch {}
       }
       const inviteToken = new URLSearchParams(window.location.hash.replace(/^#/, "")).get("invite");
