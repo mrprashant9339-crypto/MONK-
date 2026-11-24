@@ -138,7 +138,7 @@ test("server-side support intake enforces honeypot and rate limits", async () =>
   assert.match(source, /message\.length\s*<\s*10/);
   const supportPages = await readFile(join(root, "src", "components", "SupportTrustPages.tsx"), "utf8");
   assert.match(supportPages, /st-honeypot/);
-  assert.match(supportPages, /website\}\}\)/);
+  assert.match(supportPages, /website,captchaToken/);
 });
 
 test("GA4 is loaded only after analytics consent and a real measurement ID", async () => {
