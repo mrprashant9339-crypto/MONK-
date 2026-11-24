@@ -1,5 +1,5 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import PublicSite from "./components/PublicSite";
 import { ArrowUpRight, Bell, Check, ChevronRight, Command, LayoutGrid, Plus, Search, ShieldCheck, Sparkles, Target, Zap, LoaderCircle, LogOut, Pencil, Trash2, Play, Pause, RotateCcw, Users, Activity, GraduationCap, Briefcase, FolderKanban, CheckSquare, FileText, BarChart3, Wallet, Store, Bot, Settings, Building2 } from "lucide-react";
 import type { Session } from "@supabase/supabase-js";
@@ -19,14 +19,7 @@ const demoTasks: Task[] = [
 
 export default function App() {
   const location = useLocation();
-  const navigate = useNavigate();
   const [session, setSession] = useState<Session | null>(null);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [authBusy, setAuthBusy] = useState(false);
-  const [authMessage, setAuthMessage] = useState("");
-  const [legalAccepted, setLegalAccepted] = useState(false);
-  const [authMode, setAuthMode] = useState<"login" | "signup">(new URLSearchParams(window.location.search).get("mode") === "signup" || window.location.pathname === "/signup" ? "signup" : "login");
   const [tasks, setTasks] = useState<Task[]>(demoTasks);
   const [projects, setProjects] = useState<Project[]>([]);
   const [projectId, setProjectId] = useState("");
@@ -152,7 +145,7 @@ export default function App() {
 
   useEffect(() => {
     if (!session || !supabase) return;
-    const token = new URLSearchParams(window.location.hash.replace(/^#/, "")).get("invite");
+    const token = new URLSearchParams(window.location.hash.replace(/^#/, "")).get("invite") ?? new URLSearchParams(window.location.search).get("invite");
     if (!token) return;
     let active = true;
     void (async () => {
@@ -165,51 +158,7 @@ export default function App() {
       await loadWorkspace();
     })();
     return () => { active = false; };
-  }, [session, loadWorkspace]);
-
-  async function signIn(mode: "login" | "signup") {
-    if (!supabase) return;
-    if (!email.trim() || password.length < 8) { setAuthMessage("Enter a valid email and a password with at least 8 characters."); return; }
-    if (mode === "signup" && !legalAccepted) { setAuthMessage("Please accept the Terms of Service and acknowledge the Privacy Policy before creating an account."); return; }
-    setAuthBusy(true); setAuthMessage("");
-    try {
-      const result = mode === "login"
-        ? await supabase.auth.signInWithPassword({ email: email.trim(), password })
-        : await supabase.auth.signUp({ email: email.trim(), password, options: { emailRedirectTo: `${window.location.origin}/login?vertical=${organizationVertical}`, data: { terms_version: "2026-11-22", privacy_version: "2026-11-22" } } });
-      if (result.error) {
-        setAuthMessage(result.error.message);
-        return;
-      }
-      const userMetadata = result.data.user?.user_metadata as Record<string, unknown> | undefined;
-      const termsVersion = typeof userMetadata?.terms_version === "string" ? userMetadata.terms_version : null;
-      const privacyVersion = typeof userMetadata?.privacy_version === "string" ? userMetadata.privacy_version : null;
-      // Email-confirmation projects return no session at signup. The immutable
-      // consent record is written on the first authenticated sign-in instead.
-      if (result.data.session && termsVersion && privacyVersion) {
-        const { error: consentError } = await supabase.rpc("record_legal_consent", {
-          p_terms_version: termsVersion,
-          p_privacy_version: privacyVersion
-        });
-        if (consentError) {
-          await supabase.auth.signOut();
-          setAuthMessage("We could not save the legal acceptance record. Please try again or contact admin@monk.monster.");
-          return;
-        }
-      }
-      if (mode === "signup") {
-        try { sessionStorage.setItem("monk:thank-you-context", JSON.stringify({ kind: "signup" })); } catch {}
-        if (result.data.session) setSession(result.data.session);
-        navigate("/thank-you");
-        return;
-      }
-      setAuthMessage("Authentication successful.");
-      if (result.data.session) setSession(result.data.session);
-    } catch (error) {
-      setAuthMessage(error instanceof Error ? error.message : "Authentication request failed. Check your connection and try again.");
-    } finally {
-      setAuthBusy(false);
-    }
-  }
+  }, [session, loadWorkspace, location.hash, location.search]);
 
   async function createOrganization(e: FormEvent) {
     e.preventDefault();
@@ -322,6 +271,25 @@ export default function App() {
       <p className="muted">{loading ? "Checking your organization membership and workspace access." : "Your session is active, but MONK could not retrieve your workspace."}</p>
       {workspaceError && <p className="notice" role="alert">{workspaceError}</p>}
       <button className="primary full" disabled={loading} onClick={() => void loadWorkspace()}>{loading ? "Please wait…" : "Retry workspace loading"} <ArrowUpRight size={17} /></button>
+      <button className="text-button full" onClick={async () => { await supabase?.auth.signOut(); setSession(null); setWorkspaceReady(false); setOrganizationId(null); }}>Sign out</button>
+    </section></main>
+  );
+
+  const intendedRole = typeof session?.user.user_metadata?.intended_role === "string" ? session.user.user_metadata.intended_role : "";
+  const mustJoinExistingWorkspace = organizationVertical === "education"
+    ? ["student", "parent", "teacher", "hod", "principal"].includes(intendedRole)
+    : ["manager", "sales", "accounts", "operations", "staff", "client", "vendor"].includes(intendedRole);
+
+  if (isSupabaseConfigured && session && workspaceReady && !organizationId && mustJoinExistingWorkspace) return (
+    <main className="auth-page"><section className="auth-card">
+      <a className="brand" href="/"><img className="brand-mark-image" src="/brand/monk-icon.svg" alt="" /> MONK<span className="brand-dot">.</span></a>
+      <p className="eyebrow">VERIFIED WORKSPACE ACCESS</p><h1>Join your<br /><em>{organizationVertical === "education" ? "institution." : "organization."}</em></h1>
+      <p className="muted">{organizationVertical === "education"
+        ? "Student, parent, teacher, HOD and principal accounts must be linked to an institution by an authorized administrator. Your selected role does not grant access by itself."
+        : "Team members, managers and invited partners must join through an invitation from an organization owner or administrator."}</p>
+      {workspaceError && <p className="notice" role="alert">{workspaceError}</p>}
+      <p className="tiny">If you already received an invitation, open its original link in this browser and sign in with the invited email address. Your verified email must match the invitation or institution record.</p>
+      <button className="primary full" onClick={() => window.location.assign(organizationVertical === "education" ? "/campus" : "/business")}>Explore {organizationVertical === "education" ? "Campus" : "Business"} <ArrowUpRight size={17}/></button>
       <button className="text-button full" onClick={async () => { await supabase?.auth.signOut(); setSession(null); setWorkspaceReady(false); setOrganizationId(null); }}>Sign out</button>
     </section></main>
   );
