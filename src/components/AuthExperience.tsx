@@ -134,7 +134,7 @@ export default function AuthExperience() {
           email: email.trim().toLowerCase(),
           password,
           options: {
-            emailRedirectTo: window.location.origin + "/auth/callback?vertical=" + vertical,
+            emailRedirectTo: (() => { const url = new URL(window.location.origin + "/auth/callback"); url.searchParams.set("vertical", vertical); const invite = new URLSearchParams(window.location.hash.replace(/^#/, "")).get("invite"); if (invite) url.searchParams.set("invite", invite); return url.toString(); })(),
             data: {
               full_name: fullName.trim(),
               phone: phone.trim() || null,
@@ -200,7 +200,7 @@ export default function AuthExperience() {
     if (!supabase || !email.trim() || resendCooldown > 0) return;
     setBusy(true); setError(""); setMessage("");
     try {
-      const { error: resendError } = await supabase.auth.resend({ type: "signup", email: email.trim().toLowerCase(), options: { emailRedirectTo: window.location.origin + "/auth/callback?vertical=" + vertical } });
+      const { error: resendError } = await supabase.auth.resend({ type: "signup", email: email.trim().toLowerCase(), options: { emailRedirectTo: (() => { const url = new URL(window.location.origin + "/auth/callback"); url.searchParams.set("vertical", vertical); const invite = new URLSearchParams(window.location.hash.replace(/^#/, "")).get("invite"); if (invite) url.searchParams.set("invite", invite); return url.toString(); })() } });
       if (resendError) throw resendError;
       setMessage("If verification is still pending, a new confirmation email has been sent.");
       setResendCooldown(60);
