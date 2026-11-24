@@ -169,6 +169,9 @@ export default function App() {
     });
     setSaving(false);
     if (error) { setWorkspaceError(error.message); return; }
+    // Route education owners directly into institution setup; reuse the existing
+    // education module as the canonical onboarding surface and avoid duplicate data models.
+    setActive(organizationVertical === "education" ? "Education" : "Overview");
     setOrganizationId("created");
     await loadWorkspace();
   }
