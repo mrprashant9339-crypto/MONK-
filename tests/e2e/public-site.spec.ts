@@ -266,12 +266,19 @@ test("login, password recovery and password reset routes load the shared auth ex
   await expect(page.locator('.authx-form input[placeholder="Enter password again"]')).toBeVisible();
 });
 
-test("Campus and Business signup preserve their selected workspace vertical and role choices", async ({ page }) => {
+test("Campus and Business signup expose accessible role cards without granting authority", async ({ page }) => {
   await page.goto("/login?mode=signup&vertical=education");
   await expect(page.getByText("MONK Campus")).toBeVisible();
-  await expect(page.getByLabel(/I am registering as/i)).toHaveValue("student");
+  const campusRoles = page.getByRole("radiogroup", { name: "Campus account type" });
+  await expect(campusRoles.getByRole("radio", { name: /Student/i })).toHaveAttribute("aria-checked", "true");
+  await campusRoles.getByRole("radio", { name: /Teacher \/ Faculty/i }).click();
+  await expect(campusRoles.getByRole("radio", { name: /Teacher \/ Faculty/i })).toHaveAttribute("aria-checked", "true");
   await expect(page.getByText(/does not grant permissions/i)).toBeVisible();
   await page.goto("/login?mode=signup&vertical=business");
   await expect(page.getByText("MONK Business")).toBeVisible();
-  await expect(page.getByLabel(/Your role/i)).toHaveValue("owner");
+  const businessRoles = page.getByRole("radiogroup", { name: "Business workspace role" });
+  await expect(businessRoles.getByRole("radio", { name: /Business owner/i })).toHaveAttribute("aria-checked", "true");
+  await businessRoles.getByRole("radio", { name: /Manager/i }).click();
+  await expect(businessRoles.getByRole("radio", { name: /Manager/i })).toHaveAttribute("aria-checked", "true");
+  await expect(page.getByText(/permissions are granted by the organization owner/i)).toBeVisible();
 });
