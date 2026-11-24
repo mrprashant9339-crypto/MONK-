@@ -189,7 +189,7 @@ export default function AuthExperience() {
       }
       if (!email.trim() || !password) throw new Error("Enter your email address and password.");
       const { error: loginError } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(), password, captchaToken: currentCaptchaToken
+        email: email.trim().toLowerCase(), password, options: { captchaToken: currentCaptchaToken }
       });
       if (loginError) throw loginError;
       navigate("/", { replace: true });
