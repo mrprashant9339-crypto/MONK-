@@ -49,6 +49,7 @@ export default function NotificationsCenter({ organizationId, userId }: Props) {
       .limit(30);
     if (queryError) {
       setError("Notifications could not be loaded. Check your connection and access.");
+      setLoading(false);
       return;
     }
     setItems((data ?? []) as NotificationRecord[]);
