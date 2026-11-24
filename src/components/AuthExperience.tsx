@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Eye, EyeOff, GraduationCap, BriefcaseBusiness, ShieldCheck, Mail, LockKeyhole, CheckCircle2, LoaderCircle } from "lucide-react";
 import { supabase } from "../lib/supabase";
+import TurnstileWidget from "./TurnstileWidget";
 import "./auth-experience.css";
 
 type Vertical = "education" | "business";
@@ -39,6 +40,8 @@ export default function AuthExperience() {
   const [error, setError] = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
   const [callbackSession, setCallbackSession] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState("");
+  const [captchaResetKey, setCaptchaResetKey] = useState(0);
 
   useEffect(() => {
     setMode(initialMode);
@@ -121,6 +124,8 @@ export default function AuthExperience() {
     if (!supabase) { setError("Authentication is not configured. Please contact MONK support."); return; }
     setBusy(true); setError(""); setMessage("");
     try {
+      if (!captchaToken) throw new Error("Complete the security verification before continuing.");
+      const currentCaptchaToken = captchaToken;
       if (mode === "forgot") {
         if (!email.trim()) throw new Error("Enter the email address linked to your MONK account.");
         const { error: requestError } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
@@ -281,9 +286,10 @@ export default function AuthExperience() {
               </>}
               {isSignup && <label className="authx-consent"><input type="checkbox" checked={accepted} onChange={e => setAccepted(e.target.checked)} required/><span>I agree to the <a href="/terms" target="_blank" rel="noreferrer">Terms of Service</a> and acknowledge the <a href="/privacy" target="_blank" rel="noreferrer">Privacy Policy</a>.</span></label>}
               {mode === "login" && <button className="authx-link authx-forgot" type="button" onClick={() => changeMode("forgot")}>Forgot password?</button>}
+              <div className="authx-captcha-wrap"><TurnstileWidget resetKey={captchaResetKey} onToken={setCaptchaToken} onError={() => setError("Security verification could not load. Refresh the page and try again.")}/></div>
               {error && <p className="authx-alert" role="alert">{error}</p>}
               {message && <p className="authx-success" role="status"><CheckCircle2 size={16}/>{message}</p>}
-              <button className="authx-submit" type="submit" disabled={busy || (isSignup && !accepted)}>{busy ? <><LoaderCircle className="authx-spin" size={17}/> Please wait…</> : mode === "signup" ? "Create secure account" : mode === "forgot" ? "Send reset link" : mode === "reset" ? "Update password" : "Sign in"} <ArrowRight size={17}/></button>
+              <button className="authx-submit" type="submit" disabled={busy || !captchaToken || (isSignup && !accepted)}>{busy ? <><LoaderCircle className="authx-spin" size={17}/> Please wait…</> : mode === "signup" ? "Create secure account" : mode === "forgot" ? "Send reset link" : mode === "reset" ? "Update password" : "Sign in"} <ArrowRight size={17}/></button>
             </form>
             {(mode === "login" || mode === "signup") && <p className="authx-switch">{mode === "signup" ? "Already registered?" : "New to MONK?"} <button type="button" onClick={() => changeMode(isSignup ? "login" : "signup")}>{isSignup ? "Sign in" : "Create account"}</button></p>}
           </>
