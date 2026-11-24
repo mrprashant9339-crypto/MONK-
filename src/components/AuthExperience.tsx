@@ -60,8 +60,12 @@ export default function AuthExperience() {
         const raw = sessionStorage.getItem("monk:oauth-consent");
         if (raw) {
           const consent = JSON.parse(raw) as { terms: string; privacy: string; vertical: Vertical; role: IntendedRole };
+          const { data: currentUserData, error: currentUserError } = await supabase.auth.getUser();
+          if (currentUserError) throw currentUserError;
+          const existingRole = currentUserData.user?.user_metadata?.intended_role;
           const { error: metadataError } = await supabase.auth.updateUser({ data: {
-            vertical: consent.vertical, intended_role: consent.role,
+            vertical: consent.vertical,
+            intended_role: typeof existingRole === "string" ? existingRole : consent.role,
             terms_version: consent.terms, privacy_version: consent.privacy
           }});
           if (metadataError) throw metadataError;
