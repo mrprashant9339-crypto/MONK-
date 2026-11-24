@@ -108,7 +108,7 @@ export default function AuthExperience() {
 
   const roles = vertical === "education"
     ? [{ value: "student", label: "Student" }, { value: "parent", label: "Parent / Guardian" }, { value: "teacher", label: "Teacher / Faculty" }, { value: "hod", label: "Head of Department (HOD)" }, { value: "principal", label: "Principal" }, { value: "institution", label: "College / Institution administrator" }]
-    : [{ value: "owner", label: "Business owner" }, { value: "admin", label: "Administrator" }, { value: "manager", label: "Manager" }, { value: "sales", label: "Sales" }, { value: "accounts", label: "Accounts" }, { value: "operations", label: "Operations" }, { value: "staff", label: "Employee / Staff" }, { value: "contributor", label: "Team contributor" }, { value: "client", label: "Client" }, { value: "vendor", label: "Vendor" }];
+    : [{ value: "owner", label: "Business owner" }, { value: "admin", label: "Administrator" }, { value: "manager", label: "Manager" }, { value: "sales", label: "Sales" }, { value: "contributor", label: "Team contributor (Operations / Accounts / Staff)" }, { value: "auditor", label: "Auditor" }, { value: "client", label: "Client" }, { value: "vendor", label: "Vendor" }];
 
   function changeMode(next: Mode) {
     setError(""); setMessage(""); setMode(next);
