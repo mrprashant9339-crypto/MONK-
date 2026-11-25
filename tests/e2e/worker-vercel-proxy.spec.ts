@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+test.skip(!process.env.MONK_BASE_URL?.startsWith("https://preview.monk.monster"), "requires the isolated Vercel proxy preview host");
+
 test("isolated Cloudflare Worker proxies the Vercel origin", async ({ request }) => {
   const response = await request.get("/", { timeout: 30_000, maxRedirects: 0 });
   expect(response.status()).toBe(200);
