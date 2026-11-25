@@ -18,6 +18,7 @@ const PUBLIC_PAGE_METADATA: Record<string, { title: string; description: string 
   "/updates": { title: "MONK Updates — Product Progress", description: "Read product updates and development notes for the MONK Campus and Business workspaces." },
   "/faq": { title: "MONK FAQ — Accounts, Workspaces & Access", description: "Find answers about MONK accounts, Campus and Business workspaces, previews, access and support." },
   "/campus": { title: "MONK Campus — College & Institution Workspaces", description: "Explore a connected workspace concept for colleges, polytechnics, students, faculty and institution teams." },
+  "/directory": { title: "India Institution Directory — MONK", description: "Search published Indian universities, colleges and specialist institutions with source-aware verification information." },
   "/business": { title: "MONK Business — Business Operations Workspace", description: "Explore customer, inventory, orders and team workflows in the MONK Business workspace." },
   "/contact": { title: "Contact MONK — Support & Enquiries", description: "Contact the MONK team about account access, product questions, technical issues or privacy requests." },
   "/support/tickets": { title: "Support Tickets — MONK", description: "Submit a support request to MONK or review the local reference details available in this browser." },
@@ -349,6 +350,7 @@ export default function PublicSite() {
   if (location.pathname === "/updates") return <><ProjectInfoPage page="updates"/><CookieNotice/></>;
   if (location.pathname === "/faq") return <><ProjectInfoPage page="faq"/><CookieNotice/></>;
   if (location.pathname === "/campus") return <><CampusPage/><CookieNotice/></>;
+  if (location.pathname === "/directory") return <><Header active="campus"/><main className="portal-page"><InstitutionDirectory/></main><Footer/><CookieNotice/></>;
   if (location.pathname === "/business") return <><BusinessPage/><CookieNotice/></>;
   if (["/privacy","/terms","/cookies","/refunds","/disclaimer","/security","/accessibility","/data-rights"].includes(location.pathname)) return <><LegalPage/><CookieNotice/></>;
   if (location.pathname === "/") return <><HomePage/><CookieNotice/></>;
