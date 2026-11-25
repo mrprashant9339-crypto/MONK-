@@ -49,16 +49,17 @@ Official public references:
 ## Import procedure
 
 1. Download a dataset only from a source whose `terms_review_status` is `approved` and `import_enabled` is true.
-2. Keep the original file in a secure working folder, not Git.
-3. Convert XLSX to CSV locally if the source does not provide CSV. Keep the original untouched.
-4. Run a dry-run first:
+2. At present, the AIKosh university source is disabled because its page has no downloadable file; AICTE and NMC sources are disabled pending reuse review. The OGD 2011-12 and 2012-13 historical college datasets are the only currently enabled bulk-file sources.
+3. Keep the original file in a secure working folder, not Git.
+4. Convert XLSX to CSV locally if the source does not provide CSV. Keep the original untouched.
+5. Run a dry-run first:
    ```bash
-   node scripts/import-india-directory.mjs --input ./official-source.csv --source aishe_aikosh_universities --dry-run
+   node scripts/import-india-directory.mjs --input ./official-ogd-colleges.csv --source ogd_aishe_colleges_2011_2012 --dry-run
    ```
 5. Set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in a trusted shell environment. Never paste the service-role key into chat, commit it, or use a `VITE_*` variable.
-6. Run the import:
+6. After the dry-run and source approval checks, run the import:
    ```bash
-   node scripts/import-india-directory.mjs --input ./official-source.csv --source aishe_aikosh_universities
+   node scripts/import-india-directory.mjs --input ./official-ogd-colleges.csv --source ogd_aishe_colleges_2011_2012
    ```
 7. Check counts in `monk_directory_institutions`, `monk_directory_source_records`, and `monk_directory_source_snapshots`. Review rejected rows and duplicates before publishing any new source type.
 
