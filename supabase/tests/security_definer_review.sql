@@ -29,6 +29,18 @@ begin
     raise exception 'A SECURITY DEFINER function has an unexpected search_path';
   end if;
 
+  if exists (
+    select 1
+    from pg_proc p
+    join pg_namespace n on n.oid=p.pronamespace
+    where n.nspname='public'
+      and p.prosecdef
+      and has_function_privilege('authenticated',p.oid,'EXECUTE')
+      and p.prosrc !~* 'auth\\.uid\\(\\)|current_organization_id|current_member_id|has_org_permission|has_org_role|is_org_member|can_read_'
+  ) then
+    raise exception 'An authenticated-callable SECURITY DEFINER function has no identity or tenant authorization guard';
+  end if;
+
   select p.prosrc into create_org_body
   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
   where n.nspname='public' and p.proname='create_organization';
