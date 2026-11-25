@@ -118,4 +118,4 @@ After the correct project is linked to `mrprashant9339-crypto/MONK-`:
 
 ## Preview Worker route management
 - `preview.monk.monster/*` is a separately provisioned Cloudflare route to `monk-vercel-preview`.
-- The GitHub Wrangler token has Workers Script upload permission but not zone Worker Routes write permission. Keep `routes` out of `wrangler.preview.jsonc`; update the route through the Cloudflare control plane only when required.
+- The GitHub Wrangler token has Workers Script upload permission but not zone Worker Routes write permission. Keep `routes` out of `wrangler.preview.jsonc`; deploy with `workers_dev: true` so Wrangler can update the script without touching zone routes. The separately provisioned `preview.monk.monster/*` route remains attached.
