@@ -352,3 +352,9 @@ test("education invitation Edge Function restricts CORS and bounds request bodie
   assert.ok(invitation.includes("new TextEncoder().encode(rawBody).byteLength > 12000"));
   assert.ok(!invitation.includes('"Access-Control-Allow-Origin": "*"'));
 });
+
+
+test("Vercel deployment config rewrites SPA deep links to index.html", async () => {
+  const config = JSON.parse(await readFile(join(root, "vercel.json"), "utf8"));
+  assert.deepEqual(config.rewrites, [{ source: "/(.*)", destination: "/index.html" }]);
+});
