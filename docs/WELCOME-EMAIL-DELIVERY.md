@@ -12,7 +12,7 @@ Configure these in Supabase Dashboard → Edge Functions → Secrets:
 - `RESEND_API_KEY`: Resend API key with email-send permission.
 - `MONK_EMAIL_FROM`: verified sender, expected value `MONK Support <support@monk.monster>`.
 - `MONK_APP_URL`: `https://monk.monster`.
-- `MONK_SUPPORT_EMAIL`: `support@monk.monster` (optional).
+- `MONK_SUPPORT_EMAIL`: `admin@monk.monster` until a `support@monk.monster` mailbox/forwarding alias is provisioned (optional).
 - Supabase-managed `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEYS` (or `SUPABASE_ANON_KEY`) and `SUPABASE_SECRET_KEYS` (or `SUPABASE_SERVICE_ROLE_KEY`) are required by the function runtime.
 
 The Resend sender domain must be verified and its SPF/DKIM records must pass. Do not replace MX records used by Hostinger Mail. Keep the Supabase Auth SMTP configuration separate: confirmation and password-reset emails are sent by Supabase Auth SMTP, while this Edge Function sends the post-verification welcome email through Resend.
