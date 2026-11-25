@@ -3,11 +3,5 @@
   "name": "monk-vercel-preview",
   "main": "workers/monk-vercel-preview.js",
   "compatibility_date": "2026-11-25",
-  "workers_dev": false,
-  "routes": [
-    {
-      "pattern": "preview.monk.monster/*",
-      "zone_name": "monk.monster"
-    }
-  ]
+  "workers_dev": true
 }

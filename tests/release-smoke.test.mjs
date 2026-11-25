@@ -366,7 +366,8 @@ test("Vercel proxy preview Worker maps SPA routes to the Vercel app shell", asyn
   assert.ok(worker.includes("const upstreamPath = spaRoute ? \"/\" : incoming.pathname;"));
   const config = JSON.parse(await readFile(join(root, "wrangler.preview.jsonc"), "utf8"));
   assert.equal(config.name, "monk-vercel-preview");
-  assert.deepEqual(config.routes, [{ pattern: "preview.monk.monster/*", zone_name: "monk.monster" }]);
+  assert.equal(config.workers_dev, true);
+  assert.equal("routes" in config, false);
 });
 
 
