@@ -51,7 +51,7 @@ jobs:
       - name: Wait for Vercel origin SPA routes
         run: |
           for attempt in $(seq 1 24); do
-            status=$(curl -sS -o /dev/null -w '%{http_code}' https://origin.monk.monster/signup || true)
+            status=$(curl -sS -o /dev/null -w '%{http_code}' https://origin.monk.monster/ || true)
             if [ "$status" = "200" ]; then
               echo "Vercel origin SPA route is ready."
               exit 0
@@ -59,8 +59,11 @@ jobs:
             echo "Waiting for Vercel origin deployment (attempt $attempt/24, HTTP $status)..."
             sleep 10
           done
-          echo "Vercel origin did not serve /signup after 4 minutes." >&2
+          echo "Vercel origin homepage did not become ready after 4 minutes." >&2
           exit 1
+      - name: Deploy isolated Vercel proxy Worker
+        run: npx wrangler deploy --config wrangler.preview.jsonc
+
       - name: Verify Cloudflare Worker to Vercel origin preview
         env:
           MONK_BASE_URL: https://preview.monk.monster
