@@ -1,6 +1,7 @@
 name: MONK CI
 
 on:
+  workflow_dispatch:
   push:
     branches: [main, feature/auth-registration-security]
   pull_request:
