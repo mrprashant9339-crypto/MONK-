@@ -223,6 +223,7 @@ test("authentication callback exchanges PKCE codes once and preserves onboarding
   assert.match(auth, /Switch to MONK Business/);
   assert.match(auth, /Enter your full name before continuing with Google/);
   assert.match(auth, /Your Google account was not linked to a completed MONK profile/);
+  assert.match(auth, /update_my_profile/);
   assert.match(auth, /Retry security verification/);
   const app = await readFile(join(root, "src", "App.tsx"), "utf8");
   assert.match(app, /canCreateBusinessWorkspace = organizationVertical === "business" && intendedRole === "owner"/);
@@ -230,4 +231,7 @@ test("authentication callback exchanges PKCE codes once and preserves onboarding
   assert.match(migration, /current_user_email_verified/);
   assert.match(migration, /Campus workspaces require institution verification/);
   assert.match(migration, /intended_role' is distinct from 'owner'/);
+  const profileMigration = await readFile(join(root, "supabase", "migrations", "20261125042000_add_secure_own_profile_completion.sql"), "utf8");
+  assert.match(profileMigration, /auth\.uid\(\)/);
+  assert.match(profileMigration, /revoke all on function public\.update_my_profile/);
 });
