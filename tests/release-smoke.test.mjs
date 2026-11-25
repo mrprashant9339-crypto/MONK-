@@ -358,3 +358,13 @@ test("Vercel deployment config rewrites SPA deep links to index.html", async () 
   const config = JSON.parse(await readFile(join(root, "vercel.json"), "utf8"));
   assert.deepEqual(config.rewrites, [{ source: "/(.*)", destination: "/index.html" }]);
 });
+
+
+test("Vercel proxy preview Worker maps SPA routes to the Vercel app shell", async () => {
+  const worker = await readFile(join(root, "workers", "monk-vercel-preview.js"), "utf8");
+  assert.ok(worker.includes("const SPA_ROUTES = new Set(["));
+  assert.ok(worker.includes("const upstreamPath = spaRoute ? \"/\" : incoming.pathname;"));
+  const config = JSON.parse(await readFile(join(root, "wrangler.preview.jsonc"), "utf8"));
+  assert.equal(config.name, "monk-vercel-preview");
+  assert.deepEqual(config.routes, [{ pattern: "preview.monk.monster/*", zone_name: "monk.monster" }]);
+});
