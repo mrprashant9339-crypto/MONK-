@@ -311,3 +311,35 @@ test("workspace dashboard routing is organization-scoped and database regression
   assert.match(provisioningSql, /Student role self-created a Business workspace/);
   assert.match(provisioningSql, /Business owner workspace creation/);
 });
+
+
+test("application registers a guarded service worker and provides offline recovery", async () => {
+  const entry = await readFile(join(root, "src", "main.tsx"), "utf8");
+  const worker = await readFile(join(root, "public", "sw.js"), "utf8");
+  const offline = await readFile(join(root, "public", "offline.html"), "utf8");
+  assert.match(entry, /navigator\\.serviceWorker\\.register\\("\\/sw\\.js"\\)/);
+  assert.match(entry, /AppErrorBoundary/);
+  assert.match(entry, /NetworkNotice/);
+  assert.match(worker, /request\\.method !== "GET"/);
+  assert.match(worker, /request\\.mode === "navigate"/);
+  assert.match(worker, /caches\\.match\\(OFFLINE_URL\\)/);
+  assert.match(offline, /You're offline right now/);
+});
+
+test("guardian portal scopes relationship lookup to the authenticated guardian", async () => {
+  const portal = await readFile(join(root, "src", "components", "EducationPortal.tsx"), "utf8");
+  assert.match(portal, /if\\s*\\(!g\\?\\.id\\)/);
+  assert.match(portal, /education_student_guardians[\\s\\S]*?\\.eq\\\("guardian_id",\\s*g\\.id\\\)/);
+});
+
+test("Phase 6 Business Operations UI is wired to the authenticated Business workspace", async () => {
+  const app = await readFile(join(root, "src", "App.tsx"), "utf8");
+  const businessUi = await readFile(join(root, "src", "components", "BusinessOperationsLive.tsx"), "utf8");
+  const salesUi = await readFile(join(root, "src", "components", "SalesWorkspace.tsx"), "utf8");
+  const migration = await readFile(join(root, "supabase", "migrations", "20261123033736_phase_6_business_operations.sql"), "utf8");
+  assert.match(app, /BusinessOperationsLive/);
+  assert.match(app, /SalesWorkspace/);
+  assert.match(businessUi, /business_orders/);
+  assert.match(salesUi, /create_lead/);
+  assert.match(migration, /row level security/i);
+});
