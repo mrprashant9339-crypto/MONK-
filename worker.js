@@ -293,19 +293,28 @@ export default {
       return new Response("Method not allowed.", { status: 405, headers: { "allow": "GET, HEAD", "cache-control": "no-store" } });
     }
 
-    try {
-      const response = await fetchVercelOrigin(request, env, url, path);
-      if (response) return response;
-    } catch {
-      // The existing Cloudflare asset bundle remains the safe rollback path.
+    if (isApplicationRoute(path)) {
+      try {
+        const response = await fetchVercelOrigin(request, env, url, path);
+        if (response) return response;
+      } catch {
+        // The existing Cloudflare asset bundle remains the safe rollback path.
+      }
+      return fetchAssetsFallback(request, env, url, path);
     }
 
-    if (isApplicationRoute(path)) return fetchAssetsFallback(request, env, url, path);
     if (isStaticAssetPath(path)) {
+      try {
+        const response = await fetchVercelOrigin(request, env, url, path);
+        if (response && !(response.headers.get("content-type") || "").includes("text/html")) return response;
+      } catch {
+        // Try the already-deployed static asset bundle.
+      }
       const asset = await env.ASSETS.fetch(request);
       if (asset.status === 404 || (asset.headers.get("content-type") || "").includes("text/html")) return notFoundResponse(request.method);
       return asset;
     }
+
     return notFoundResponse(request.method);
   }
 };
