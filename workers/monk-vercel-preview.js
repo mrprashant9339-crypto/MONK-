@@ -1,10 +1,24 @@
 const ORIGIN = "https://origin.monk.monster";
+const SPA_ROUTES = new Set([
+  "/", "/login", "/signup", "/forgot-password", "/reset-password", "/auth/callback",
+  "/about", "/documentation", "/updates", "/faq", "/campus", "/business", "/directory",
+  "/contact", "/support/tickets", "/status", "/incidents", "/security-center",
+  "/security/vulnerability-disclosure", "/privacy-center", "/cookies/preferences",
+  "/data-rights", "/offline", "/maintenance", "/error", "/privacy", "/terms",
+  "/cookies", "/refunds", "/disclaimer", "/security", "/accessibility", "/thank-you",
+]);
+
+function isSpaRoute(path) {
+  return SPA_ROUTES.has(path) || /^\/support\/tickets\/[A-Z0-9-]+$/.test(path);
+}
 
 export default {
   async fetch(request) {
     const incoming = new URL(request.url);
     const origin = new URL(ORIGIN);
-    const upstream = new URL(incoming.pathname + incoming.search, origin);
+    const spaRoute = isSpaRoute(incoming.pathname);
+    const upstreamPath = spaRoute ? "/" : incoming.pathname;
+    const upstream = new URL(upstreamPath + incoming.search, origin);
 
     const headers = new Headers(request.headers);
     headers.delete("host");
@@ -42,6 +56,7 @@ export default {
 
     responseHeaders.set("x-monk-proxy-upstream", "vercel-origin");
     responseHeaders.set("x-monk-proxy-host", incoming.hostname);
+    responseHeaders.set("x-monk-proxy-route", spaRoute ? "spa" : "asset");
     return new Response(upstreamResponse.body, {
       status: upstreamResponse.status,
       statusText: upstreamResponse.statusText,
