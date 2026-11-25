@@ -193,6 +193,13 @@ function withRouteMetadata(response, path) {
 
 const DEFAULT_VERCEL_ORIGIN = "https://origin.monk.monster";
 
+async function isVercelSecurityCheckpoint(response) {
+  const contentType = response.headers.get("content-type") || "";
+  if (!contentType.includes("text/html")) return false;
+  const body = await response.clone().text();
+  return /Vercel Security Checkpoint|Failed to verify your browser|Code\\s*21/i.test(body);
+}
+
 async function fetchVercelOrigin(request, env, url, path) {
   const origin = new URL(env.MONK_VERCEL_ORIGIN || DEFAULT_VERCEL_ORIGIN);
   const appRoute = isApplicationRoute(path);
@@ -202,11 +209,14 @@ async function fetchVercelOrigin(request, env, url, path) {
   headers.delete("host");
   headers.set("x-forwarded-host", url.host);
   headers.set("x-forwarded-proto", url.protocol.replace(":", ""));
+  const cfConnectingIp = request.headers.get("cf-connecting-ip");
+  if (cfConnectingIp) headers.set("CF-Connecting-IP", cfConnectingIp);
 
   const init = { method: request.method, headers, redirect: "manual" };
   if (request.method !== "GET" && request.method !== "HEAD") init.body = request.body;
   const upstreamResponse = await fetch(new Request(upstreamUrl, init));
 
+  if (await isVercelSecurityCheckpoint(upstreamResponse)) return null;
   if (upstreamResponse.status >= 500 || upstreamResponse.status === 404) return null;
 
   let response = upstreamResponse;
@@ -230,6 +240,7 @@ async function fetchVercelOrigin(request, env, url, path) {
     }
   }
   responseHeaders.set("x-monk-origin", "vercel");
+  responseHeaders.set("x-monk-cf-ip-forwarded", cfConnectingIp ? "yes" : "no");
   responseHeaders.delete("x-monk-origin-fallback");
   return new Response(response.body, {
     status: response.status,
@@ -251,6 +262,7 @@ async function fetchAssetsFallback(request, env, url, path) {
   const response = await env.ASSETS.fetch(fallbackRequest);
   const headers = new Headers(response.headers);
   headers.set("x-monk-origin-fallback", "assets");
+  headers.set("x-monk-cf-ip-forwarded", request.headers.get("cf-connecting-ip") ? "yes" : "no");
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
