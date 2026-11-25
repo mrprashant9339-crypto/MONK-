@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import type { FormEvent, MouseEvent, ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import "../public-site.css";
-import InstitutionDirectory from "./InstitutionDirectory";
+import IndiaInstitutionDirectory from "./IndiaInstitutionDirectory";
 import LegalPage, { CookieNotice } from "./LegalPages";
 import SupportTrustPages, { isSupportTrustRoute } from "./SupportTrustPages";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -326,7 +326,7 @@ function CampusPage() {
   const navigate = useNavigate();
   return <><Header active="campus"/><main className="portal-page campus-page"><section className="portal-hero"><div className="portal-hero-copy"><span className="eyebrow-pill"><GraduationCap size={14}/> MONK CAMPUS</span><h1>One campus.<br/><em>Every connection.</em></h1><p>Bring students, faculty, departments and college operations into one organized digital space—built for institutions and the people who make them work.</p><div className="hero-actions"><button className="button-dark" onClick={() => navigate("/login?vertical=education&mode=signup")}>Create a college workspace <ArrowRight size={17}/></button><a href="#college-directory">Explore colleges <ChevronRight size={16}/></a></div><div className="demo-label"><span className="demo-pulse"/> IN DEVELOPMENT · PREVIEW AVAILABLE · No login required</div></div><div className="campus-preview"><div className="preview-top"><span><MonkMark/> CAMPUS OVERVIEW</span><span className="preview-status">DEMO</span></div><div className="preview-welcome">Good morning, <b>Campus team</b><small>Your institution at a glance</small></div><div className="preview-metrics"><div><strong>2,480</strong><small>Students</small></div><div><strong>86</strong><small>Faculty</small></div><div><strong>94%</strong><small>Attendance</small></div></div><div className="preview-schedule"><span>UPCOMING</span><div><b>Mechanical Engineering · 3rd Sem</b><small>Workshop practice · 10:30 AM</small></div><CalendarDays size={18}/></div><div className="preview-notice"><span><BookOpen size={15}/> Academic notice</span><b>Internal assessment schedule published</b></div><small className="preview-disclaimer">Illustrative demo data — not a live college record</small></div></section>
     <section className="portal-benefits"><div className="section-intro"><span className="section-kicker">BUILT FOR INSTITUTIONS</span><h2>Campus life, connected<br/><em>from one place.</em></h2><p>Keep everyday academic work structured, visible and permission-aware.</p></div><FeatureGrid items={campusFeatures}/></section>
-    <InstitutionDirectory/>
+    <IndiaInstitutionDirectory/>
     <section className="roles-section"><span className="section-kicker">ONE INSTITUTION. CLEAR RESPONSIBILITIES.</span><h2>Every role gets<br/><em>the right view.</em></h2><div className="role-chips">{["Principal / Admin","HOD","Faculty","Student","Office staff","Parent / Guardian"].map(role=><span key={role}><CheckCircle2 size={15}/>{role}</span>)}</div><p>Role access is configured by the institution. A role name in this preview does not grant access to real student records.</p></section>
     <section className="portal-bottom-cta"><div><span className="section-kicker">FOR YOUR INSTITUTION</span><h2>Give your campus<br/>one clear workspace.</h2><p>Start with a secure institution account, then invite the people who need access.</p></div><button className="button-dark" onClick={() => navigate("/login?vertical=education&mode=signup")}>Set up MONK Campus <ArrowUpRight size={17}/></button></section>
   </main><Footer/></>;
@@ -350,7 +350,7 @@ export default function PublicSite() {
   if (location.pathname === "/updates") return <><ProjectInfoPage page="updates"/><CookieNotice/></>;
   if (location.pathname === "/faq") return <><ProjectInfoPage page="faq"/><CookieNotice/></>;
   if (location.pathname === "/campus") return <><CampusPage/><CookieNotice/></>;
-  if (location.pathname === "/directory") return <><Header active="campus"/><main className="portal-page"><InstitutionDirectory/></main><Footer/><CookieNotice/></>;
+  if (location.pathname === "/directory") return <><Header active="campus"/><main className="portal-page"><IndiaInstitutionDirectory/></main><Footer/><CookieNotice/></>;
   if (location.pathname === "/business") return <><BusinessPage/><CookieNotice/></>;
   if (["/privacy","/terms","/cookies","/refunds","/disclaimer","/security","/accessibility","/data-rights"].includes(location.pathname)) return <><LegalPage/><CookieNotice/></>;
   if (location.pathname === "/") return <><HomePage/><CookieNotice/></>;

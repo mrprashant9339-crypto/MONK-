@@ -1,5 +1,5 @@
 const PUBLIC_ROUTES = new Set([
-  "/", "/login", "/forgot-password", "/reset-password", "/auth/callback", "/about", "/documentation", "/updates", "/faq", "/campus", "/business", "/directory",
+  "/", "/login", "/signup", "/forgot-password", "/reset-password", "/auth/callback", "/about", "/documentation", "/updates", "/faq", "/campus", "/business", "/directory",
   "/contact", "/support/tickets", "/status", "/incidents", "/security-center",
   "/security/vulnerability-disclosure", "/privacy-center", "/cookies/preferences",
   "/data-rights", "/offline", "/maintenance", "/error", "/privacy", "/terms",
@@ -120,8 +120,12 @@ const PAGE_METADATA = {
     "description": "Your MONK submission has been received. Review the next steps and keep your reference number if one was provided."
   },
   "/login": {
-    "title": "Log in or Sign up — MONK",
-    "description": "Sign in or create a MONK workspace account for your organization."
+    "title": "Log in — MONK",
+    "description": "Sign in to your MONK Campus or Business workspace."
+  },
+  "/signup": {
+    "title": "Create a MONK Account",
+    "description": "Create a secure MONK account for Campus or Business workspaces."
   },
   "/forgot-password": {
     "title": "Recover Account — MONK",
@@ -191,9 +195,6 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const path = normalizedPath(url.pathname);
-    if ((request.method === "GET" || request.method === "HEAD") && path === "/signup") {
-      return Response.redirect(new URL("/login?mode=signup", url), 302);
-    }
     if (request.method === "GET" && isApplicationRoute(path)) {
       const appUrl = new URL("/", url);
       const response = await env.ASSETS.fetch(new Request(appUrl, request));
