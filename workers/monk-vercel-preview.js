@@ -24,6 +24,8 @@ export default {
     headers.delete("host");
     headers.set("x-forwarded-host", incoming.host);
     headers.set("x-forwarded-proto", incoming.protocol.replace(":", ""));
+    const cfConnectingIp = request.headers.get("cf-connecting-ip");
+    if (cfConnectingIp) headers.set("CF-Connecting-IP", cfConnectingIp);
 
     const init = { method: request.method, headers, redirect: "manual" };
     if (request.method !== "GET" && request.method !== "HEAD") init.body = request.body;
@@ -36,6 +38,14 @@ export default {
         status: 502,
         headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" },
       });
+    }
+
+    const contentType = upstreamResponse.headers.get("content-type") || "";
+    if (contentType.includes("text/html")) {
+      const html = await upstreamResponse.clone().text();
+      if (/Vercel Security Checkpoint|Failed to verify your browser|Code\\s*21/i.test(html)) {
+        return new Response("Vercel origin challenged the preview proxy request.", { status: 502, headers: { "cache-control": "no-store", "x-monk-proxy-challenge": "detected" } });
+      }
     }
 
     const responseHeaders = new Headers(upstreamResponse.headers);
@@ -57,6 +67,7 @@ export default {
     responseHeaders.set("x-monk-proxy-upstream", "vercel-origin");
     responseHeaders.set("x-monk-proxy-host", incoming.hostname);
     responseHeaders.set("x-monk-proxy-route", spaRoute ? "spa" : "asset");
+    responseHeaders.set("x-monk-proxy-cf-ip", cfConnectingIp ? "present" : "missing");
     return new Response(upstreamResponse.body, {
       status: upstreamResponse.status,
       statusText: upstreamResponse.statusText,
