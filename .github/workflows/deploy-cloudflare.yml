@@ -84,6 +84,9 @@ jobs:
       - name: Verify production Worker is using Vercel origin
         run: node --test tests/integration/production-worker-origin.test.mjs
 
+      - name: Verify www canonical redirect
+        run: node --test tests/integration/production-worker-origin.test.mjs
+
       - name: Live production Chromium tests
         env:
           MONK_BASE_URL: https://monk.monster
