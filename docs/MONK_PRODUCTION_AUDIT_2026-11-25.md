@@ -103,4 +103,4 @@ Do not merge this branch or perform a production DNS/Worker/Vercel cutover until
 ## Wrangler preview route permission
 - The Cloudflare deployment token can upload Worker scripts but does not have permission to manage zone Worker routes.
 - The `preview.monk.monster/*` route is already provisioned and verified through the connected Cloudflare control plane.
-- PR #33 removes route management from `wrangler.preview.jsonc`; Wrangler will only update the preview script, leaving the pre-existing route intact. This avoids broadening the GitHub deployment token.
+- PR #33 removes route management from `wrangler.preview.jsonc` and keeps `workers_dev: true`; Wrangler updates the script without calling the zone-routes API, leaving the pre-existing route intact. This avoids broadening the GitHub deployment token.
