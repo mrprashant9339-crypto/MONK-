@@ -153,7 +153,7 @@ export default function AuthExperience() {
               vertical: consent.vertical,
               intended_role: typeof existingRole === "string" ? existingRole : consent.role,
               institution_id: typeof currentMetadata.institution_id === "string" ? currentMetadata.institution_id : consent.institutionId ?? null,
-              full_name: typeof currentMetadata.full_name === "string" && currentMetadata.full_name.trim() ? currentMetadata.full_name : consent.fullName ?? "",
+              full_name: typeof consent.fullName === "string" && consent.fullName.trim() ? consent.fullName.trim() : typeof currentMetadata.full_name === "string" && currentMetadata.full_name.trim() ? currentMetadata.full_name : "",
               phone: typeof currentMetadata.phone === "string" && currentMetadata.phone.trim() ? currentMetadata.phone : consent.phone ?? null,
               terms_version: consent.terms, privacy_version: consent.privacy
             }});
@@ -165,6 +165,14 @@ export default function AuthExperience() {
           if (consentError) throw consentError;
           if (raw) localStorage.removeItem("monk:oauth-consent");
         }
+        const resolvedFullName = typeof consent.fullName === "string" && consent.fullName.trim()
+          ? consent.fullName.trim()
+          : typeof currentMetadata.full_name === "string" && currentMetadata.full_name.trim()
+            ? currentMetadata.full_name.trim()
+            : typeof currentMetadata.name === "string" ? currentMetadata.name.trim() : "";
+        if (resolvedFullName.length < 2) throw new Error("Complete your MONK profile with your full name before opening a workspace.");
+        const { error: profileError } = await supabase.rpc("update_my_profile", { p_full_name: resolvedFullName });
+        if (profileError) throw profileError;
         if (alive) {
           const invite = new URLSearchParams(window.location.search).get("invite");
           const callbackVertical = consent?.vertical ?? (currentMetadata.vertical === "education" ? "education" : "business");
