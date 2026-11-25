@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import worker, { isApplicationRoute } from "../worker.js";
+import worker, { isApplicationRoute, isStaticAssetPath } from "../worker.js";
 
 function mockEnv() {
   const requested = [];
@@ -72,14 +72,36 @@ test("origin network failure falls back to Cloudflare assets", async () => {
   });
 });
 
-test("origin 404 falls back to the existing Cloudflare 404 response", async () => {
+test("unknown application paths return a real 404 instead of the SPA shell", async () => {
   await withMockFetch(async () => new Response("not found", { status: 404 }), async () => {
     const env = mockEnv();
     const response = await worker.fetch(new Request("https://monk.monster/unknown-page"), env);
     assert.equal(response.status, 404);
-    assert.equal(response.headers.get("x-monk-origin-fallback"), "assets");
-    assert.deepEqual(env.requested, ["/unknown-page"]);
+    assert.match(await response.text(), /ERROR 404/);
+    assert.equal(response.headers.get("cache-control"), "no-store");
+    assert.deepEqual(env.requested, []);
   });
+});
+
+test("unknown static assets return 404 and never the application HTML", async () => {
+  await withMockFetch(async () => new Response("not found", { status: 404 }), async () => {
+    const env = mockEnv();
+    const response = await worker.fetch(new Request("https://monk.monster/assets/missing.js"), env);
+    assert.equal(response.status, 404);
+    assert.deepEqual(env.requested, ["/assets/missing.js"]);
+  });
+});
+
+test("non-read methods are rejected by the static application Worker", async () => {
+  const response = await worker.fetch(new Request("https://monk.monster/unknown-page", { method: "POST" }), mockEnv());
+  assert.equal(response.status, 405);
+  assert.equal(response.headers.get("allow"), "GET, HEAD");
+});
+
+test("static asset path detection does not classify unknown SPA routes as assets", () => {
+  assert.equal(isStaticAssetPath("/assets/app.js"), true);
+  assert.equal(isStaticAssetPath("/brand/monk-icon.svg"), true);
+  assert.equal(isStaticAssetPath("/unknown-page"), false);
 });
 
 test("www host redirects to the canonical MONK domain", async () => {
