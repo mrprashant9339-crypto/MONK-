@@ -1,5 +1,5 @@
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { Archive, Download, FileText, FileUp, LoaderCircle, RefreshCw, Search, ShieldCheck, Trash2 } from "lucide-react";
+import { Download, FileText, FileUp, LoaderCircle, RefreshCw, Search, ShieldCheck, Trash2 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import "./business-documents.css";
 
