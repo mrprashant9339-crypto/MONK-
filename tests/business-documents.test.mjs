@@ -9,8 +9,8 @@ test("Business document panel uses private tenant-scoped storage and signed down
   const panel = await readFile(join(root, "src/components/BusinessDocumentsPanel.tsx"), "utf8");
   assert.match(panel, /from\("business-private"\)/);
   assert.match(panel, /createSignedUrl\(row\.storage_path, 60/);
-  assert.match(panel, /documents\.document\.upload/);
-  assert.match(panel, /documents\.document\.approve/);
+  assert.match(panel, /canUpload/);
+  assert.match(panel, /canDelete/);
   assert.match(panel, /MAX_FILE_SIZE = 25 \* 1024 \* 1024/);
   assert.match(panel, /storagePath = `\$\{organizationId\}\/\$\{documentId\}\//);
   assert.doesNotMatch(panel, /getPublicUrl\(/);
@@ -19,7 +19,7 @@ test("Business document panel uses private tenant-scoped storage and signed down
 test("Business workspace exposes Documents only to users with read permission", async () => {
   const workspace = await readFile(join(root, "src/components/BusinessOperationsLive.tsx"), "utf8");
   assert.match(workspace, /"Documents"/);
-  assert.match(workspace, /documents\.document\.read/);
+  assert.match(workspace, /documents\.document\.read/);\n  assert.match(workspace, /documents\.document\.upload/);\n  assert.match(workspace, /documents\.document\.approve/);
   assert.match(workspace, /<BusinessDocumentsPanel/);
 });
 
