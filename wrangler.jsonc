@@ -8,5 +8,8 @@
     "binding": "ASSETS",
     "run_worker_first": true,
     "not_found_handling": "404-page"
+  },
+  "vars": {
+    "MONK_VERCEL_ORIGIN": "https://origin.monk.monster"
   }
 }
