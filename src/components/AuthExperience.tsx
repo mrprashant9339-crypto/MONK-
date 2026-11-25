@@ -42,6 +42,10 @@ export default function AuthExperience() {
   const [callbackSession, setCallbackSession] = useState(false);
   const [captchaToken, setCaptchaToken] = useState("");
   const [captchaResetKey, setCaptchaResetKey] = useState(0);
+  const [institutionQuery, setInstitutionQuery] = useState("");
+  const [institutionId, setInstitutionId] = useState("");
+  const [institutionOptions, setInstitutionOptions] = useState<Array<{id:string;canonical_name:string;city:string|null;state_code:string|null;institution_kind:string}>>([]);
+  const [institutionLoading, setInstitutionLoading] = useState(false);
 
   useEffect(() => {
     setMode(initialMode);
@@ -52,6 +56,29 @@ export default function AuthExperience() {
     const timer = window.setTimeout(() => setResendCooldown(value => Math.max(0, value - 1)), 1000);
     return () => window.clearTimeout(timer);
   }, [resendCooldown]);
+
+  useEffect(() => {
+    if (vertical !== "education" || mode !== "signup" || institutionQuery.trim().length < 2) {
+      setInstitutionOptions([]);
+      setInstitutionLoading(false);
+      return;
+    }
+    let alive = true;
+    const timer = window.setTimeout(async () => {
+      setInstitutionLoading(true);
+      const { data, error: directoryError } = await supabase
+        .from("monk_directory_institutions")
+        .select("id,canonical_name,city,state_code,institution_kind")
+        .eq("published", true)
+        .ilike("canonical_name", "%" + institutionQuery.trim().replace(/[%_]/g, "") + "%")
+        .order("canonical_name", { ascending: true })
+        .limit(20);
+      if (!alive) return;
+      setInstitutionOptions(directoryError ? [] : (data ?? []) as Array<{id:string;canonical_name:string;city:string|null;state_code:string|null;institution_kind:string}>);
+      setInstitutionLoading(false);
+    }, 250);
+    return () => { alive = false; window.clearTimeout(timer); };
+  }, [vertical, mode, institutionQuery]);
 
   useEffect(() => {
     if (!supabase) return;
@@ -76,8 +103,8 @@ export default function AuthExperience() {
         const { data: currentUserData, error: currentUserError } = await supabase.auth.getUser();
         if (currentUserError) throw currentUserError;
         const currentMetadata = currentUserData.user?.user_metadata ?? {};
-        const consent: { terms: string; privacy: string; vertical?: Vertical; role?: IntendedRole } | null = raw
-          ? JSON.parse(raw) as { terms: string; privacy: string; vertical: Vertical; role: IntendedRole }
+        const consent: { terms: string; privacy: string; vertical?: Vertical; role?: IntendedRole; institutionId?: string | null } | null = raw
+          ? JSON.parse(raw) as { terms: string; privacy: string; vertical: Vertical; role: IntendedRole; institutionId?: string | null }
           : typeof currentMetadata.terms_version === "string" && typeof currentMetadata.privacy_version === "string"
             ? { terms: currentMetadata.terms_version, privacy: currentMetadata.privacy_version }
             : null;
@@ -87,6 +114,7 @@ export default function AuthExperience() {
             const { error: metadataError } = await supabase.auth.updateUser({ data: {
               vertical: consent.vertical,
               intended_role: typeof existingRole === "string" ? existingRole : consent.role,
+              institution_id: typeof currentMetadata.institution_id === "string" ? currentMetadata.institution_id : consent.institutionId ?? null,
               terms_version: consent.terms, privacy_version: consent.privacy
             }});
             if (metadataError) throw metadataError;
@@ -158,6 +186,9 @@ export default function AuthExperience() {
           throw new Error("Use at least 12 characters with uppercase, lowercase and a number.");
         }
         if (password !== confirmPassword) throw new Error("The passwords do not match.");
+        if (vertical === "education" && institutionOptions.length > 0 && !institutionId) {
+          throw new Error("Select your college or institution to continue.");
+        }
         if (!accepted) throw new Error("Accept the Terms of Service and Privacy Policy to create your account.");
         const { data, error: signupError } = await supabase.auth.signUp({
           email: email.trim().toLowerCase(),
@@ -170,6 +201,7 @@ export default function AuthExperience() {
               phone: phone.trim() || null,
               vertical,
               intended_role: role,
+              institution_id: vertical === "education" ? institutionId || null : null,
               terms_version: TERMS_VERSION,
               privacy_version: PRIVACY_VERSION
             }
@@ -212,7 +244,7 @@ export default function AuthExperience() {
     setBusy(true); setError("");
     try {
       if (mode === "signup" || mode === "login") {
-        try { sessionStorage.setItem("monk:oauth-consent", JSON.stringify({ terms: TERMS_VERSION, privacy: PRIVACY_VERSION, vertical, role })); } catch {}
+        try { sessionStorage.setItem("monk:oauth-consent", JSON.stringify({ terms: TERMS_VERSION, privacy: PRIVACY_VERSION, vertical, role, institutionId: institutionId || null })); } catch {}
       }
       const inviteToken = new URLSearchParams(window.location.hash.replace(/^#/, "")).get("invite");
       const callbackUrl = new URL(window.location.origin + "/auth/callback");
@@ -284,6 +316,14 @@ export default function AuthExperience() {
               {isSignup && <>
                 <label>Full name<input autoComplete="name" value={fullName} onChange={e => setFullName(e.target.value)} maxLength={100} required placeholder="Your full name"/></label>
                 <label>Phone number <span className="authx-optional">Optional</span><input type="tel" autoComplete="tel" value={phone} onChange={e => setPhone(e.target.value)} maxLength={20} placeholder="+91"/></label>
+                {vertical === "education" && <label>Find your college or institution
+                  <input type="search" value={institutionQuery} onChange={e => { setInstitutionQuery(e.target.value); setInstitutionId(""); }} placeholder="Search by college or university name" autoComplete="off"/>
+                  <select value={institutionId} onChange={e => setInstitutionId(e.target.value)} aria-label="Select your college or institution">
+                    <option value="">{institutionLoading ? "Searching institutions…" : institutionQuery.trim().length < 2 ? "Enter at least 2 characters to search" : institutionOptions.length ? "Choose your institution" : "No published institution found"}</option>
+                    {institutionOptions.map(item => <option key={item.id} value={item.id}>{item.canonical_name}{item.city ? " — " + item.city : ""}{item.state_code ? ", " + item.state_code : ""}</option>)}
+                  </select>
+                  {institutionQuery.trim().length >= 2 && !institutionLoading && institutionOptions.length === 0 && <span className="authx-optional">This institution is not in the published directory yet. You can still create an account, but access to a campus workspace requires an invitation from its administrator.</span>}
+                </label>}
                 <fieldset className="authx-role-field"><legend>{vertical === "education" ? "Choose your account type" : "Choose your workspace role"}</legend><div className="authx-role-grid" role="radiogroup" aria-label={vertical === "education" ? "Campus account type" : "Business workspace role"}>{roles.map((item, index) => <button className={"authx-role-option" + (role === item.value ? " is-selected" : "")} key={item.value} type="button" role="radio" aria-checked={role === item.value} onClick={() => setRole(item.value as IntendedRole)}><span className="authx-role-number">{String(index + 1).padStart(2, "0")}</span><span className="authx-role-label">{item.label}</span><span className="authx-role-check"><CheckCircle2 size={15}/></span></button>)}</div></fieldset>
                 <p className="authx-hint">{vertical === "education" ? "Student, parent and faculty access is verified against institution records or a valid invitation. Selecting a role here does not grant permissions." : "Workspace permissions are granted by the organization owner or an authorized administrator after verification."}</p>
               </>}
