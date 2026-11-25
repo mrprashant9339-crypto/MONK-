@@ -9,7 +9,7 @@ MONK has one public website and two distinct product journeys. The root route is
 - Roles: platform admin, institution admin/principal, HOD, faculty, student and optional guardian.
 - Core modules: institution profile, departments/branches, courses/semesters, notices, timetable, attendance, assignments, assessments/results, documents and analytics.
 - Data policy: public directory data must be sourced from official SBTE/AICTE/state sources; demo metrics and student records must be marked fictional and never presented as live records.
-- Current UI: public Campus landing page and a small illustrative college directory preview. Full verified 46-institute dataset and complete institutional workflows remain follow-up work.
+- Current UI: public Campus landing page and a data-backed India-wide institution directory search; the production directory currently has zero published records. Full verified 46-institute dataset and complete institutional workflows remain follow-up work.
 
 ## Journey B — MONK Business
 - Public page: business-focused overview, workflows, feature cards and sample dashboard.

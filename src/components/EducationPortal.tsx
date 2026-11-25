@@ -61,7 +61,9 @@ export default function EducationPortal({organizationId,role}:Props) {
       .eq("organization_id",organizationId).eq("email",auth.data.user.email??"").is("user_id",null);
     if(claimError)throw claimError;
     const {data:g,error:e}=await supabase.from("education_guardians").select("id,full_name,email").eq("organization_id",organizationId).eq("user_id",auth.data.user.id).maybeSingle();if(e)throw e;setGuardian(g as Guardian|null);
-    const {data:links,error:le}=await supabase.from("education_student_guardians").select("student_id").eq("organization_id",organizationId);if(le)throw le;
+    if(!g?.id){setChildren([]);setParentResults([]);setParentAttendance([]);setDocuments([]);return;}
+    // Defense in depth: scope this relationship lookup to the authenticated guardian as well as relying on RLS.
+    const {data:links,error:le}=await supabase.from("education_student_guardians").select("student_id").eq("organization_id",organizationId).eq("guardian_id",g.id);if(le)throw le;
     const ids=(links??[]).map(x=>x.student_id);
     if(ids.length){const {data:child,error:ce}=await supabase.from("education_students").select("id,full_name,admission_number,batch_id,status,email").eq("organization_id",organizationId).in("id",ids);if(ce)throw ce;setChildren((child??[]) as Student[]);}
     else setChildren([]);

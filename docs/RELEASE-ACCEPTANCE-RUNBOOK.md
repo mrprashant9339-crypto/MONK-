@@ -23,12 +23,13 @@ This runbook separates automated CI coverage from live provider/account acceptan
 5. Create an invitation for a controlled test mailbox; verify provider acceptance, mailbox delivery, and acceptance by only that confirmed mailbox.
 
 ## 3. Supabase Auth hardening
-Open [Supabase Auth Rate Limits](https://supabase.com/dashboard/project/yucwackrbekwaxiyuobt/auth/rate-limits) and [Auth Providers](https://supabase.com/dashboard/project/yucwackrbekwaxiyuobt/auth/providers).
+Open [Supabase Auth Rate Limits](https://supabase.com/dashboard/project/yucwackrbekwaxiyuobt/auth/rate-limits), [Auth Providers](https://supabase.com/dashboard/project/yucwackrbekwaxiyuobt/auth/providers), and the Auth Bot and Abuse Protection settings.
 - Keep email confirmation enabled.
 - Configure custom SMTP using the verified sender/provider credentials.
 - Enable leaked-password protection (HaveIBeenPwned check).
 - Review signup, sign-in, OTP/resend and password-recovery rate limits.
-- Configure CAPTCHA with a site key and secret for the production origin, then verify signup and recovery.
+- Configure CAPTCHA with the existing Cloudflare Turnstile site key and matching server-side secret; confirm the Auth dashboard toggle is enabled (it has not yet been independently verified).
+- Test signup, password login and password recovery with missing, expired, invalid and valid CAPTCHA tokens.
 - Verify the redirect allowlist contains no broad wildcards.
 
 These dashboard settings cannot be changed by repository CI. Record the enabled state and a successful test before release.
@@ -59,7 +60,7 @@ Use a real Business workspace owner and a member without `organization.profile.u
 5. Switch organizations; verify the first organization's profile is not displayed or editable.
 
 ## 6. Production deployment verification
-The connected Vercel project is `monk-platform` (Vite), linked to `mrprashant9339-crypto/MONK-`. Its current production deployment is on `main` at commit `7f743cecf16ea80ff57672fc7cd2831fa8024f3f`. The feature branch has a separate preview deployment. The custom domain `monk.monster` is still served through the existing Cloudflare Worker route/binding; do not detach or re-route it until the approved Vercel production deployment and authentication are fully accepted.
+The Vercel project is `monk-platform` (Vite), linked to `mrprashant9339-crypto/MONK-`. The latest inspected production deployment is READY on `main` at commit `75fe54d733ab782cea9ae2bf3af8f2053144d57e` (deployment `dpl_Ga9auMSEbgytJ1DhsCGsA8zub7CT`). GitHub `main` now also has an audit-document-only commit `bfabf4777a59817e7e8304c1ec0f48dbcaba05e`. Project metadata reports `live=false`; Vercel SSO protection is enabled for non-custom deployment domains. The `monk.monster` custom domain is currently attached to Cloudflare Worker `monk`, which serves its own static assets. There is no Worker-to-Vercel reverse proxy today. Do not detach or re-route the custom domain until a separate public Vercel origin hostname, protection strategy, preview test and rollback have been accepted.
 
 After the correct project is linked to `mrprashant9339-crypto/MONK-`:
 - Confirm Vite framework/build settings and production branch.
@@ -97,3 +98,11 @@ After the correct project is linked to `mrprashant9339-crypto/MONK-`:
 - The client-executable grant on `public.rls_auto_enable()` has been revoked. The remaining Supabase Security Advisor warnings for authenticated SECURITY DEFINER RPCs require function-by-function review; do not bulk-revoke them because many are application RPCs with internal permission checks. Leaked-password protection remains disabled and must be enabled in Auth settings.
 - Google OAuth provider credentials, custom SMTP delivery, actual email signup/confirmation/password-reset, fresh-account Google callback, invitation acceptance, tenant-isolation negative cases and production-domain routing remain unverified. These require provider credentials and controlled test accounts.
 - PR #25 remains open and draft; no merge or production promotion has been performed.
+
+
+## 8. Phase 6 Business and Phase 7 Campus acceptance
+- Phase 6 Sales and Business Operations UI integration is proposed in PR #29. Its production database migrations are already applied; do not re-run them without checking migration history.
+- Exercise Business owner/admin/manager/sales/auditor roles and prove cross-tenant reads and writes are denied.
+- The India-wide directory UI is being integrated in PR #27. The current production directory has zero published records. Test filters and honest empty state; do not insert synthetic institutions.
+- Guardian relationship RLS and support-intake server-only table SQL regression tests passed against the current production database. The client guardian-id filter is included in PR #27.
+- Complete fresh Student, Faculty/Teacher, Parent, HOD, Principal/Institution Admin onboarding with separate controlled accounts before declaring Phase 7 accepted.
