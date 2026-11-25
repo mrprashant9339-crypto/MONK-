@@ -173,7 +173,7 @@ begin
     -- Cross-source auto-linking is deliberately conservative: merge only one
     -- exact name + state + district + city match. Ambiguous names stay separate.
     if v_institution_id is null and v_state is not null and v_district is not null then
-      select min(id), count(*)::integer into v_match_id, v_match_count
+      select (array_agg(id order by id))[1], count(*)::integer into v_match_id, v_match_count
       from public.monk_directory_institutions
       where normalized_name = v_normalized
         and state_code = v_state
