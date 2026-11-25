@@ -38,7 +38,8 @@ Deno.serve(async (request) => {
   if (!authorization?.startsWith("Bearer ")) return json(401, { error: "Authentication required." });
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? Deno.env.get("SUPABASE_PUBLISHABLE_KEY");
+  const publishableKeysRaw = Deno.env.get("SUPABASE_PUBLISHABLE_KEYS");
+  const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? (publishableKeysRaw ? (JSON.parse(publishableKeysRaw) as Record<string, string>).default : undefined);
   const secretKeysRaw = Deno.env.get("SUPABASE_SECRET_KEYS");
   const serviceKey = secretKeysRaw ? (JSON.parse(secretKeysRaw) as Record<string, string>).default : Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const resendKey = Deno.env.get("RESEND_API_KEY");
