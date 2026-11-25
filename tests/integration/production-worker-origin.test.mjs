@@ -15,3 +15,10 @@ test("production Worker serves the homepage from Vercel origin", async () => {
   assert.equal(response.headers.get("x-monk-origin"), "vercel");
   assert.equal(response.headers.get("x-monk-origin-fallback"), null);
 });
+
+
+test("www host redirects to the canonical apex through the Worker route", async () => {
+  const response = await fetch("https://www.monk.monster/signup", { redirect: "manual" });
+  assert.equal(response.status, 308);
+  assert.equal(response.headers.get("location"), "https://monk.monster/signup");
+});
