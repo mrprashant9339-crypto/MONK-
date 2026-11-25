@@ -29,7 +29,8 @@ The production `main` commit passes GitHub Actions run #1058. That proves the co
 | MONK-016 | P2 | Dependency reproducibility | The repository has no committed package-lock.json, so `npm ci` cannot run and CI currently relies on `npm install`. | Generate and commit a reviewed lockfile, then switch CI to `npm ci`. |
 | MONK-017 | P2 | Design | PR #24 is a separate preview-only draft and is unmergeable/dirty. | Review against approved brand assets; integrate only approved, functional screens. |
 | MONK-018 | P2 | Docs | Some README/release-runbook statements were historical or contradictory. | Refresh documentation to the verified production baseline and keep evidence current. |
-| MONK-019 | P2 | Invitation API | The deployed invitation Edge Function used wildcard CORS and did not bound the request body, although JWT and organization permission checks were present. | PR #27 restricts CORS to approved origins and caps request bodies; deployment and live invitation test remain pending. |
+| MONK-019 | P2 | Signup routing | The Worker redirected `/signup` to `/login?mode=signup`, contradicting the app's canonical signup route and failing the production browser test. | PR #27 removes the redirect, registers `/signup` as a public SPA route and adds route metadata; deploy and live verification remain pending. |
+| MONK-020 | P2 | Invitation API | The deployed invitation Edge Function used wildcard CORS and did not bound the request body, although JWT and organization permission checks were present. | PR #27 restricts CORS to approved origins and caps request bodies; deployment and live invitation test remain pending. |
 
 ## Verified infrastructure snapshot
 - GitHub `main`: `75fe54d733ab782cea9ae2bf3af8f2053144d57e`.
