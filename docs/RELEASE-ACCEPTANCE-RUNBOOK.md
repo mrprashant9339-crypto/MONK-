@@ -114,3 +114,8 @@ After the correct project is linked to `mrprashant9339-crypto/MONK-`:
 - The existing Cloudflare Assets binding remains the failover. Check `x-monk-origin: vercel` for normal origin traffic and `x-monk-origin-fallback: assets` for failover.
 - Rollback: redeploy the previous Worker version or clear `MONK_VERCEL_ORIGIN` and redeploy so all requests use the Assets fallback.
 - Keep the origin hostname DNS-only and do not point it back to the public apex; that would create a proxy loop. Restrict direct origin access with Cloudflare Access/service tokens in a separate hardening change.
+
+
+## Preview Worker route management
+- `preview.monk.monster/*` is a separately provisioned Cloudflare route to `monk-vercel-preview`.
+- The GitHub Wrangler token has Workers Script upload permission but not zone Worker Routes write permission. Keep `routes` out of `wrangler.preview.jsonc`; update the route through the Cloudflare control plane only when required.
