@@ -1,0 +1,34 @@
+name: Bootstrap reproducible npm lockfile
+
+on:
+  push:
+    branches:
+      - fix/monk-release-integration-v2
+
+permissions:
+  contents: write
+
+jobs:
+  generate-lockfile:
+    if: ${{ !hashFiles('package-lock.json') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout integration branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Generate deterministic npm lockfile
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - name: Commit lockfile and remove bootstrap workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          rm .github/workflows/bootstrap-lockfile.yml
+          git add package-lock.json .github/workflows/bootstrap-lockfile.yml
+          git commit -m "build: add reproducible npm dependency lockfile"
+          git push
