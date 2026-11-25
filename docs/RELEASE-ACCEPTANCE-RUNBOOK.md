@@ -69,7 +69,22 @@ After the correct project is linked to `mrprashant9339-crypto/MONK-`:
 - Test login/signup, reset, Google OAuth, invitation email and tenant isolation on production.
 - Record deployment URL, ID, commit SHA and test timestamps.
 
-## 7. Current evidence boundary
+## 7. Directory import and source controls
+- The public directory route is `/directory` and reads only published institution rows. The previous static/demo college list has been removed; an empty database produces an honest "records are being prepared" state rather than fabricated colleges.
+- `directory-import` is ACTIVE at version 9 with JWT verification. It requires server-managed `app_metadata.platform_role` of `platform_admin` or `directory_admin`; user-editable metadata cannot grant import privileges.
+- `ingest_monk_directory_batch` is service-role-only, limited to 250 records and 1 MB per batch, stores compact normalized snapshots, and retains only the latest two snapshots per source record. Cross-source matching is exact and conservative.
+- Current database counts: 0 institution rows, 0 published rows, 0 fully verified rows. No college records have been fabricated or imported from third-party scraped lists.
+- AIKosh AISHE university dataset has OGL metadata but its public landing page currently has no downloadable data file; import is disabled until the file exists.
+- OGD AISHE 2011-12 and 2012-13 college resources are OGL historical datasets. They may be imported only as stale, unpublished discovery candidates, never as current approval.
+- AICTE public API and the NMC 10-Mar-2026 notice were identified. AICTE bulk reuse terms are pending; NMC notice reuse is pending. Neither source is enabled for bulk import until its reuse/attribution review is completed.
+- AICTE state-wise sync code is prepared but checks source authorization before contacting the upstream API. It will not run while the source is disabled.
+
+## 8. Database acceptance tests
+- `supabase/tests/tenant-isolation.sql` was executed against Supabase in a transaction and rolled back. It passed two synthetic tenants' project/task read isolation, active-organization resolution, cross-tenant update denial and cross-tenant insert denial.
+- `supabase/tests/invitation-acceptance.sql` was executed against Supabase in a transaction and rolled back. It passed authorized teacher invitation acceptance, one-time token use, mismatched-email rejection, unverified-email rejection and prevention of Campus student roles in a Business workspace.
+- These are database regression tests with synthetic users; they do not replace live signup/login or production-user acceptance.
+
+## 9. Current evidence boundary
 - GitHub Actions run #1023 completed successfully on commit `42dd85c70515dcee9d9f485238482e0b4b14d945`: TypeScript/production build, release smoke tests and Playwright browser E2E all passed. The E2E suite includes Campus institution-selector visibility and the guard that prevents an incomplete Google signup profile from leaving MONK.
 - Latest Vercel feature-branch preview is READY at `https://monk-platform-4usumqgoj-makto-community.vercel.app`; stable branch alias: `https://monk-platform-git-feature-auth-registrat-3476eb-makto-community.vercel.app`. This is a preview, not a production release.
 - Cloudflare Turnstile widget `0x4AAAAAAGRN064WbzkNKlkA` is in `managed` mode. Its allowlist now includes `monk.monster`, `www.monk.monster`, localhost addresses, the stable feature-branch Vercel alias and several exact preview hosts. The stable branch alias is the intended preview test origin; ephemeral preview hosts are not permanent.
