@@ -26,7 +26,7 @@ function json(data: unknown, status: number, origin: string | null) {
 
 const categories = new Set([
   "General enquiry", "Account access", "Workspace or product issue",
-  "Privacy or data request", "Security vulnerability", "Accessibility issue",
+  "Privacy or data request", "Privacy request", "Security vulnerability", "Accessibility issue",
   "Technical issue", "Billing or refund", "Campus workspace",
   "Business workspace", "Security concern", "Other",
 ]);
