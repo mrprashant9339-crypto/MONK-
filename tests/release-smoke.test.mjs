@@ -378,3 +378,11 @@ test("production Worker has a change-friendly Vercel origin binding", async () =
   assert.ok(worker.includes("x-monk-origin"));
   assert.ok(worker.includes("x-monk-origin-fallback"));
 });
+
+
+test("production proxy forwards Cloudflare Verified Proxy client IP and rejects Vercel challenge pages", async () => {
+  const worker = await readFile(join(root, "worker.js"), "utf8");
+  assert.ok(worker.includes('headers.set("CF-Connecting-IP", cfConnectingIp)'));
+  assert.ok(worker.includes("isVercelSecurityCheckpoint"));
+  assert.ok(worker.includes("x-monk-cf-ip-forwarded"));
+});
