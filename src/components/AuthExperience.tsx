@@ -12,6 +12,20 @@ type IntendedRole = "student" | "parent" | "teacher" | "hod" | "principal" | "in
 const TERMS_VERSION = "2026-11-22";
 const PRIVACY_VERSION = "2026-11-22";
 
+// React StrictMode replays mount effects in development. Keep one PKCE exchange
+// promise per authorization code so the one-time code can never be exchanged twice.
+let pendingAuthCodeExchange: {
+  code: string;
+  promise: ReturnType<typeof supabase.auth.exchangeCodeForSession>;
+} | null = null;
+
+function exchangeAuthCodeOnce(code: string) {
+  if (pendingAuthCodeExchange?.code === code) return pendingAuthCodeExchange.promise;
+  const promise = supabase.auth.exchangeCodeForSession(code);
+  pendingAuthCodeExchange = { code, promise };
+  return promise;
+}
+
 function safeVertical(value: string | null): Vertical {
   return value === "education" ? "education" : "business";
 }
@@ -93,7 +107,7 @@ export default function AuthExperience() {
       const callbackPath = location.pathname;
       const code = new URLSearchParams(window.location.search).get("code");
       if (code && (callbackPath === "/auth/callback" || callbackPath === "/reset-password")) {
-        const { data: exchangeData, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+        const { data: exchangeData, error: exchangeError } = await exchangeAuthCodeOnce(code);
         if (!alive) return;
         if (exchangeError) {
           setError("This secure sign-in link is invalid, expired, or already used. Return to MONK and request a new link.");
