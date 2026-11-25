@@ -55,7 +55,7 @@ Never place a Supabase service-role key, OAuth client secret, Resend API key or 
 - `monk.monster` is currently served by Cloudflare Worker `monk`, using its static-assets binding to serve the Vite build.
 - The Worker has an enabled custom domain; its current traffic is on the deployed Worker version.
 - Vercel project `monk-platform` has a READY production deployment. Project metadata reports `live=false`; deployment protection is enabled for non-custom deployment domains. An isolated custom origin `origin.monk.monster` and preview Worker host `preview.monk.monster` are being used to validate the proxy path.
-- The Worker is not yet a production reverse proxy to Vercel. The Vercel origin returned 404 for direct SPA deep links and its next build hit an account build-rate limit. The isolated preview Worker now maps known SPA paths to the origin root while proxying assets directly; production cutover remains blocked until the preview deep-link suite passes.
+- The isolated Worker-to-Vercel preview has passed homepage, SPA deep-link and asset checks. PR #32 switches the production Worker to the verified Vercel origin with Cloudflare Assets fallback; cutover remains gated on exact-head CI and live production-origin verification. The Vercel origin returned 404 for direct SPA deep links and its next build hit an account build-rate limit. The isolated preview Worker now maps known SPA paths to the origin root while proxying assets directly; production cutover remains blocked until the preview deep-link suite passes.
 
 ## Current release gates
 

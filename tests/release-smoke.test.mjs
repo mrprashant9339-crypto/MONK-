@@ -368,3 +368,12 @@ test("Vercel proxy preview Worker maps SPA routes to the Vercel app shell", asyn
   assert.equal(config.name, "monk-vercel-preview");
   assert.deepEqual(config.routes, [{ pattern: "preview.monk.monster/*", zone_name: "monk.monster" }]);
 });
+
+
+test("production Worker has a change-friendly Vercel origin binding", async () => {
+  const config = JSON.parse(await readFile(join(root, "wrangler.jsonc"), "utf8"));
+  assert.equal(config.vars.MONK_VERCEL_ORIGIN, "https://origin.monk.monster");
+  const worker = await readFile(join(root, "worker.js"), "utf8");
+  assert.ok(worker.includes("x-monk-origin"));
+  assert.ok(worker.includes("x-monk-origin-fallback"));
+});

@@ -85,3 +85,16 @@ Do not merge this branch or perform a production DNS/Worker/Vercel cutover until
 - Vercel reported a production build-rate-limit failure for the commit adding `vercel.json`; the previous READY deployment remains active.
 - The proxy Worker now maps known SPA routes (`/signup`, `/login`, `/campus`, `/business`) to the Vercel origin's root document and proxies hashed assets by their original path.
 - This removes the Worker proxy's dependency on Vercel rewrite availability. The `vercel.json` SPA rewrite remains in source for direct-origin deep links once Vercel can build again.
+
+
+## Production Worker-to-Vercel cutover (PR #32)
+- Preview route `preview.monk.monster` passed homepage, `/signup`, `/login`, `/campus`, `/business` and hashed-asset checks.
+- Main Worker now proxies GET/HEAD requests to `MONK_VERCEL_ORIGIN`, maps known SPA routes to the origin root, preserves route metadata, and proxies static assets by exact path.
+- If Vercel returns 404/5xx or the origin fetch fails, the existing Cloudflare Assets binding serves the request as a rollback/failover path.
+- Deployment acceptance requires the live `x-monk-origin: vercel` response header on production homepage and signup requests.
+- The origin subdomain is currently publicly reachable; Cloudflare Access/service-token protection is a follow-up hardening item because direct origin access can bypass Worker-level edge controls.
+
+
+## CI deployment-gate finding
+- The first main deployment attempt after PR #31 passed build, release smoke, local E2E and the Vercel origin readiness check, but the preview Worker Wrangler step lacked `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` environment bindings. No production Worker deployment occurred.
+- PR #32 supplies the existing deployment secrets explicitly to the preview Worker deploy step before the proxy and CORS checks.

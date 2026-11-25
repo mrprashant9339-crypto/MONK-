@@ -191,19 +191,92 @@ function withRouteMetadata(response, path) {
   });
 }
 
+const DEFAULT_VERCEL_ORIGIN = "https://origin.monk.monster";
+
+async function fetchVercelOrigin(request, env, url, path) {
+  const origin = new URL(env.MONK_VERCEL_ORIGIN || DEFAULT_VERCEL_ORIGIN);
+  const appRoute = isApplicationRoute(path);
+  const upstreamPath = appRoute ? "/" : url.pathname;
+  const upstreamUrl = new URL(upstreamPath + url.search, origin);
+  const headers = new Headers(request.headers);
+  headers.delete("host");
+  headers.set("x-forwarded-host", url.host);
+  headers.set("x-forwarded-proto", url.protocol.replace(":", ""));
+
+  const init = { method: request.method, headers, redirect: "manual" };
+  if (request.method !== "GET" && request.method !== "HEAD") init.body = request.body;
+  const upstreamResponse = await fetch(new Request(upstreamUrl, init));
+
+  if (upstreamResponse.status >= 500 || upstreamResponse.status === 404) return null;
+
+  let response = upstreamResponse;
+  if (appRoute && request.method === "GET" && upstreamResponse.status === 200) {
+    response = await withRouteMetadata(upstreamResponse, path);
+  }
+
+  const responseHeaders = new Headers(response.headers);
+  const location = responseHeaders.get("location");
+  if (location) {
+    try {
+      const redirect = new URL(location, origin);
+      if (redirect.hostname === origin.hostname) {
+        redirect.hostname = url.hostname;
+        redirect.protocol = url.protocol;
+        redirect.port = url.port;
+        responseHeaders.set("location", redirect.toString());
+      }
+    } catch {
+      // Preserve non-URL Location values unchanged.
+    }
+  }
+  responseHeaders.set("x-monk-origin", "vercel");
+  responseHeaders.delete("x-monk-origin-fallback");
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: responseHeaders,
+  });
+}
+
+async function fetchAssetsFallback(request, env, url, path) {
+  if (!env.ASSETS) {
+    return new Response("MONK origin and asset fallback are unavailable.", {
+      status: 502,
+      headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" },
+    });
+  }
+  const fallbackRequest = isApplicationRoute(path)
+    ? new Request(new URL("/", url), request)
+    : request;
+  const response = await env.ASSETS.fetch(fallbackRequest);
+  const headers = new Headers(response.headers);
+  headers.set("x-monk-origin-fallback", "assets");
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const path = normalizedPath(url.pathname);
-    if (request.method === "GET" && isApplicationRoute(path)) {
-      const appUrl = new URL("/", url);
-      const response = await env.ASSETS.fetch(new Request(appUrl, request));
-      return withRouteMetadata(response, path);
+
+    if (url.hostname === "www.monk.monster") {
+      return Response.redirect(new URL(url.pathname + url.search, "https://monk.monster"), 308);
     }
-    if (request.method === "HEAD" && isApplicationRoute(path)) {
-      return env.ASSETS.fetch(new Request(new URL("/", url), request));
+
+    if (request.method === "GET" || request.method === "HEAD") {
+      try {
+        const response = await fetchVercelOrigin(request, env, url, path);
+        if (response) return response;
+      } catch {
+        // The existing Cloudflare asset bundle remains the safe rollback path.
+      }
     }
-    return env.ASSETS.fetch(request);
+
+    return fetchAssetsFallback(request, env, url, path);
   }
 };
 export { isApplicationRoute, PUBLIC_ROUTES, PAGE_METADATA };
