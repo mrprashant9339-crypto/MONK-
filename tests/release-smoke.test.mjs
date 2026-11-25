@@ -208,3 +208,17 @@ test("privacy policy describes current collection rather than hypothetical futur
   assert.match(privacy, /no valid GA4 Measurement ID is configured/);
   assert.doesNotMatch(privacy, /When paid checkout is introduced|Newsletter email addresses will be processed|If analytics, newsletter or payment services are added/);
 });
+
+test("authentication callback exchanges PKCE codes once and preserves onboarding context", async () => {
+  const auth = await readFile(join(root, "src", "components", "AuthExperience.tsx"), "utf8");
+  const client = await readFile(join(root, "src", "lib", "supabase.ts"), "utf8");
+  assert.match(client, /detectSessionInUrl:\s*false/);
+  assert.match(auth, /exchangeAuthCodeOnce\(code\)/);
+  assert.match(auth, /pendingAuthCodeExchange\?\.code === code/);
+  assert.match(auth, /localStorage\.setItem\("monk:oauth-consent"/);
+  assert.match(auth, /localStorage\.getItem\("monk:oauth-consent"/);
+  assert.match(auth, /institutionOptions\.map/);
+  assert.match(auth, /monk_directory_institutions/);
+  assert.match(auth, /Switch to MONK Campus/);
+  assert.match(auth, /Switch to MONK Business/);
+});
