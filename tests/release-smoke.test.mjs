@@ -291,3 +291,19 @@ test("national directory uses live published rows and keeps unlicensed sources d
   assert.match(policy, /ogd_aishe_colleges_2012_2013/);
   assert.match(policy, /nmc_crmi_mbbs_2026_27/);
 });
+
+test("workspace dashboard routing is organization-scoped and database regression suites cover tenant boundaries", async () => {
+  const app = await readFile(join(root, "src", "App.tsx"), "utf8");
+  assert.match(app, /rpc\("current_organization_id"\)/);
+  assert.match(app, /\.eq\("organization_id", orgId\)/);
+  assert.match(app, /\.eq\("organization_id", orgId\)[\s\S]*?\.eq\("project_id", selected\)/);
+  assert.match(app, /organizationVertical === "education"/);
+  assert.match(app, /mustJoinExistingWorkspace = !canCreateBusinessWorkspace/);
+  const tenantSql = await readFile(join(root, "supabase", "tests", "tenant-isolation.sql"), "utf8");
+  assert.match(tenantSql, /cross-tenant project read/);
+  assert.match(tenantSql, /cross-tenant project insert/);
+  const inviteSql = await readFile(join(root, "supabase", "tests", "invitation-acceptance.sql"), "utf8");
+  assert.match(inviteSql, /mismatched invitation email/);
+  assert.match(inviteSql, /unverified email accepted invitation/);
+  assert.match(inviteSql, /invitation token reuse/);
+});
