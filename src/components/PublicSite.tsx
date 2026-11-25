@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import type { FormEvent, MouseEvent, ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import "../public-site.css";
@@ -6,7 +6,7 @@ import InstitutionDirectory from "./InstitutionDirectory";
 import LegalPage, { CookieNotice } from "./LegalPages";
 import SupportTrustPages, { isSupportTrustRoute } from "./SupportTrustPages";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ArrowRight, ArrowUpRight, GraduationCap, Store, Users, BookOpen, ShieldCheck, BarChart3, CalendarDays, ClipboardList, Package, Receipt, Menu, X, CheckCircle2, Layers3, Workflow, ChevronRight, Mail, Github, Instagram, Linkedin, Youtube } from "lucide-react";
+import { ArrowRight, ArrowUpRight, GraduationCap, Store, Users, BookOpen, ShieldCheck, BarChart3, CalendarDays, ClipboardList, Package, Receipt, Menu, X, CheckCircle2, Search, Layers3, Workflow, ChevronRight, Mail, Github, Instagram, Linkedin, Youtube } from "lucide-react";
 
 type Portal = "campus" | "business";
 
