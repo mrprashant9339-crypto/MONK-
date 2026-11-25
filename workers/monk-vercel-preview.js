@@ -43,7 +43,7 @@ export default {
     const contentType = upstreamResponse.headers.get("content-type") || "";
     if (contentType.includes("text/html")) {
       const html = await upstreamResponse.clone().text();
-      if (/Vercel Security Checkpoint|Failed to verify your browser|Code\\s*21/i.test(html)) {
+      if (/Vercel Security Checkpoint|Failed to verify your browser|Code\s*21/i.test(html)) {
         return new Response("Vercel origin challenged the preview proxy request.", { status: 502, headers: { "cache-control": "no-store", "x-monk-proxy-challenge": "detected" } });
       }
     }
