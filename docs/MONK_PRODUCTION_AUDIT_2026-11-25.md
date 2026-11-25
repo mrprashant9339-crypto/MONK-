@@ -93,3 +93,8 @@ Do not merge this branch or perform a production DNS/Worker/Vercel cutover until
 - If Vercel returns 404/5xx or the origin fetch fails, the existing Cloudflare Assets binding serves the request as a rollback/failover path.
 - Deployment acceptance requires the live `x-monk-origin: vercel` response header on production homepage and signup requests.
 - The origin subdomain is currently publicly reachable; Cloudflare Access/service-token protection is a follow-up hardening item because direct origin access can bypass Worker-level edge controls.
+
+
+## CI deployment-gate finding
+- The first main deployment attempt after PR #31 passed build, release smoke, local E2E and the Vercel origin readiness check, but the preview Worker Wrangler step lacked `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` environment bindings. No production Worker deployment occurred.
+- PR #32 supplies the existing deployment secrets explicitly to the preview Worker deploy step before the proxy and CORS checks.
