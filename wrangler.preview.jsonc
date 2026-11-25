@@ -3,5 +3,5 @@
   "name": "monk-vercel-preview",
   "main": "workers/monk-vercel-preview.js",
   "compatibility_date": "2026-11-25",
-  "workers_dev": false
+  "workers_dev": true
 }
