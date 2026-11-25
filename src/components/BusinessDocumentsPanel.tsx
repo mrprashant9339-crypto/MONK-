@@ -1,6 +1,7 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { ArrowDownToLine, FileText, RefreshCw, Trash2, UploadCloud } from "lucide-react";
 import { supabase } from "../lib/supabase";
+import "../business-documents.css";
 
 type DocumentRow = {
   id: string;
