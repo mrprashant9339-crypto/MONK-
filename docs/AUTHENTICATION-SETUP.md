@@ -28,7 +28,7 @@ Production site: `https://monk.monster`
 
 The frontend calls Supabase Auth with provider `google` and redirects to `/auth/callback`. The callback performs one explicit PKCE code exchange; automatic URL detection is disabled to prevent React StrictMode from attempting to consume the one-time authorization code twice. Campus/Business intent, role, legal-consent versions and pre-OAuth profile fields are retained across the provider redirect in browser storage and written to Supabase Auth metadata only after the callback is validated.
 
-For Google signup, the user must enter a full name and accept the current Terms and Privacy Policy before leaving MONK. Do not treat Google's account chooser as a completed MONK profile. If the callback has no valid MONK onboarding context, the session is rejected and the user must restart from the MONK signup/login page.
+For Google signup, the user must enter a full name and accept the current Terms and Privacy Policy before leaving MONK. Do not treat Google's account chooser as a completed MONK profile. The callback validates the stored onboarding context, records legal consent, and updates the caller's own existing `profiles` row through the narrow `update_my_profile` RPC. If the callback has no valid MONK onboarding context or no usable full name, the session is rejected and the user must restart from the MONK signup/login page.
 
 Google sign-in cannot succeed until provider credentials and redirect allowlists are configured in the dashboard. In Google Cloud OAuth consent-screen branding, set the application name to `MONK`; the hostname shown by the Google account chooser is the Supabase Auth callback host, not a project name entered by the user.
 
