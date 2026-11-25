@@ -72,3 +72,13 @@ PR #36 implementation commit `aed68d164e3a0395014649e9033c565cdd1acefd` passed G
 
 ## Scope boundary
 PR #36 remains open and unmerged. Do not merge or perform a production DNS/Worker/Vercel cutover until exact-head CI, mergeability, code review and external release gates are reviewed. Do not create fake student, faculty, institution, sales, inventory or finance records to make tests appear successful.
+
+
+## Additional release blockers discovered during restart
+
+| ID | Priority | Area | Finding | Required remediation |
+|---|---|---|---|---|
+| MONK-021 | P0 | PR integration | PR #36 is open; GitHub comparison reports the branch is 10 commits ahead and 6 commits behind `main`, with `mergeable=false`. Exact merge conflicts have not yet been resolved or reviewed. | Reconcile the six newer `main` commits into a clean integration branch, inspect conflicts and rerun exact-head CI before merge. |
+| MONK-022 | P1 | Vercel quota | Vercel preview deployment for PR #36 failed with `api-deployments-free-per-day` after exceeding 100 daily deployments. This is a hosting-plan quota failure, not a code build result. | Avoid repeated preview deployment attempts until quota resets or an approved deployment path is selected. The existing Cloudflare Worker deployment path must be used only after exact-head CI and release approval. |
+
+The audit README and acceptance documents were corrected on the remediation branch. The current remediation head still has no new GitHub Actions run recorded; run #1073 applies to the earlier implementation commit only. The Vercel failure does not invalidate that GitHub Actions result, but it blocks Vercel preview validation.
