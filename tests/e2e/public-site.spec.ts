@@ -313,7 +313,7 @@ test("Campus signup exposes institution selection and blocks incomplete Google p
   await expect(page).toHaveURL(/\/login\?mode=signup&vertical=education/);
 });
 
-test("India-wide directory renders live filters and honest empty state", async ({ page }) => {
+test("India-wide directory renders source-aware filters and an honest empty state", async ({ page }) => {
   await page.route("**/rest/v1/monk_directory_*", route => route.fulfill({
     status: 200,
     contentType: "application/json",
@@ -321,12 +321,16 @@ test("India-wide directory renders live filters and honest empty state", async (
     body: "[]"
   }));
   await page.goto("/directory");
-  await expect(page.getByRole("heading", { name: /find the right institution/i })).toBeVisible();
-  await expect(page.getByLabel("Search institutions")).toBeVisible();
-  await expect(page.getByLabel("Filter by state")).toBeVisible();
-  await expect(page.getByLabel("Filter by category")).toBeVisible();
-  await expect(page.getByText("Official directory records are being prepared")).toBeVisible();
-  await expect(page.getByText(/46 Government polytechnic institutes|Directory preview/i)).toHaveCount(0);
+  const directory = page.locator("#college-directory");
+  await expect(directory).toBeVisible();
+  await expect(directory.getByRole("heading", { name: /explore institutions/i })).toBeVisible();
+  await expect(directory.getByLabel("Search institutions")).toBeVisible();
+  await expect(directory.getByLabel("Category")).toBeVisible();
+  await expect(directory.getByLabel("State / Union Territory")).toBeVisible();
+  await expect(directory.getByLabel("Ownership")).toBeVisible();
+  await expect(directory.getByText("Published listings are being prepared")).toBeVisible();
+  await expect(directory.getByText(/No institution or approval records are fabricated/i)).toBeVisible();
+  await expect(directory.getByText(/46 Government polytechnic institutes|Directory preview/i)).toHaveCount(0);
 });
 
 
