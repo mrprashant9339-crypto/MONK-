@@ -12,7 +12,7 @@ The production `main` commit passes GitHub Actions run #1058. That proves the co
 | ID | Priority | Area | Finding | Required remediation |
 |---|---|---|---|---|
 | MONK-001 | P0 | Business | Phase 6 UI was not integrated into production `main`; PR #22 remains open/unmerged. Its production database migrations are already applied. | Integrate the existing Sales and Business Operations UI; run role and tenant-isolation tests. |
-| MONK-002 | P0 | Campus | Phase 7 is not fully accepted. PR #23 is a draft based on `frontend-first-complete`; PR #27 ports the source-aware India directory and guardian-scope regression work onto the current production baseline, but the full role workflows remain untested. | Directory UI and guardian scope are integrated in PR #27; complete Principal/HOD/Faculty/Student/Parent live acceptance. |
+| MONK-002 | P0 | Campus | Phase 7 is not fully accepted. PR #23 is a draft based on `frontend-first-complete`; PR #29 ports the source-aware India directory and guardian-scope regression work onto the current production baseline, but the full role workflows remain untested. | Directory UI and guardian scope are integrated in PR #27; complete Principal/HOD/Faculty/Student/Parent live acceptance. |
 | MONK-003 | P0 | Auth E2E | Three existing Auth users are confirmed, but their role metadata is unset. One linked Google identity does not prove fresh-account OAuth. | Test signup, verification, login, Google OAuth, reset, invitation acceptance/revocation with isolated test identities. |
 | MONK-004 | P0 | CAPTCHA | Cloudflare Turnstile widget and secret presence are verified; Supabase Auth CAPTCHA dashboard enablement/secret configuration is not readable from the connected integration. | Operator verifies Supabase Auth → Bot and Abuse Protection and tests valid/missing/invalid tokens. |
 | MONK-005 | P0 | Staging | Staging Supabase project `monk-staging` is inactive. | Activate isolated staging, apply migrations, and run all live-account tests there. |
@@ -29,11 +29,11 @@ The production `main` commit passes GitHub Actions run #1058. That proves the co
 | MONK-016 | P2 | Dependency reproducibility | The repository has no committed package-lock.json, so `npm ci` cannot run and CI currently relies on `npm install`. | Generate and commit a reviewed lockfile, then switch CI to `npm ci`. |
 | MONK-017 | P2 | Design | PR #24 is a separate preview-only draft and is unmergeable/dirty. | Review against approved brand assets; integrate only approved, functional screens. |
 | MONK-018 | P2 | Docs | Some README/release-runbook statements were historical or contradictory. | Refresh documentation to the verified production baseline and keep evidence current. |
-| MONK-019 | P2 | Signup routing | The Worker redirected `/signup` to `/login?mode=signup`, contradicting the app's canonical signup route and failing the production browser test. | PR #27 removes the redirect, registers `/signup` as a public SPA route and adds route metadata; deploy and live verification remain pending. |
+| MONK-019 | P1 | Signup routing | The Worker redirected `/signup` to `/login?mode=signup`, contradicting the app's canonical signup route and failing the production browser test. | PR #27 removes the redirect, registers `/signup` as a public SPA route and adds route metadata; deploy and live verification remain pending. |
 | MONK-020 | P2 | Invitation API | The deployed invitation Edge Function used wildcard CORS and did not bound the request body, although JWT and organization permission checks were present. | PR #27 restricts CORS to approved origins and caps request bodies; deployment and live invitation test remain pending. |
 
 ## Verified infrastructure snapshot
-- GitHub `main`: `75fe54d733ab782cea9ae2bf3af8f2053144d57e`.
+- GitHub `main` includes audit-document commit `bfabf4777a59817e7e8304c1ec0f48dbcaba05e0`; application source baseline is `75fe54d733ab782cea9ae2bf3af8f2053144d57e`.
 - GitHub Actions run #1058: success.
 - Vercel `monk-platform`: latest production deployment READY on that commit; project metadata reports `live=false`.
 - Vercel `monk.monster` domain: verified; Cloudflare nameservers are active.
