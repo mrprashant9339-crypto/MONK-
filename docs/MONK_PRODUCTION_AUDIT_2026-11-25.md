@@ -104,3 +104,8 @@ Do not merge this branch or perform a production DNS/Worker/Vercel cutover until
 - The Cloudflare deployment token can upload Worker scripts but does not have permission to manage zone Worker routes.
 - The `preview.monk.monster/*` route is already provisioned and verified through the connected Cloudflare control plane.
 - PR #33 removes route management from `wrangler.preview.jsonc` and keeps `workers_dev: true`; Wrangler updates the script without calling the zone-routes API, leaving the pre-existing route intact. This avoids broadening the GitHub deployment token.
+
+
+## WWW canonical routing
+- Added the explicit Cloudflare Worker route `www.monk.monster/*` → `monk`.
+- The deployed Worker redirects WWW requests to `https://monk.monster`; PR #34 adds a live production assertion for the 308 redirect.
