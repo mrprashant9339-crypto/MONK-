@@ -221,4 +221,13 @@ test("authentication callback exchanges PKCE codes once and preserves onboarding
   assert.match(auth, /monk_directory_institutions/);
   assert.match(auth, /Switch to MONK Campus/);
   assert.match(auth, /Switch to MONK Business/);
+  assert.match(auth, /Enter your full name before continuing with Google/);
+  assert.match(auth, /Your Google account was not linked to a completed MONK profile/);
+  assert.match(auth, /Retry security verification/);
+  const app = await readFile(join(root, "src", "App.tsx"), "utf8");
+  assert.match(app, /canCreateBusinessWorkspace = organizationVertical === "business" && intendedRole === "owner"/);
+  const migration = await readFile(join(root, "supabase", "migrations", "20261125041500_harden_organization_self_service_creation.sql"), "utf8");
+  assert.match(migration, /current_user_email_verified/);
+  assert.match(migration, /Campus workspaces require institution verification/);
+  assert.match(migration, /intended_role' <> 'owner'/);
 });
