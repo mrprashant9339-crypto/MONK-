@@ -334,6 +334,15 @@ test("India-wide directory renders source-aware filters and an honest empty stat
 });
 
 
+test("Data Rights page collects and submits privacy requests through the secure support workflow", async ({ page }) => {
+  await page.goto("/data-rights");
+  await expect(page.getByRole("heading", { name: /submit a privacy-aware request/i })).toBeVisible();
+  await expect(page.getByLabel(/Your name/i)).toBeVisible();
+  await expect(page.getByLabel(/Account email/i)).toBeVisible();
+  await expect(page.getByLabel(/Request details/i)).toBeVisible();
+  await expect(page.getByRole("button", { name: /submit privacy request/i })).toBeDisabled();
+  await expect(page.getByText(/server-side support queue/i)).toBeVisible();
+});
 test("Campus directory provides India-wide filters without inventing institution records", async ({ page }) => {
   await page.goto("/campus", { waitUntil: "domcontentloaded" });
   const directory = page.locator("#college-directory");
