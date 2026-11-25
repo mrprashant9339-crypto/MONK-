@@ -38,7 +38,7 @@ At the previous implementation snapshot:
 - `npm run test:release`: passed.
 - `npm run test:e2e`: passed.
 
-The Business Documents MIME fallback, security regressions and later database hardening are included in the PR head. Exact-head GitHub CI is running; its final result is the merge gate. A reproducible `package-lock.json` is now committed. Both GitHub CI and Cloudflare deployment workflows use `npm ci --no-audit --no-fund`. The temporary bootstrap workflow ran successfully on the PR and removed itself.
+The Business Documents MIME fallback, security regressions and later database hardening are included in the PR head. Exact-head GitHub Actions run #1109 passed on commit `2576c6966ed74c88de087afa505fa5cd4ef487fe`: `npm ci`, type-check/build, release smoke tests, browser E2E and Cloudflare Worker-to-Vercel preview checks all passed. A reproducible `package-lock.json` is now committed. Both GitHub CI and Cloudflare deployment workflows use `npm ci --no-audit --no-fund`. The temporary bootstrap workflow ran successfully on the PR and removed itself.
 
 ## Hosting observations
 
@@ -48,7 +48,7 @@ The Business Documents MIME fallback, security regressions and later database ha
 - `preview.monk.monster/*` is routed to `monk-vercel-preview`.
 - Vercel origin `https://origin.monk.monster/` and `/signup` both returned HTTP 200 through the authenticated Vercel fetch integration.
 - The preview deployment lookup returned 404 through the Vercel fetch integration, although Cloudflare's route is provisioned. This preview route still needs an external/live acceptance test.
-- A Vercel preview deployment attempt previously failed with `api-deployments-free-per-day` after the Free plan daily quota was exceeded.
+- Vercel still reports a failed PR status check with `build-rate-limit`. Two recent branch preview deployments are `READY` for earlier commits, but no Vercel deployment exists for the exact PR head `2576c6966ed74c88de087afa505fa5cd4ef487fe`. The Cloudflare Worker-to-Vercel preview test passed in GitHub Actions run #1109.
 - The origin hostname is directly reachable. Do not add Cloudflare Access or change DNS until a Worker service-token design and rollback test are ready.
 
 ## Remaining operator and release gates
