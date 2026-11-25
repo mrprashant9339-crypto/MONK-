@@ -30,7 +30,7 @@ const ALLOWED_TYPES = new Set([
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 ]);
 
-function safeFileName(name: string) {
+function detectedMimeType(file: File) {\n  if (file.type) return file.type;\n  const extension = file.name.toLowerCase().split(".").pop() || "";\n  const byExtension: Record<string, string> = { pdf: "application/pdf", jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp", txt: "text/plain", csv: "text/csv", doc: "application/msword", docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", xls: "application/vnd.ms-excel", xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" };\n  return byExtension[extension] || "";\n}\n\nfunction safeFileName(name: string) {
   return name.normalize("NFKC").replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(-120) || "document";
 }
 
@@ -86,7 +86,7 @@ export default function BusinessDocumentsPanel({
       setError("Choose a file between 1 byte and 25 MB.");
       return;
     }
-    if (!ALLOWED_TYPES.has(file.type)) {
+    const mimeType = detectedMimeType(file);\n    if (!ALLOWED_TYPES.has(mimeType)) {
       setError("Unsupported file type. Upload PDF, JPG, PNG, WEBP, TXT, CSV, DOC/DOCX or XLS/XLSX.");
       return;
     }
@@ -102,7 +102,7 @@ export default function BusinessDocumentsPanel({
     const storagePath = `${organizationId}/${documentId}/${safeFileName(file.name)}`;
     const { error: storageError } = await supabase.storage
       .from("business-private")
-      .upload(storagePath, file, { contentType: file.type, cacheControl: "3600", upsert: false });
+      .upload(storagePath, file, { contentType: mimeType, cacheControl: "3600", upsert: false });
 
     if (storageError) {
       setSaving(false);
@@ -115,7 +115,7 @@ export default function BusinessDocumentsPanel({
       organization_id: organizationId,
       storage_path: storagePath,
       file_name: file.name.slice(0, 255),
-      mime_type: file.type,
+      mime_type: mimeType,
       file_size: file.size,
       category,
       description: description.trim() || null,
@@ -147,7 +147,7 @@ export default function BusinessDocumentsPanel({
       setError(signedError?.message || "A secure download link could not be created.");
       return;
     }
-    window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+    const anchor = document.createElement("a");\n    anchor.href = data.signedUrl;\n    anchor.target = "_blank";\n    anchor.rel = "noopener noreferrer";\n    anchor.download = row.file_name;\n    document.body.appendChild(anchor);\n    anchor.click();\n    anchor.remove();
   }
 
   async function remove(row: DocumentRow) {
