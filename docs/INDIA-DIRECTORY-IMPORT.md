@@ -10,11 +10,12 @@ Never mark a record fully verified from a search result, NIRF participation, a c
 
 | Source | Coverage | Use in MONK |
 |---|---|---|
-| AIKosh AISHE university dataset | Universities from the AISHE Institutional Directory; Open Government License, India | Import enabled. Published as `partially_verified`, with AISHE identity fields explicitly listed. Review every 90 days. |
-| OGD India AISHE 2011-12 college dataset | Historical colleges | Import enabled only as `stale`, unpublished discovery candidates. Not current recognition. |
-| AISHE live institutional directory | Universities, colleges and standalone institutions | Do not bulk-republish its site content until Ministry reuse permission is confirmed. The existing `aishe` source remains disabled. |
+| AIKosh AISHE university dataset | Universities from the AISHE Institutional Directory; Open Government License, India | License is confirmed, but the current landing page reports no downloadable data file. Import is disabled until the official file is available; never synthesize records from search snippets. |
+| OGD India AISHE 2011-12 and 2012-13 college datasets | Historical colleges | OGD catalog states Government Open Data License - India. Import only as `stale`, unpublished discovery candidates. Not current recognition. |
+| AISHE live institutional directory | Universities, colleges and standalone institutions | Current dashboard lists the national universe, but no bulk export file was obtained. Do not scrape/rehost until a lawful export or documented API/reuse route is available. |
+| AICTE public approved-institutes API | Technical institutions across states | Public endpoint identified; the upstream data is owned by AICTE and no explicit bulk-reuse license was found. State-wise sync code is ready but disabled until reuse terms are confirmed. |
 | UGC | University legal status, categories, notices and fake-university warnings | Cross-check university identity/status; store notices as evidence, not blanket course approvals. |
-| AICTE | Technical institutions and programme approvals | Approval must be year-, programme-, campus- and intake-specific. |
+| NMC | Medical institution and course notices | The 10 Mar 2026 CRMI notice contains MBBS seat history through AY 2025-26 and CRMI slots for AY 2026-27. It is not proof of 2026-27 MBBS approval; bulk import is disabled pending reuse review. |
 | NMC / DCI / PCI / INC / NCISM / NCH | Medical, dental, pharmacy, nursing and AYUSH | Course-wise approval and annual intake evidence. |
 | BCI / NCTE / RCI / CoA / VCI / ICAR / DGT-NCVT / NCVET | Law, teacher education, rehabilitation, architecture, veterinary, agriculture and vocational | Relevant regulator's own current list/order only. |
 | NIRF | Participating/ranked institutions | Discovery/ranking signal only; not statutory recognition. Import disabled until reuse terms are reviewed. |
@@ -24,6 +25,9 @@ Official public references:
 - AISHE documents: https://aishe.gov.in/documents/
 - AIKosh AISHE universities dataset: https://aikosh.indiaai.gov.in/home/datasets/details/all_universities_as_per_aishe_dashboard.html
 - OGD AISHE college catalog: https://data.gov.in/catalog/list-colleges-aishe-survey
+- Government Open Data License, India: https://data.gov.in/Godl
+- AICTE approved-institutes endpoint: https://facilities.aicte-india.org/dashboard/pages/php/approvedinstituteserver.php
+- NMC CRMI/MBBS seat notice (10 Mar 2026): https://www.nmc.org.in/MCIRest/open/getDocument?path=%2FDocuments%2FPublic%2FPortal%2FLatestNews%2FCRMI_mergedPublicNotice.pdf
 - UGC university details: https://www.ugc.gov.in/universitydetails/
 - UGC fake/violating HEI notices: https://www.ugc.gov.in/universitydetails/HEIs_Violating_Regulations?tab=fakeuni
 - AICTE: https://www.aicte-india.org/
@@ -63,6 +67,20 @@ For the historical OGD file, use `--source ogd_aishe_colleges_2011_2012`. It is 
 ## Admin endpoint
 
 `directory-import` is deployed with JWT verification. It accepts requests only from users whose server-managed `app_metadata.platform_role` is `platform_admin` or `directory_admin`. User-editable `user_metadata` cannot grant this role. The endpoint supports an admin-only status action and batches through the service-role-only RPC.
+
+## AICTE live sync (currently gated)
+The Edge Function also supports `action: "sync_aicte"` and fetches one state per request from the official AICTE endpoint for the selected academic year. It intentionally does not synchronize all 36 states concurrently. The AICTE source is currently `terms_review_status=pending` and `import_enabled=false` because the API's bulk-reuse terms were not established. The endpoint returns a clear 403/422 until a source owner/license review authorizes reuse. Do not flip this flag merely to populate the count.
+
+Example after reuse approval and assignment of a server-managed directory-admin role:
+```json
+{
+  "action": "sync_aicte",
+  "state": "Bihar",
+  "academicYear": "2025-2026"
+}
+```
+
+The AICTE source is an institution-listing signal only. It does not approve every programme at an institution. Do not infer a course approval from an institute's presence in this list.
 
 ## Verification lifecycle
 
