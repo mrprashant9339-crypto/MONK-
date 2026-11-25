@@ -40,9 +40,9 @@ Never place a Supabase service-role key, OAuth client secret, Resend API key or 
 
 ## Production snapshot — 25 November 2026
 
-- GitHub production baseline: `main` at `75fe54d733ab782cea9ae2bf3af8f2053144d57e`.
-- Latest confirmed production-main GitHub CI run: #1058, success.
-- Remediation PR #27 is integrating Phase 6 Business UI, the source-aware India directory, guardian query hardening and PWA recovery. Do not treat its code as deployed until merged and deployed.
+- GitHub `main` now includes audit documentation commit `bfabf4777a59817e7e8304c1ec0f48dbcaba05e0`; the application source baseline remains `75fe54d733ab782cea9ae2bf3af8f2053144d57e`.
+- Latest confirmed production-main GitHub CI run: #1069, success. Cloudflare deployment run #217 deployed the unchanged app bundle but failed its live E2E suite on the direct `/signup` route; PR #29 contains the fix.
+- Remediation PR #29 is integrating Phase 6 Business UI, the source-aware India directory, guardian query hardening and PWA recovery. Do not treat its code as deployed until merged and deployed.
 - Supabase production project `yucwackrbekwaxiyuobt` is active. The separate `monk-staging` project is inactive.
 - Production Auth currently has 3 confirmed accounts and 1 linked Google identity; this is not proof that fresh OAuth or Campus role onboarding has passed.
 - Cloudflare Turnstile widget for MONK exists in Managed mode; its public site key matches the frontend and a secret is present in Cloudflare. Supabase Auth CAPTCHA enablement/secret configuration still requires dashboard verification.
@@ -72,7 +72,7 @@ Never place a Supabase service-role key, OAuth client secret, Resend API key or 
 
 - Full issue register: `docs/MONK_PRODUCTION_AUDIT_2026-11-25.md`
 - External/operator acceptance tracker: GitHub issue #28
-- Remediation implementation: PR #27
+- Remediation implementation: PR #29
 - Authentication and live-account runbook: `docs/RELEASE-ACCEPTANCE-RUNBOOK.md`
 
 Do not create fake customer, student, parent, faculty, institution, inventory, invoice or attendance records to make acceptance appear complete.
