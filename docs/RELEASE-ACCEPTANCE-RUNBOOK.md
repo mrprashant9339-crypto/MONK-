@@ -60,7 +60,7 @@ Use a real Business workspace owner and a member without `organization.profile.u
 5. Switch organizations; verify the first organization's profile is not displayed or editable.
 
 ## 6. Production deployment verification
-The Vercel project is `monk-platform` (Vite), linked to `mrprashant9339-crypto/MONK-`. The latest inspected production deployment is READY on `main` at commit `75fe54d733ab782cea9ae2bf3af8f2053144d57e` (deployment `dpl_Ga9auMSEbgytJ1DhsCGsA8zub7CT`). Project metadata reports `live=false`; Vercel SSO protection is enabled for non-custom deployment domains. The `monk.monster` custom domain is currently attached to Cloudflare Worker `monk`, which serves its own static assets. There is no Worker-to-Vercel reverse proxy today. Do not detach or re-route the custom domain until a separate public Vercel origin hostname, protection strategy, preview test and rollback have been accepted.
+The Vercel project is `monk-platform` (Vite), linked to `mrprashant9339-crypto/MONK-`. The latest inspected production deployment is READY on `main` at commit `75fe54d733ab782cea9ae2bf3af8f2053144d57e` (deployment `dpl_Ga9auMSEbgytJ1DhsCGsA8zub7CT`). GitHub `main` now also has an audit-document-only commit `bfabf4777a59817e7e8304c1ec0f48dbcaba05e`. Project metadata reports `live=false`; Vercel SSO protection is enabled for non-custom deployment domains. The `monk.monster` custom domain is currently attached to Cloudflare Worker `monk`, which serves its own static assets. There is no Worker-to-Vercel reverse proxy today. Do not detach or re-route the custom domain until a separate public Vercel origin hostname, protection strategy, preview test and rollback have been accepted.
 
 After the correct project is linked to `mrprashant9339-crypto/MONK-`:
 - Confirm Vite framework/build settings and production branch.
@@ -101,7 +101,7 @@ After the correct project is linked to `mrprashant9339-crypto/MONK-`:
 
 
 ## 8. Phase 6 Business and Phase 7 Campus acceptance
-- Phase 6 Sales and Business Operations UI integration is proposed in PR #27. Its production database migrations are already applied; do not re-run them without checking migration history.
+- Phase 6 Sales and Business Operations UI integration is proposed in PR #29. Its production database migrations are already applied; do not re-run them without checking migration history.
 - Exercise Business owner/admin/manager/sales/auditor roles and prove cross-tenant reads and writes are denied.
 - The India-wide directory UI is being integrated in PR #27. The current production directory has zero published records. Test filters and honest empty state; do not insert synthetic institutions.
 - Guardian relationship RLS and support-intake server-only table SQL regression tests passed against the current production database. The client guardian-id filter is included in PR #27.
