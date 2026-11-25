@@ -137,8 +137,8 @@ export default function AuthExperience() {
         const { data: currentUserData, error: currentUserError } = await supabase.auth.getUser();
         if (currentUserError) throw currentUserError;
         const currentMetadata = currentUserData.user?.user_metadata ?? {};
-        const consent: { terms: string; privacy: string; vertical?: Vertical; role?: IntendedRole; institutionId?: string | null } | null = raw
-          ? JSON.parse(raw) as { terms: string; privacy: string; vertical: Vertical; role: IntendedRole; institutionId?: string | null }
+        const consent: { terms: string; privacy: string; vertical?: Vertical; role?: IntendedRole; institutionId?: string | null; fullName?: string; phone?: string } | null = raw
+          ? JSON.parse(raw) as { terms: string; privacy: string; vertical: Vertical; role: IntendedRole; institutionId?: string | null; fullName?: string; phone?: string }
           : typeof currentMetadata.terms_version === "string" && typeof currentMetadata.privacy_version === "string"
             ? { terms: currentMetadata.terms_version, privacy: currentMetadata.privacy_version }
             : null;
@@ -149,6 +149,8 @@ export default function AuthExperience() {
               vertical: consent.vertical,
               intended_role: typeof existingRole === "string" ? existingRole : consent.role,
               institution_id: typeof currentMetadata.institution_id === "string" ? currentMetadata.institution_id : consent.institutionId ?? null,
+              full_name: typeof currentMetadata.full_name === "string" && currentMetadata.full_name.trim() ? currentMetadata.full_name : consent.fullName ?? "",
+              phone: typeof currentMetadata.phone === "string" && currentMetadata.phone.trim() ? currentMetadata.phone : consent.phone ?? null,
               terms_version: consent.terms, privacy_version: consent.privacy
             }});
             if (metadataError) throw metadataError;
@@ -275,10 +277,14 @@ export default function AuthExperience() {
   async function googleSignIn() {
     if (!supabase) { setError("Authentication is not configured."); return; }
     if (!accepted) { setError("Accept the Terms of Service and Privacy Policy before continuing with Google."); return; }
+    if (mode === "signup" && fullName.trim().length < 2) {
+      setError("Enter your full name before continuing with Google so MONK can complete your profile.");
+      return;
+    }
     setBusy(true); setError("");
     try {
       if (mode === "signup" || mode === "login") {
-        try { localStorage.setItem("monk:oauth-consent", JSON.stringify({ terms: TERMS_VERSION, privacy: PRIVACY_VERSION, vertical, role, institutionId: institutionId || null })); } catch {}
+        try { localStorage.setItem("monk:oauth-consent", JSON.stringify({ terms: TERMS_VERSION, privacy: PRIVACY_VERSION, vertical, role, institutionId: institutionId || null, fullName: fullName.trim(), phone: phone.trim() })); } catch {}
       }
       const inviteToken = new URLSearchParams(window.location.hash.replace(/^#/, "")).get("invite");
       const callbackUrl = new URL(window.location.origin + "/auth/callback");
