@@ -76,3 +76,6 @@ Never place a Supabase service-role key, OAuth client secret, Resend API key or 
 - Authentication and live-account runbook: `docs/RELEASE-ACCEPTANCE-RUNBOOK.md`
 
 Do not create fake customer, student, parent, faculty, institution, inventory, invoice or attendance records to make acceptance appear complete.
+
+
+Vercel Verified Proxy: the production Worker forwards Cloudflare's `CF-Connecting-IP` header to the Vercel origin. The Worker detects Vercel Security Checkpoint HTML and serves the existing Cloudflare Assets bundle instead, so a bot challenge is never shown to users. The production integration gate verifies both the forwarded-IP marker and the absence of checkpoint content.
