@@ -1,7 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFile, readdir } from "node:fs/promises";
+import { readFile, readdir, mkdtemp, writeFile, rm } from "node:fs/promises";
 import { join } from "node:path";
+import { tmpdir } from "node:os";
+import { spawnSync } from "node:child_process";
 import { isApplicationRoute } from "../worker.js";
 
 const root = process.cwd();
@@ -234,4 +236,42 @@ test("authentication callback exchanges PKCE codes once and preserves onboarding
   const profileMigration = await readFile(join(root, "supabase", "migrations", "20261125042000_add_secure_own_profile_completion.sql"), "utf8");
   assert.match(profileMigration, /auth\.uid\(\)/);
   assert.match(profileMigration, /revoke all on function public\.update_my_profile/);
+});
+
+test("India directory CSV importer normalizes official AISHE university records without storing source files", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "monk-directory-"));
+  try {
+    const csv = join(directory, "aishe-sample.csv");
+    await writeFile(csv, [
+      "AISHE Code,Name of Institution,State,District,Year of Establishment,Location",
+      'U-0003,"Acharya Nagarjuna University, Guntur",Andhra Pradesh,Guntur,1976,Rural',
+      'BAD-1,"Unmapped State College",Unknown State,Unknown,2001,Urban'
+    ].join("\\n"));
+    const run = spawnSync(process.execPath, [
+      join(root, "scripts", "import-india-directory.mjs"),
+      "--input", csv,
+      "--source", "aishe_aikosh_universities",
+      "--dry-run"
+    ], { cwd: root, encoding: "utf8" });
+    assert.equal(run.status, 0, run.stderr);
+    const result = JSON.parse(run.stdout);
+    assert.equal(result.accepted, 1);
+    assert.equal(result.rejectedRows, 1);
+    assert.equal(result.preview[0].aishe_code, "U-0003");
+    assert.equal(result.preview[0].state_code, "AP");
+    assert.equal(result.preview[0].canonical_name, "Acharya Nagarjuna University, Guntur");
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("directory ingestion is service-role-only, bounded, idempotent and does not write generated search vectors", async () => {
+  const migration = await readFile(join(root, "supabase", "migrations", "20261125050000_compact_directory_import_pipeline.sql"), "utf8");
+  assert.match(migration, /jsonb_array_length\(p_records\) > 250/);
+  assert.match(migration, /octet_length\(p_records::text\) > 1000000/);
+  assert.match(migration, /terms_review_status = 'approved'/);
+  assert.match(migration, /on conflict \(source_id, source_record_id, snapshot_hash\) do nothing/);
+  assert.match(migration, /grant execute on function public\.ingest_monk_directory_batch\(text,jsonb\) to service_role/);
+  assert.doesNotMatch(migration, /search_document\s*=/);
+  assert.doesNotMatch(migration, /search_document,\s*primary_source_id/);
 });
