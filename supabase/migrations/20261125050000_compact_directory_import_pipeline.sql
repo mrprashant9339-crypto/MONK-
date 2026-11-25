@@ -187,7 +187,7 @@ begin
         canonical_name, normalized_name, institution_kind, category_key, ownership_key,
         state_code, district, city, website_url, aishe_code, official_identifiers,
         verification_state, verified_fields, published, last_verified_at, next_review_at,
-        search_document, primary_source_id, primary_source_record_id
+        primary_source_id, primary_source_record_id
       ) values (
         v_name, v_normalized, v_kind, v_category, v_ownership,
         v_state, v_district, v_city,
@@ -205,7 +205,6 @@ begin
         p_source_key = 'aishe_aikosh_universities',
         case when p_source_key = 'aishe_aikosh_universities' then v_now else null end,
         case when p_source_key = 'aishe_aikosh_universities' then v_now + interval '90 days' else null end,
-        to_tsvector('simple', concat_ws(' ', v_name, v_city, v_district, v_state, v_aishe)),
         v_source.id, v_source_record_id
       ) returning id into v_institution_id;
       v_inserted := v_inserted + 1;
@@ -230,7 +229,6 @@ begin
           published = i.published or p_source_key = 'aishe_aikosh_universities',
           last_verified_at = case when p_source_key = 'aishe_aikosh_universities' then v_now else i.last_verified_at end,
           next_review_at = case when p_source_key = 'aishe_aikosh_universities' then v_now + interval '90 days' else i.next_review_at end,
-          search_document = to_tsvector('simple', concat_ws(' ', i.canonical_name, coalesce(i.city,v_city), coalesce(i.district,v_district), coalesce(i.state_code,v_state), coalesce(i.aishe_code,v_aishe))),
           updated_at = v_now
       where i.id = v_institution_id;
       v_updated := v_updated + 1;
