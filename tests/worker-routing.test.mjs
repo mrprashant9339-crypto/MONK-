@@ -97,6 +97,6 @@ test("Vercel security checkpoint is never exposed to visitors", async () => {
     assert.equal(response.status, 200);
     assert.equal(response.headers.get("x-monk-origin-fallback"), "assets");
     assert.equal(response.headers.get("x-monk-cf-ip-forwarded"), "yes");
-    assert.doesNotMatch(await response.text(), /Vercel Security Checkpoint|Code\\s*21/i);
+    assert.doesNotMatch(await response.text(), /Vercel Security Checkpoint|Code\s*21/i);
   });
 });
