@@ -19,7 +19,7 @@ function mockEnv() {
 }
 
 test("known public routes are routed to the SPA entry document", async () => {
-  for (const route of ["/", "/about", "/campus", "/business", "/faq", "/contact", "/privacy", "/support/tickets/ABC-123", "/thank-you", "/login"]) {
+  for (const route of ["/", "/about", "/campus", "/business", "/faq", "/contact", "/privacy", "/support/tickets/ABC-123", "/thank-you", "/login", "/forgot-password", "/reset-password", "/auth/callback"]) {
     assert.equal(isApplicationRoute(route), true, route);
     const env = mockEnv();
     const response = await worker.fetch(new Request(`https://monk.monster${route}`), env);
