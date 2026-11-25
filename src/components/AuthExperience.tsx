@@ -83,14 +83,34 @@ export default function AuthExperience() {
   useEffect(() => {
     if (!supabase) return;
     let alive = true;
-    supabase.auth.getSession().then(({ data }) => {
-      if (alive && data.session && location.pathname === "/auth/callback") setCallbackSession(true);
-    });
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
       if (!alive) return;
       if (event === "PASSWORD_RECOVERY") setMode("reset");
       if (session && location.pathname === "/auth/callback") setCallbackSession(true);
     });
+
+    void (async () => {
+      const callbackPath = location.pathname;
+      const code = new URLSearchParams(window.location.search).get("code");
+      if (code && (callbackPath === "/auth/callback" || callbackPath === "/reset-password")) {
+        const { data: exchangeData, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+        if (!alive) return;
+        if (exchangeError) {
+          setError("This secure sign-in link is invalid, expired, or already used. Return to MONK and request a new link.");
+          return;
+        }
+        const cleanUrl = new URL(window.location.href);
+        cleanUrl.searchParams.delete("code");
+        window.history.replaceState({}, "", cleanUrl.pathname + cleanUrl.search + cleanUrl.hash);
+        if (exchangeData.session && callbackPath === "/auth/callback") setCallbackSession(true);
+        if (callbackPath === "/reset-password") setMode("reset");
+        return;
+      }
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (alive && sessionData.session && callbackPath === "/auth/callback") setCallbackSession(true);
+    })();
+
     return () => { alive = false; data.subscription.unsubscribe(); };
   }, [location.pathname]);
 
