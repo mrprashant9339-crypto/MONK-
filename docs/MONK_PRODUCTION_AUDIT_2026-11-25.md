@@ -12,7 +12,7 @@ The production `main` commit passes GitHub Actions run #1058. That proves the co
 | ID | Priority | Area | Finding | Required remediation |
 |---|---|---|---|---|
 | MONK-001 | P0 | Business | Phase 6 UI was not integrated into production `main`; PR #22 remains open/unmerged. Its production database migrations are already applied. | Integrate the existing Sales and Business Operations UI; run role and tenant-isolation tests. |
-| MONK-002 | P0 | Campus | Phase 7 is still a kickoff/draft PR #23, based on `frontend-first-complete`, not production `main`. | Integrate India-wide directory improvements; complete Principal/HOD/Faculty/Student/Parent acceptance. |
+| MONK-002 | P0 | Campus | Phase 7 is not fully accepted. PR #23 is a draft based on `frontend-first-complete`; PR #27 ports the source-aware India directory and guardian-scope regression work onto the current production baseline, but the full role workflows remain untested. | Directory UI and guardian scope are integrated in PR #27; complete Principal/HOD/Faculty/Student/Parent live acceptance. |
 | MONK-003 | P0 | Auth E2E | Three existing Auth users are confirmed, but their role metadata is unset. One linked Google identity does not prove fresh-account OAuth. | Test signup, verification, login, Google OAuth, reset, invitation acceptance/revocation with isolated test identities. |
 | MONK-004 | P0 | CAPTCHA | Cloudflare Turnstile widget and secret presence are verified; Supabase Auth CAPTCHA dashboard enablement/secret configuration is not readable from the connected integration. | Operator verifies Supabase Auth → Bot and Abuse Protection and tests valid/missing/invalid tokens. |
 | MONK-005 | P0 | Staging | Staging Supabase project `monk-staging` is inactive. | Activate isolated staging, apply migrations, and run all live-account tests there. |
@@ -24,8 +24,8 @@ The production `main` commit passes GitHub Actions run #1058. That proves the co
 | MONK-011 | P1 | Password security | Leaked-password protection is disabled. | Enable compromised-password protection and test signup/password updates. |
 | MONK-012 | P1 | Email | SMTP/Resend delivery is not proven end-to-end. | Configure verified sender and secrets; test verification, reset and invitation delivery. |
 | MONK-013 | P1 | Business files | Phase 6 describes Documents as a local browser preview, not secure persistent storage. | Implement private Storage, tenant-scoped policies, signed URL lifecycle, metadata, retention and file validation. |
-| MONK-014 | P2 | PWA | Production `main` did not register a service worker or verified offline fallback. | Add GET-only same-origin caching, offline page, network notice and error boundary; never cache authenticated API responses or POSTs. |
-| MONK-015 | P2 | Guardian portal | Client relationship lookup was broader than the signed-in guardian, although database RLS already scopes rows. | Add guardian-id filter and explicit no-guardian empty state. |
+| MONK-014 | P2 | PWA | Production `main` did not register a service worker or verified offline fallback. | Implemented in PR #27 with GET-only same-origin caching, offline page, network notice and error boundary; merge only after exact-head CI. |
+| MONK-015 | P2 | Guardian portal | Client relationship lookup was broader than the signed-in guardian, although database RLS already scopes rows. | Implemented in PR #27; guardian-scope SQL regression passed against production. |
 | MONK-016 | P2 | Dependency reproducibility | The repository has no committed package-lock.json, so `npm ci` cannot run and CI currently relies on `npm install`. | Generate and commit a reviewed lockfile, then switch CI to `npm ci`. |
 | MONK-017 | P2 | Design | PR #24 is a separate preview-only draft and is unmergeable/dirty. | Review against approved brand assets; integrate only approved, functional screens. |
 | MONK-018 | P2 | Docs | Some README/release-runbook statements are historical or contradictory. | Keep release evidence aligned to exact commit, deployment, settings and tests. |
@@ -45,6 +45,7 @@ The production `main` commit passes GitHub Actions run #1058. That proves the co
 - Parent portal relationship lookup is being narrowed to the authenticated guardian.
 - Offline recovery, GET-only same-origin service-worker caching, network status notice and React error boundary are being added.
 - CI remains on `npm install` because the repository has no lockfile; the failed `npm ci` experiment is recorded as MONK-016.
+- Update the README and release runbook to remove stale deployment, CI and Auth claims.
 - Release smoke tests cover these changes.
 
 ## External/operator blockers (not safe to fake)
