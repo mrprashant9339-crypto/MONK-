@@ -6,7 +6,7 @@ const inputIndex = args.indexOf("--input");
 const sourceIndex = args.indexOf("--source");
 const dryRun = args.includes("--dry-run");
 const inputPath = inputIndex >= 0 ? args[inputIndex + 1] : "";
-const sourceKey = sourceIndex >= 0 ? args[sourceIndex + 1] : "aishe_aikosh_universities";
+const sourceKey = sourceIndex >= 0 ? args[sourceIndex + 1] : "";
 if (!inputPath || !sourceKey) {
   console.error("Usage: node scripts/import-india-directory.mjs --input <official.csv> --source <source_key> [--dry-run]");
   process.exit(2);
@@ -14,7 +14,7 @@ if (!inputPath || !sourceKey) {
 
 const stateCodes = new Map(Object.entries({
   "andaman and nicobar islands":"AN","andhra pradesh":"AP","arunachal pradesh":"AR","assam":"AS","bihar":"BR",
-  "chandigarh":"CH","chhattisgarh":"CT","dadra and nagar haveli and daman and diu":"DN","delhi":"DL","goa":"GA",
+  "chandigarh":"CH","chhattisgarh":"CT","dadra and nagar haveli and daman and diu":"DN","dadra & nagar haveli and daman & diu":"DN","jammu & kashmir":"JK","andaman & nicobar islands":"AN","uttaranchal":"UK","orissa":"OD","delhi":"DL","goa":"GA",
   "gujarat":"GJ","haryana":"HR","himachal pradesh":"HP","jammu and kashmir":"JK","jharkhand":"JH","karnataka":"KA",
   "kerala":"KL","ladakh":"LA","lakshadweep":"LD","madhya pradesh":"MP","maharashtra":"MH","manipur":"MN",
   "meghalaya":"ML","mizoram":"MZ","nagaland":"NL","odisha":"OD","puducherry":"PY","punjab":"PB","rajasthan":"RJ",
@@ -74,7 +74,7 @@ for (let i = 0; i < mapped.length; i++) {
   const row = mapped[i];
   const name = first(row, ["Name of Institution","Institution Name","College Name","University Name","Name"]);
   const code = first(row, ["AISHE Code","AISHE Code (Id)","Institute Code","College Code","University Code","Code"]);
-  const stateName = first(row, ["State","State Name"]);
+  const stateName = first(row, ["State","State Name","State/UT","State / UT"]);
   const district = first(row, ["District","District Name"]);
   if (!name || !code || !stateName) { rejected.push(i + 2); continue; }
   const stateCode = stateCodes.get(stateName.toLowerCase());
