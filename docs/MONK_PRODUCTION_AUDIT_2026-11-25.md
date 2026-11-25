@@ -98,3 +98,9 @@ Do not merge this branch or perform a production DNS/Worker/Vercel cutover until
 ## CI deployment-gate finding
 - The first main deployment attempt after PR #31 passed build, release smoke, local E2E and the Vercel origin readiness check, but the preview Worker Wrangler step lacked `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` environment bindings. No production Worker deployment occurred.
 - PR #32 supplies the existing deployment secrets explicitly to the preview Worker deploy step before the proxy and CORS checks.
+
+
+## Wrangler preview route permission
+- The Cloudflare deployment token can upload Worker scripts but does not have permission to manage zone Worker routes.
+- The `preview.monk.monster/*` route is already provisioned and verified through the connected Cloudflare control plane.
+- PR #33 removes route management from `wrangler.preview.jsonc`; Wrangler will only update the preview script, leaving the pre-existing route intact. This avoids broadening the GitHub deployment token.
