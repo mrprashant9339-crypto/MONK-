@@ -106,3 +106,11 @@ After the correct project is linked to `mrprashant9339-crypto/MONK-`:
 - The India-wide directory UI is being integrated in PR #27. The current production directory has zero published records. Test filters and honest empty state; do not insert synthetic institutions.
 - Guardian relationship RLS and support-intake server-only table SQL regression tests passed against the current production database. The client guardian-id filter is included in PR #27.
 - Complete fresh Student, Faculty/Teacher, Parent, HOD, Principal/Institution Admin onboarding with separate controlled accounts before declaring Phase 7 accepted.
+
+
+## Production Vercel origin cutover
+- The Worker uses `MONK_VERCEL_ORIGIN=https://origin.monk.monster`; change this variable if the origin hostname changes.
+- Known application routes are fetched from the Vercel root document, then route metadata is applied at the Worker edge. Static assets are fetched by their original path.
+- The existing Cloudflare Assets binding remains the failover. Check `x-monk-origin: vercel` for normal origin traffic and `x-monk-origin-fallback: assets` for failover.
+- Rollback: redeploy the previous Worker version or clear `MONK_VERCEL_ORIGIN` and redeploy so all requests use the Assets fallback.
+- Keep the origin hostname DNS-only and do not point it back to the public apex; that would create a proxy loop. Restrict direct origin access with Cloudflare Access/service tokens in a separate hardening change.
