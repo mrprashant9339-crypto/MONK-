@@ -295,6 +295,9 @@ export default function AuthExperience() {
           <div><strong>{vertical === "education" ? "MONK Campus" : "MONK Business"}</strong><small>{subtitle}</small></div>
           <a href={vertical === "education" ? "/campus" : "/business"}>Explore</a>
         </div>
+        <a className="authx-vertical-switch" href={"/login?mode=" + (isSignup ? "signup" : "login") + "&vertical=" + (vertical === "education" ? "business" : "education")}>
+          {vertical === "education" ? "Creating a business workspace? Switch to MONK Business" : "Joining a college? Switch to MONK Campus"}
+        </a>
         <div className="authx-heading">
           <p className="authx-eyebrow"><ShieldCheck size={14}/> SECURE ACCOUNT ACCESS</p>
           <h1 id="authx-heading">{heading}</h1>
