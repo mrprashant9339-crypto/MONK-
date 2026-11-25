@@ -9,7 +9,7 @@ MONK has one public website and two distinct product journeys. The root route is
 - Roles: platform admin, institution admin/principal, HOD, faculty, student and optional guardian.
 - Core modules: institution profile, departments/branches, courses/semesters, notices, timetable, attendance, assignments, assessments/results, documents and analytics.
 - Data policy: public directory data must be sourced from official SBTE/AICTE/state sources; demo metrics and student records must be marked fictional and never presented as live records.
-- Current UI: public Campus landing page and a data-backed India-wide institution directory search; the production directory currently has zero published records. Full verified 46-institute dataset and complete institutional workflows remain follow-up work.
+- Current UI: public Campus landing page and a source-aware India-wide institution directory search is implemented in PR #36; production remains unchanged until merge and deployment, and currently has zero published records. Full verified 46-institute dataset and complete institutional workflows remain follow-up work.
 
 ## Journey B — MONK Business
 - Public page: business-focused overview, workflows, feature cards and sample dashboard.
@@ -17,7 +17,7 @@ MONK has one public website and two distinct product journeys. The root route is
 - Roles: owner/admin, manager, sales, accounts, operations and staff.
 - Core modules: CRM, leads/enquiries, products, inventory, suppliers, orders, bookings/service jobs, invoices, payments, team tasks and analytics.
 - Data policy: sample business name, sales, customer activity and transactions are fictional demo data until a real organization signs up.
-- Current UI: public Business landing page and fictional Muzaffarpur shop workflow preview. Real business data integrations and advanced inventory/finance modules remain follow-up work.
+- Current UI: public Business landing page and fictional Muzaffarpur shop workflow preview. Phase 6 Sales and Business Operations UI integration is included in PR #36; live role acceptance and deployment remain pending.
 
 ## Authentication and tenancy
 - Public marketing and demo pages must remain accessible without login.
