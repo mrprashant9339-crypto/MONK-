@@ -56,12 +56,12 @@ Official public references:
    ```bash
    node scripts/import-india-directory.mjs --input ./official-ogd-colleges.csv --source ogd_aishe_colleges_2011_2012 --dry-run
    ```
-5. Set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in a trusted shell environment. Never paste the service-role key into chat, commit it, or use a `VITE_*` variable.
-6. After the dry-run and source approval checks, run the import:
+6. Set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in a trusted shell environment. Never paste the service-role key into chat, commit it, or use a `VITE_*` variable.
+7. After the dry-run and source approval checks, run the import:
    ```bash
    node scripts/import-india-directory.mjs --input ./official-ogd-colleges.csv --source ogd_aishe_colleges_2011_2012
    ```
-7. Check counts in `monk_directory_institutions`, `monk_directory_source_records`, and `monk_directory_source_snapshots`. Review rejected rows and duplicates before publishing any new source type.
+8. Check counts in `monk_directory_institutions`, `monk_directory_source_records`, and `monk_directory_source_snapshots`. Review rejected rows and duplicates before publishing any new source type.
 
 For the historical OGD file, use `--source ogd_aishe_colleges_2011_2012`. It is deliberately imported as stale and unpublished. Do not change that policy merely to inflate the public count.
 
