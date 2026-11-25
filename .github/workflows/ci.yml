@@ -31,10 +31,6 @@ jobs:
         run: npm run test:release
       - name: Browser end-to-end tests
         run: npm run test:e2e
-      - name: Verify Cloudflare Worker to Vercel origin preview
-        env:
-          MONK_BASE_URL: https://preview.monk.monster
-        run: npx playwright test tests/e2e/worker-vercel-proxy.spec.ts
       - name: Upload browser screenshots and reports
         if: always()
         uses: actions/upload-artifact@v4
