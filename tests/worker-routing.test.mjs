@@ -31,14 +31,16 @@ test("known public routes are served from the Vercel app shell with route metada
   await withMockFetch(async request => {
     assert.equal(new URL(request.url).hostname, "origin.monk.monster");
     assert.equal(new URL(request.url).pathname, "/");
+    assert.equal(request.headers.get("cf-connecting-ip"), "203.0.113.10");
     return new Response(appShell, { status: 200, headers: { "content-type": "text/html" } });
   }, async () => {
     for (const route of ["/", "/about", "/campus", "/business", "/faq", "/contact", "/privacy", "/support/tickets/ABC-123", "/thank-you", "/login", "/signup", "/forgot-password", "/reset-password", "/auth/callback"]) {
       assert.equal(isApplicationRoute(route), true, route);
       const env = mockEnv();
-      const response = await worker.fetch(new Request(`https://monk.monster${route}`), env);
+      const response = await worker.fetch(new Request(`https://monk.monster${route}`, { headers: { "cf-connecting-ip": "203.0.113.10" } }), env);
       assert.equal(response.status, 200, route);
       assert.equal(response.headers.get("x-monk-origin"), "vercel", route);
+      assert.equal(response.headers.get("x-monk-cf-ip-forwarded"), "yes", route);
       assert.deepEqual(env.requested, [], route);
       const html = await response.text();
       if (route === "/signup") assert.match(html, /Create a MONK Account/);
@@ -85,4 +87,16 @@ test("www host redirects to the canonical MONK domain", async () => {
   const response = await worker.fetch(new Request("https://www.monk.monster/signup?vertical=education"), env);
   assert.equal(response.status, 308);
   assert.equal(response.headers.get("location"), "https://monk.monster/signup?vertical=education");
+});
+
+
+test("Vercel security checkpoint is never exposed to visitors", async () => {
+  await withMockFetch(async () => new Response("<html><title>Vercel Security Checkpoint</title><p>Code 21</p></html>", { status: 200, headers: { "content-type": "text/html" } }), async () => {
+    const env = mockEnv();
+    const response = await worker.fetch(new Request("https://monk.monster/signup", { headers: { "cf-connecting-ip": "203.0.113.10" } }), env);
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get("x-monk-origin-fallback"), "assets");
+    assert.equal(response.headers.get("x-monk-cf-ip-forwarded"), "yes");
+    assert.doesNotMatch(await response.text(), /Vercel Security Checkpoint|Code\s*21/i);
+  });
 });

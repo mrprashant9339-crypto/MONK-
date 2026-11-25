@@ -119,3 +119,10 @@ After the correct project is linked to `mrprashant9339-crypto/MONK-`:
 ## Preview Worker route management
 - `preview.monk.monster/*` is a separately provisioned Cloudflare route to `monk-vercel-preview`.
 - The GitHub Wrangler token has Workers Script upload permission but not zone Worker Routes write permission. Keep `routes` out of `wrangler.preview.jsonc`; deploy with `workers_dev: true` so Wrangler can update the script without touching zone routes. The separately provisioned `preview.monk.monster/*` route remains attached.
+
+
+## Vercel Verified Proxy and checkpoint handling
+- Forward the incoming Cloudflare `CF-Connecting-IP` header to the Vercel origin. Vercel documents Cloudflare as a Verified Proxy Lite provider.
+- Verify the response marker `x-monk-cf-ip-forwarded: yes`.
+- If Vercel returns a Security Checkpoint page (for example, Code 21), the Worker must not expose it; it falls back to the Cloudflare Assets bundle and marks `x-monk-origin-fallback: assets`.
+- Production acceptance requires `/` and `/signup` to return the MONK app shell, never a Vercel checkpoint. Either Vercel origin or the safe Assets fallback is acceptable until Verified Proxy is consistently recognized.

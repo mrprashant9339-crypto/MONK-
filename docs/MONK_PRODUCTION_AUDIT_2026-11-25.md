@@ -104,3 +104,11 @@ Do not merge this branch or perform a production DNS/Worker/Vercel cutover until
 - The Cloudflare deployment token can upload Worker scripts but does not have permission to manage zone Worker routes.
 - The `preview.monk.monster/*` route is already provisioned and verified through the connected Cloudflare control plane.
 - PR #33 removes route management from `wrangler.preview.jsonc` and keeps `workers_dev: true`; Wrangler updates the script without calling the zone-routes API, leaving the pre-existing route intact. This avoids broadening the GitHub deployment token.
+
+
+## Vercel Security Checkpoint / Verified Proxy finding
+- Production browser tests showed that some Vercel origin requests returned a "Vercel Security Checkpoint — Code 21" HTML challenge despite HTTP 200. The previous origin smoke test was too weak because it checked only status and the app-root marker.
+- Vercel documents Cloudflare as a supported Verified Proxy Lite provider and requires the `CF-Connecting-IP` header. The Worker now forwards that header explicitly.
+- The production Worker detects checkpoint HTML and falls back to the existing Cloudflare Assets bundle instead of exposing the challenge to visitors.
+- Preview and production tests now assert the CF client-IP marker and reject checkpoint content.
+- Vercel notes that reverse proxies reduce firewall visibility and can add latency; this architecture is retained per the MONK routing plan, with the trade-offs documented.
