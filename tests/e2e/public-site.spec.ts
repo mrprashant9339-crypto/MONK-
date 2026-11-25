@@ -300,3 +300,14 @@ test("Campus and Business signup expose accessible role cards without granting a
   await expect(businessRoles.getByRole("radio", { name: /Manager/i })).toHaveAttribute("aria-checked", "true");
   await expect(page.getByText(/permissions are granted by the organization owner/i)).toBeVisible();
 });
+
+test("Campus signup exposes institution selection and blocks incomplete Google profiles", async ({ page }) => {
+  await page.goto("/login?mode=signup&vertical=education");
+  await expect(page.getByText("MONK Campus")).toBeVisible();
+  await expect(page.getByRole("searchbox", { name: /college or institution/i })).toBeVisible();
+  await expect(page.getByRole("radio", { name: /Student/i })).toBeVisible();
+  await page.getByRole("checkbox").check();
+  await page.getByRole("button", { name: /Continue with Google/i }).click();
+  await expect(page.getByRole("alert")).toContainText(/Enter your full name before continuing with Google/i);
+  await expect(page).toHaveURL(/\/login\?mode=signup&vertical=education/);
+});
