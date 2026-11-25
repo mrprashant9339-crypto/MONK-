@@ -116,6 +116,14 @@ Deno.serve(async (req: Request) => {
   }
 
   if (body.action === "sync_aicte") {
+    const { data: aicteSource, error: sourceError } = await adminClient
+      .from("monk_directory_sources")
+      .select("terms_review_status,import_enabled")
+      .eq("source_key", "aicte_live_approved_institutes")
+      .maybeSingle();
+    if (sourceError || !aicteSource || !aicteSource.import_enabled || aicteSource.terms_review_status !== "approved") {
+      return response({ error: "AICTE bulk import is disabled until its data-reuse terms are approved. No upstream request was made." }, 409, origin);
+    }
     const stateName = typeof body.state === "string" ? body.state.trim() : "";
     const stateCode = STATE_CODES[stateName.toLowerCase()];
     const academicYear = typeof body.academicYear === "string" ? body.academicYear : "2025-2026";
