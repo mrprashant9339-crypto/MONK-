@@ -26,7 +26,11 @@ Production site: `https://monk.monster`
 4. Save the provider configuration and test both new-account consent and existing-account sign-in.
 5. Do not put the Google Client Secret in `VITE_*` variables, source code, or GitHub.
 
-The frontend already calls Supabase Auth with provider `google` and redirects to `/auth/callback`. Google sign-in cannot succeed until the provider credentials and redirect allowlist are configured in the dashboard.
+The frontend calls Supabase Auth with provider `google` and redirects to `/auth/callback`. The callback performs one explicit PKCE code exchange; automatic URL detection is disabled to prevent React StrictMode from attempting to consume the one-time authorization code twice. Campus/Business intent, role, legal-consent versions and pre-OAuth profile fields are retained across the provider redirect in browser storage and written to Supabase Auth metadata only after the callback is validated.
+
+For Google signup, the user must enter a full name and accept the current Terms and Privacy Policy before leaving MONK. Do not treat Google's account chooser as a completed MONK profile. If the callback has no valid MONK onboarding context, the session is rejected and the user must restart from the MONK signup/login page.
+
+Google sign-in cannot succeed until provider credentials and redirect allowlists are configured in the dashboard. In Google Cloud OAuth consent-screen branding, set the application name to `MONK`; the hostname shown by the Google account chooser is the Supabase Auth callback host, not a project name entered by the user.
 
 ### Email and password security
 
@@ -45,6 +49,8 @@ The frontend already calls Supabase Auth with provider `google` and redirects to
 - Students, parents, teachers, HODs, principals, managers, sales, accounts, operations, staff, clients and vendors must join through an authorized invitation or existing verified institution record.
 - Actual access is determined by organization membership, server-side permission checks and RLS. Never authorize using `user_metadata`.
 - Student and guardian self-claim requires a verified email matching the institution's pre-created record. Do not let a user self-assign a college, admission number, HOD, principal or staff role.
+- Public self-service workspace creation is limited to verified MONK Business owners with recorded legal consent. Campus workspace creation is blocked at the database RPC until the institution is independently verified and provisioned by MONK; selecting the "institution administrator" intent is not proof of authority.
+- Student, parent, faculty, HOD, principal, institution administrators, and all Business team roles must join through a verified invitation or the approved institution-onboarding process. User metadata is intent only and must never grant membership or permissions.
 
 ## Release verification
 
