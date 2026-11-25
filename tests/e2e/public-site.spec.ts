@@ -1,8 +1,8 @@
-import { beforeEach, expect, test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 // Cloudflare Turnstile is an external anti-bot service. Browser E2E tests use a
 // deterministic client stub; server-side Siteverify is covered separately.
-beforeEach(async ({ page }) => {
+test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     Object.defineProperty(window, "turnstile", {
       configurable: true,
