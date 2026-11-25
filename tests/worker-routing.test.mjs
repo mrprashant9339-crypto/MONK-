@@ -62,6 +62,16 @@ test("static assets are proxied to Vercel without SPA rewriting", async () => {
   });
 });
 
+test("the offline HTML shell remains available as an explicit static asset", async () => {
+  await withMockFetch(async request => {
+    assert.equal(new URL(request.url).pathname, "/offline.html");
+    return new Response("<!doctype html><title>Offline</title>", { status: 200, headers: { "content-type": "text/html" } });
+  }, async () => {
+    const response = await worker.fetch(new Request("https://monk.monster/offline.html"), mockEnv());
+    assert.equal(response.status, 200);
+    assert.match(await response.text(), /Offline/);
+  });
+});
 test("origin network failure falls back to Cloudflare assets", async () => {
   await withMockFetch(async () => { throw new Error("origin unavailable"); }, async () => {
     const env = mockEnv();
