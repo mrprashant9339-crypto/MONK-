@@ -87,7 +87,7 @@ After the correct project is linked to `mrprashant9339-crypto/MONK-`:
 - These are database regression tests with synthetic users; they do not replace live signup/login or production-user acceptance.
 
 ## 9. Current evidence boundary
-- GitHub Actions run #1023 completed successfully on commit `42dd85c70515dcee9d9f485238482e0b4b14d945`: TypeScript/production build, release smoke tests and Playwright browser E2E all passed. The E2E suite includes Campus institution-selector visibility and the guard that prevents an incomplete Google signup profile from leaving MONK.
+- GitHub Actions run #1073 completed successfully on implementation commit `aed68d164e3a0395014649e9033c565cdd1acefd`: TypeScript/production build, release smoke tests and Playwright browser E2E all passed. The E2E suite includes Campus institution-selector visibility and the guard that prevents an incomplete Google signup profile from leaving MONK.
 - Latest Vercel feature-branch preview is READY at `https://monk-platform-4usumqgoj-makto-community.vercel.app`; stable branch alias: `https://monk-platform-git-feature-auth-registrat-3476eb-makto-community.vercel.app`. This is a preview, not a production release.
 - Cloudflare Turnstile widget `0x4AAAAAAGRN064WbzkNKlkA` is in `managed` mode. Its allowlist now includes `monk.monster`, `www.monk.monster`, localhost addresses, the stable feature-branch Vercel alias and several exact preview hosts. The stable branch alias is the intended preview test origin; ephemeral preview hosts are not permanent.
 - Supabase `support-ticket-intake` Edge Function is ACTIVE at version 5. Its deployed code fails closed if `TURNSTILE_SECRET` is missing and validates the Turnstile token and hostname before accepting support submissions.
@@ -97,12 +97,12 @@ After the correct project is linked to `mrprashant9339-crypto/MONK-`:
 - The database `create_organization` RPC now requires a verified email and legal-consent record, permits only Business-owner self-service creation, rejects public Campus workspace creation pending independent institution verification, and uses NULL-safe role checks. The UI mirrors this rule; team members and Campus accounts must join an approved organization.
 - The client-executable grant on `public.rls_auto_enable()` has been revoked. The remaining Supabase Security Advisor warnings for authenticated SECURITY DEFINER RPCs require function-by-function review; do not bulk-revoke them because many are application RPCs with internal permission checks. Leaked-password protection remains disabled and must be enabled in Auth settings.
 - Google OAuth provider credentials, custom SMTP delivery, actual email signup/confirmation/password-reset, fresh-account Google callback, invitation acceptance, tenant-isolation negative cases and production-domain routing remain unverified. These require provider credentials and controlled test accounts.
-- PR #25 remains open and draft; no merge or production promotion has been performed.
+- PR #36 is open and unmerged; its latest Vercel preview deployment failed because the Free plan daily deployment limit was exceeded. No production promotion has been performed.
 
 
 ## 8. Phase 6 Business and Phase 7 Campus acceptance
-- Phase 6 Sales and Business Operations UI integration is proposed in PR #29. Its production database migrations are already applied; do not re-run them without checking migration history.
+- Phase 6 Sales and Business Operations UI integration is proposed in PR #36. Its production database migrations are already applied; do not re-run them without checking migration history.
 - Exercise Business owner/admin/manager/sales/auditor roles and prove cross-tenant reads and writes are denied.
-- The India-wide directory UI is being integrated in PR #27. The current production directory has zero published records. Test filters and honest empty state; do not insert synthetic institutions.
-- Guardian relationship RLS and support-intake server-only table SQL regression tests passed against the current production database. The client guardian-id filter is included in PR #27.
+- The India-wide directory UI is integrated in PR #36. The current production directory has zero published records. Test filters and honest empty state; do not insert synthetic institutions.
+- Guardian relationship RLS and support-intake server-only table SQL regression tests passed against the current production database. The client guardian-id filter is included in PR #36.
 - Complete fresh Student, Faculty/Teacher, Parent, HOD, Principal/Institution Admin onboarding with separate controlled accounts before declaring Phase 7 accepted.
