@@ -197,7 +197,7 @@ async function isVercelSecurityCheckpoint(response) {
   const contentType = response.headers.get("content-type") || "";
   if (!contentType.includes("text/html")) return false;
   const body = await response.clone().text();
-  return /Vercel Security Checkpoint|Failed to verify your browser|Code\\s*21/i.test(body);
+  return /Vercel Security Checkpoint|Failed to verify your browser|Code\s*21/i.test(body);
 }
 
 async function fetchVercelOrigin(request, env, url, path) {
