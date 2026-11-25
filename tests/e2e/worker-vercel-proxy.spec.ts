@@ -9,9 +9,10 @@ test("isolated Cloudflare Worker proxies the Vercel origin", async ({ request })
   expect(response.headers()["x-monk-proxy-host"]).toBe("preview.monk.monster");
   expect(response.headers()["x-monk-proxy-route"]).toBe("spa");
   expect(response.headers()["x-monk-proxy-cf-ip"]).toBe("present");
-  expect(await response.text()).not.toMatch(/Vercel Security Checkpoint|Failed to verify your browser|Code\\s*21/i);
+  const html = await response.text();
+  expect(html).not.toMatch(/Vercel Security Checkpoint|Failed to verify your browser|Code\s*21/i);
   expect(response.headers()["content-type"]).toContain("text/html");
-  expect(await response.text()).toContain('id="root"');
+  expect(html).toContain('id="root"');
 });
 
 test("Vercel SPA deep links survive the Cloudflare proxy", async ({ request }) => {
@@ -21,8 +22,9 @@ test("Vercel SPA deep links survive the Cloudflare proxy", async ({ request }) =
     expect(response.headers()["x-monk-proxy-upstream"], path).toBe("vercel-origin");
     expect(response.headers()["x-monk-proxy-route"], path).toBe("spa");
     expect(response.headers()["x-monk-proxy-cf-ip"], path).toBe("present");
-    expect(await response.text(), path).not.toMatch(/Vercel Security Checkpoint|Failed to verify your browser|Code\\s*21/i);
-    expect(await response.text(), path).toContain('id="root"');
+    const html = await response.text();
+    expect(html, path).not.toMatch(/Vercel Security Checkpoint|Failed to verify your browser|Code\s*21/i);
+    expect(html, path).toContain('id="root"');
   }
 });
 
