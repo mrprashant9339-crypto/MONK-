@@ -343,3 +343,12 @@ test("Phase 6 Business Operations UI is wired to the authenticated Business work
   assert.ok(salesUi.includes("create_lead"));
   assert.ok(migration.toLowerCase().includes("row level security"));
 });
+
+
+test("education invitation Edge Function restricts CORS and bounds request bodies", async () => {
+  const invitation = await readFile(join(root, "supabase", "functions", "send-education-invitation", "index.ts"), "utf8");
+  assert.ok(invitation.includes("const allowedOrigins = new Set(["));
+  assert.ok(invitation.includes("if (origin && !allowedOrigins.has(origin))"));
+  assert.ok(invitation.includes("new TextEncoder().encode(rawBody).byteLength > 12000"));
+  assert.ok(!invitation.includes('"Access-Control-Allow-Origin": "*"'));
+});
