@@ -30,7 +30,7 @@ const ALLOWED_TYPES = new Set([
   "application/vnd.ms-excel",
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 ]);
-const CATEGORIES = ["general", "contracts", "finance", "identity", "operations", "people", "sales", "tax", "other"];
+const CATEGORIES = ["general", "contract", "invoice", "receipt", "identity", "compliance", "other"];
 
 function formatBytes(value: number) {
   if (!Number.isFinite(value) || value < 0) return "—";
