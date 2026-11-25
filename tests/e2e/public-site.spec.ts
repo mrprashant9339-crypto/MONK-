@@ -107,7 +107,7 @@ test("contact page exposes email support without publishing a personal phone num
   await page.goto("/contact");
   await expect(page.getByRole("heading", { name: /a clear path to the right help/i })).toBeVisible();
   await expect(page.getByRole("link", { name: /WhatsApp support/i })).toHaveCount(0);
-  await expect(page.getByRole("complementary").getByRole("link", { name: /admin@monk.monster/i })).toBeVisible();
+  await expect(page.getByRole("complementary").getByRole("link", { name: /support@monk.monster/i })).toBeVisible();
   await expect(page.locator("body")).not.toContainText(/WhatsApp|92884\s*35641|919288435641/i);
 });
 
@@ -334,6 +334,15 @@ test("India-wide directory renders source-aware filters and an honest empty stat
 });
 
 
+test("Data Rights page collects and submits privacy requests through the secure support workflow", async ({ page }) => {
+  await page.goto("/data-rights");
+  await expect(page.getByRole("heading", { name: /submit a privacy-aware request/i })).toBeVisible();
+  await expect(page.getByLabel(/Your name/i)).toBeVisible();
+  await expect(page.getByLabel(/Account email/i)).toBeVisible();
+  await expect(page.getByLabel(/Request details/i)).toBeVisible();
+  await expect(page.getByRole("button", { name: /submit privacy request/i })).toBeDisabled();
+  await expect(page.getByText(/server-side support queue/i)).toBeVisible();
+});
 test("Campus directory provides India-wide filters without inventing institution records", async ({ page }) => {
   await page.goto("/campus", { waitUntil: "domcontentloaded" });
   const directory = page.locator("#college-directory");

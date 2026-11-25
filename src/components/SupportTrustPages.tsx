@@ -11,7 +11,6 @@ import TurnstileWidget from "./TurnstileWidget";
 
 type Ticket = { id: string; subject: string; category: string; message: string; email: string; createdAt: string; status: "Submitted"; };
 const TICKET_KEY = "monk-support-tickets-v1";
-const REQUEST_KEY = "monk-privacy-requests-v1";
 const readList = <T,>(key: string): T[] => {
   try { const value = JSON.parse(localStorage.getItem(key) || "[]"); return Array.isArray(value) ? value as T[] : []; }
   catch { return []; }
@@ -19,7 +18,7 @@ const readList = <T,>(key: string): T[] => {
 const storeList = <T,>(key: string, value: T[]) => {
   try { localStorage.setItem(key, JSON.stringify(value)); return true; } catch { return false; }
 };
-const emailAddress = "admin@monk.monster";
+const emailAddress = "support@monk.monster";
 
 function Shell({ eyebrow, title, intro, children }: { eyebrow: string; title: string; intro: string; children: ReactNode }) {
   useEffect(() => { document.title = `${title} | MONK`; const meta = document.querySelector('meta[name="description"]'); if (meta) meta.setAttribute("content", intro.slice(0, 155)); }, [title, intro]);
@@ -60,7 +59,7 @@ function ThankYouPage() {
       <span className="st-icon"><CheckCircle2/></span>
       <h2>{context ? (signup ? "Next step: verify your email" : "Support request received") : "No recent submission found"}</h2>
       {context?.reference && <p>Support reference: <strong>{context.reference}</strong></p>}
-      {context?.kind === "support" && <p>{context.notification === "sent" ? "A support notification email was sent." : context.notification === "failed" ? "Your request is stored, but the notification email failed. Contact admin@monk.monster if the matter is urgent." : "Your request is stored. Email alerts are not configured; contact admin@monk.monster if the matter is urgent."}</p>}
+      {context?.kind === "support" && <p>{context.notification === "sent" ? "A support notification email was sent." : context.notification === "failed" ? "Your request is stored, but the notification email failed. Contact support@monk.monster if the matter is urgent." : "Your request is stored. Email alerts are not configured; contact support@monk.monster if the matter is urgent."}</p>}
       {!context && <p>This page is only a confirmation destination. To send a request, use the contact form.</p>}
       <div className="st-thank-you-actions">
         <button className="st-primary" type="button" onClick={() => navigate(signup ? "/login" : "/")}>{signup ? "Continue to sign in" : "Back to MONK"} <ArrowRight size={16}/></button>
@@ -85,7 +84,7 @@ function ContactPage() {
       if(!data?.ok || !data?.ticketRef) throw new Error(data?.error || "Your request could not be submitted.");
       try { sessionStorage.setItem("monk:thank-you-context", JSON.stringify({ kind: "support", reference: data.ticketRef, notification: data.notification || "not_configured" })); } catch {}
       navigate("/thank-you");
-    } catch(error) { setSubmitError(error instanceof Error ? error.message : "Unable to submit your request. Please contact admin@monk.monster."); }
+    } catch(error) { setSubmitError(error instanceof Error ? error.message : "Unable to submit your request. Please contact support@monk.monster."); }
     finally { setCaptchaToken(""); setCaptchaResetKey(value=>value+1); setSending(false); }
   }
   return <Shell eyebrow="CONTACT SUPPORT" title="A clear path to the right help." intro="Submit a support request directly to MONK. A reference number is shown after the server confirms that your request has been stored.">
@@ -101,7 +100,7 @@ function ContactPage() {
       <TurnstileWidget resetKey={captchaResetKey} onToken={setCaptchaToken} onError={()=>setSubmitError("Security verification could not load. Refresh the page and try again.")}/>
       <button className="st-primary" type="submit" disabled={!valid||!captchaToken||sending}>{sending?<><RefreshCw size={16} className="st-spin"/> Submitting securely…</>:<><Mail size={16}/> Submit support request <ArrowUpRight size={16}/></>}</button>
     </form><aside className="st-card st-side-card"><span className="st-icon"><LifeBuoy/></span><h2>Other support routes</h2>
-      <Link to="/support/tickets"><ClipboardList/> Support tickets <ArrowRight/></Link><a href="" target="_blank" rel="noreferrer"><MessageSquare/> Email support <ArrowUpRight/></a><Link to="/security-center"><ShieldCheck/> Security center <ArrowRight/></Link><Link to="/privacy-center"><LockKeyhole/> Privacy center <ArrowRight/></Link><Link to="/status"><Activity/> Service status <ArrowRight/></Link>
+      <Link to="/support/tickets"><ClipboardList/> Support tickets <ArrowRight/></Link><a href={`mailto:${emailAddress}`}><MessageSquare/> Email support <ArrowUpRight/></a><Link to="/security-center"><ShieldCheck/> Security center <ArrowRight/></Link><Link to="/privacy-center"><LockKeyhole/> Privacy center <ArrowRight/></Link><Link to="/status"><Activity/> Service status <ArrowRight/></Link>
       <div className="st-divider"/><p className="st-small">Prefer email? Use the published support address.</p><div className="st-email"><a href={`mailto:${emailAddress}`}>{emailAddress}</a><button type="button" aria-label="Copy support email" onClick={()=>{void navigator.clipboard?.writeText(emailAddress);setCopied(true);}}><Copy size={15}/></button></div>{copied&&<small className="st-success">Email address copied when clipboard permission is available.</small>}
     </aside></div>
   </Shell>;
@@ -202,11 +201,47 @@ function CookiePreferencesPage() {
 }
 
 function DataRequestPage() {
-  const [type,setType]=useState("Access my personal information");const [email,setEmail]=useState("");const [details,setDetails]=useState("");const [saved,setSaved]=useState(false);
-  const valid=/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)&&details.trim().length>=10;
-  function submit(e:FormEvent){e.preventDefault();if(!valid)return;const entry={type,email,details,createdAt:new Date().toISOString(),status:"Draft — not submitted"};const next=[entry,...readList<any>(REQUEST_KEY)];if(storeList(REQUEST_KEY,next))setSaved(true);}
-  return <Shell eyebrow="DATA RIGHTS" title="Make a clear, privacy-aware request." intro="Prepare a request concerning personal information. This local form does not submit data to MONK; use the email action after reviewing the draft. Identity and authority may need to be verified before any request is actioned.">
-    <form className="st-card st-form st-request-form" onSubmit={submit}><label>Request type<select value={type} onChange={e=>{setType(e.target.value);setSaved(false);}}><option>Access my personal information</option><option>Correct inaccurate information</option><option>Delete personal information</option><option>Withdraw consent where applicable</option><option>Raise a privacy complaint</option><option>Ask a question about processing</option></select></label><label>Account email *<input type="email" required value={email} onChange={e=>{setEmail(e.target.value);setSaved(false);}} placeholder="The email associated with your account"/></label><label>Request details *<textarea required minLength={10} maxLength={3000} rows={6} value={details} onChange={e=>{setDetails(e.target.value);setSaved(false);}} placeholder="Describe the data or workspace involved. Do not attach identity documents or passwords here."/></label><div className="st-note"><ShieldCheck size={17}/> Do not send passwords, OTPs, full identity documents or another person's personal data.</div><button className="st-primary" disabled={!valid}><ClipboardList size={16}/> Save request draft</button>{saved&&<div className="st-success-panel">Draft saved in this browser only. It has not been submitted.</div>}<a className="st-secondary st-mail-link" href={`mailto:${emailAddress}?subject=${encodeURIComponent("MONK data rights request: "+type)}&body=${encodeURIComponent("Account email: "+email+"\n\n"+details)}`}><Mail size={16}/> Prepare email to support <ArrowUpRight size={15}/></a></form>
+  const navigate = useNavigate();
+  const [type,setType]=useState("Access my personal information");
+  const [fullName,setFullName]=useState("");
+  const [email,setEmail]=useState("");
+  const [details,setDetails]=useState("");
+  const [captchaToken,setCaptchaToken]=useState("");
+  const [captchaResetKey,setCaptchaResetKey]=useState(0);
+  const [sending,setSending]=useState(false);
+  const [error,setError]=useState("");
+  const valid=fullName.trim().length>=2 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && details.trim().length>=10;
+  async function submit(e:FormEvent){
+    e.preventDefault();
+    if(!valid||!captchaToken||sending)return;
+    setSending(true);setError("");
+    try {
+      const subject="Data rights request: "+type;
+      const {data,error:invokeError}=await supabase.functions.invoke("support-ticket-intake",{body:{fullName,email,category:"Privacy request",subject,message:details,website:"",captchaToken}});
+      if(invokeError)throw invokeError;
+      if(!data?.ok||!data?.ticketRef)throw new Error(data?.error||"Your privacy request could not be submitted.");
+      const ticket:Ticket={id:data.ticketRef,subject,category:"Privacy request",message:details.trim(),email:email.trim(),createdAt:data.createdAt||new Date().toISOString(),status:"Submitted"};
+      storeList(TICKET_KEY,[ticket,...readList<Ticket>(TICKET_KEY)]);
+      try{sessionStorage.setItem("monk:thank-you-context",JSON.stringify({kind:"support",reference:data.ticketRef,notification:data.notification||"not_configured"}));}catch{}
+      navigate("/thank-you");
+    } catch(cause) {
+      setError(cause instanceof Error?cause.message:"Unable to submit your privacy request. Please try again.");
+    } finally {
+      setCaptchaToken("");setCaptchaResetKey(value=>value+1);setSending(false);
+    }
+  }
+  return <Shell eyebrow="DATA RIGHTS" title="Submit a privacy-aware request." intro="Submit an access, correction, deletion or privacy concern to MONK. We will issue a reference after the server confirms that your request has been stored. Identity and authority may need to be verified before action.">
+    {error&&<div className="st-alert" role="alert">{error}</div>}
+    <form className="st-card st-form st-request-form" onSubmit={submit}>
+      <label>Request type<select value={type} onChange={e=>setType(e.target.value)}><option>Access my personal information</option><option>Correct inaccurate information</option><option>Delete personal information</option><option>Withdraw consent where applicable</option><option>Raise a privacy complaint</option><option>Ask a question about processing</option></select></label>
+      <label>Your name *<input required minLength={2} maxLength={80} autoComplete="name" value={fullName} onChange={e=>setFullName(e.target.value)} placeholder="Full name"/></label>
+      <label>Account email *<input type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="The email associated with your account"/></label>
+      <label>Request details *<textarea required minLength={10} maxLength={3000} rows={6} value={details} onChange={e=>setDetails(e.target.value)} placeholder="Describe the data or workspace involved. Do not attach identity documents or passwords here."/></label>
+      <div className="st-note"><ShieldCheck size={17}/> Do not send passwords, OTPs, full identity documents or third-party personal data.</div>
+      <TurnstileWidget resetKey={captchaResetKey} onToken={setCaptchaToken} onError={()=>setError("Security verification could not load. Refresh the page and try again.")}/>
+      <button className="st-primary" disabled={!valid||!captchaToken||sending}>{sending?<><RefreshCw size={16} className="st-spin"/> Submitting securely…</>:<><ClipboardList size={16}/> Submit privacy request</>}</button>
+      <p className="st-footnote">Your request is stored in the MONK server-side support queue. Keep the reference number shown after successful submission.</p>
+    </form>
   </Shell>;
 }
 

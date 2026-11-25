@@ -151,6 +151,16 @@ function isApplicationRoute(pathname) {
   return PUBLIC_ROUTES.has(path) || /^\/support\/tickets\/[^/]+$/.test(path);
 }
 
+function isStaticAssetPath(pathname) {
+  return pathname.startsWith("/assets/") || pathname.startsWith("/brand/") ||
+    ["/favicon.svg", "/manifest.webmanifest", "/robots.txt", "/sitemap.xml", "/404.html", "/offline.html"].includes(pathname) ||
+    /\.(?:css|js|mjs|map|svg|png|jpe?g|webp|gif|ico|woff2?|ttf|otf|webmanifest|txt|xml)$/i.test(pathname);
+}
+
+function notFoundResponse(method = "GET") {
+  const body = method === "HEAD" ? null : '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>404 — MONK</title></head><body><main><h1>ERROR 404</h1><p>This MONK page could not be found.</p><a href="/">Return to MONK</a></main></body></html>';
+  return new Response(body, { status: 404, headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "x-content-type-options": "nosniff" } });
+}
 function escapeHtml(value) {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
@@ -279,16 +289,33 @@ export default {
       return Response.redirect(new URL(url.pathname + url.search, "https://monk.monster"), 308);
     }
 
-    if (request.method === "GET" || request.method === "HEAD") {
+    if (request.method !== "GET" && request.method !== "HEAD") {
+      return new Response("Method not allowed.", { status: 405, headers: { "allow": "GET, HEAD", "cache-control": "no-store" } });
+    }
+
+    if (isApplicationRoute(path)) {
       try {
         const response = await fetchVercelOrigin(request, env, url, path);
         if (response) return response;
       } catch {
         // The existing Cloudflare asset bundle remains the safe rollback path.
       }
+      return fetchAssetsFallback(request, env, url, path);
     }
 
-    return fetchAssetsFallback(request, env, url, path);
+    if (isStaticAssetPath(path)) {
+      try {
+        const response = await fetchVercelOrigin(request, env, url, path);
+        if (response && (!(response.headers.get("content-type") || "").includes("text/html") || ["/offline.html", "/404.html"].includes(path))) return response;
+      } catch {
+        // Try the already-deployed static asset bundle.
+      }
+      const asset = await env.ASSETS.fetch(request);
+      if (asset.status === 404 || ((asset.headers.get("content-type") || "").includes("text/html") && !["/offline.html", "/404.html"].includes(path))) return notFoundResponse(request.method);
+      return asset;
+    }
+
+    return notFoundResponse(request.method);
   }
 };
-export { isApplicationRoute, PUBLIC_ROUTES, PAGE_METADATA };
+export { isApplicationRoute, isStaticAssetPath, PUBLIC_ROUTES, PAGE_METADATA };

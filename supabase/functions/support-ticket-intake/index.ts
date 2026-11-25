@@ -148,8 +148,8 @@ Deno.serve(async (req: Request) => {
 
     let notificationStatus = "not_configured";
     const resendKey = Deno.env.get("RESEND_API_KEY");
-    const fromEmail = Deno.env.get("RESEND_FROM_EMAIL");
-    const inboxEmail = Deno.env.get("SUPPORT_INBOX_EMAIL") || "admin@monk.monster";
+    const fromEmail = Deno.env.get("MONK_EMAIL_FROM") || Deno.env.get("RESEND_FROM_EMAIL");
+    const inboxEmail = Deno.env.get("MONK_SUPPORT_EMAIL") || Deno.env.get("SUPPORT_INBOX_EMAIL") || "admin@monk.monster";
     if (resendKey && fromEmail) {
       try {
         const emailResponse = await fetch("https://api.resend.com/emails", {

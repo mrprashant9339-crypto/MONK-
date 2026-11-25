@@ -129,3 +129,6 @@ After the correct project is linked to `mrprashant9339-crypto/MONK-`:
 - Verify the response marker `x-monk-cf-ip-forwarded: yes`.
 - If Vercel returns a Security Checkpoint page (for example, Code 21), the Worker must not expose it; it falls back to the Cloudflare Assets bundle and marks `x-monk-origin-fallback: assets`.
 - Production acceptance requires `/` and `/signup` to return the MONK app shell, never a Vercel checkpoint. Either Vercel origin or the safe Assets fallback is acceptable until Verified Proxy is consistently recognized.
+
+## 10. Ten-phase production completion
+See `docs/PRODUCTION-COMPLETION-PLAN.md` for the implementation matrix, verified provider facts and release gates. Do not mark a phase complete solely because its UI or migration exists. The Data Rights form submits through `support-ticket-intake` with Turnstile; support notifications use `MONK_EMAIL_FROM` (legacy `RESEND_FROM_EMAIL` remains supported) and `MONK_SUPPORT_EMAIL` (legacy `SUPPORT_INBOX_EMAIL` remains supported), defaulting to the provisioned `admin@monk.monster` mailbox until the public support alias exists. Business documents use the private `business-private` bucket and `business_documents` metadata table; verify cross-tenant denial, signed URL expiry and authorized deletion with controlled test tenants.
