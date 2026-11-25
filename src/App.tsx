@@ -106,6 +106,13 @@ export default function App() {
   }, [session, loadWorkspace]);
 
   useEffect(() => {
+    const profileVertical = session?.user.user_metadata?.vertical;
+    if (!organizationId && (profileVertical === "education" || profileVertical === "business")) {
+      setOrganizationVertical(profileVertical);
+    }
+  }, [session, organizationId]);
+
+  useEffect(() => {
     if (organizationVertical !== "education" && active === "Education") setActive("Overview");
   }, [organizationVertical, active]);
 
