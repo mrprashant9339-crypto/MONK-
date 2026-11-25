@@ -328,3 +328,20 @@ test("India-wide directory renders live filters and honest empty state", async (
   await expect(page.getByText("Official directory records are being prepared")).toBeVisible();
   await expect(page.getByText(/46 Government polytechnic institutes|Directory preview/i)).toHaveCount(0);
 });
+
+
+test("Campus directory provides India-wide filters without inventing institution records", async ({ page }) => {
+  await page.goto("/campus", { waitUntil: "domcontentloaded" });
+  const directory = page.locator("#college-directory");
+  await expect(directory).toBeVisible();
+  await expect(directory.getByRole("heading", { name: /explore institutions/i })).toBeVisible();
+  await expect(directory.getByLabel("Category").locator("option")).toContainText(["All categories", "Engineering & Technology", "Medical Colleges"]);
+  await expect(directory.getByLabel("State / Union Territory").locator("option")).toContainText(["All India", "Andaman and Nicobar Islands", "Bihar"]);
+  await expect(directory.getByLabel("Ownership").locator("option")).toContainText(["All ownership types", "Central Government", "Private"]);
+  await directory.getByLabel("Category").selectOption("engineering");
+  await directory.getByLabel("State / Union Territory").selectOption("BR");
+  await directory.getByLabel("Ownership").selectOption("private");
+  await directory.getByRole("searchbox", { name: "Search institutions" }).fill("IIT");
+  await directory.getByRole("searchbox", { name: "Search institutions" }).press("Enter");
+  await expect(directory.locator(".national-directory-summary")).toContainText(/published institution record/i);
+});
