@@ -275,3 +275,19 @@ test("directory ingestion is service-role-only, bounded, idempotent and does not
   assert.doesNotMatch(migration, /search_document\s*=/);
   assert.doesNotMatch(migration, /search_document,\s*primary_source_id/);
 });
+
+test("national directory uses live published rows and keeps unlicensed sources disabled", async () => {
+  const directory = await readFile(join(root, "src", "components", "InstitutionDirectory.tsx"), "utf8");
+  assert.match(directory, /\.eq\("published", true\)/);
+  assert.match(directory, /Official directory records are being prepared/);
+  assert.match(directory, /Course recognition and intake are checked separately/);
+  const importer = await readFile(join(root, "supabase", "functions", "directory-import", "index.ts"), "utf8");
+  assert.match(importer, /platform_role/);
+  assert.match(importer, /action === "sync_aicte"/);
+  assert.match(importer, /AICTE bulk import is disabled until its data-reuse terms are approved/);
+  const policy = await readFile(join(root, "supabase", "migrations", "20261125050400_directory_source_reuse_and_status_policy.sql"), "utf8");
+  assert.match(policy, /aishe_aikosh_universities/);
+  assert.match(policy, /import_enabled = false/);
+  assert.match(policy, /ogd_aishe_colleges_2012_2013/);
+  assert.match(policy, /nmc_crmi_mbbs_2026_27/);
+});
