@@ -26,6 +26,7 @@ const publicRoutes = [
   "/faq",
   "/campus",
   "/business",
+  "/directory",
   "/privacy",
   "/terms",
   "/cookies",
@@ -310,4 +311,20 @@ test("Campus signup exposes institution selection and blocks incomplete Google p
   await page.getByRole("button", { name: /Continue with Google/i }).click();
   await expect(page.getByRole("alert")).toContainText(/Enter your full name before continuing with Google/i);
   await expect(page).toHaveURL(/\/login\?mode=signup&vertical=education/);
+});
+
+test("India-wide directory renders live filters and honest empty state", async ({ page }) => {
+  await page.route("**/rest/v1/monk_directory_*", route => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    headers: { "content-range": "*/0" },
+    body: "[]"
+  }));
+  await page.goto("/directory");
+  await expect(page.getByRole("heading", { name: /find the right institution/i })).toBeVisible();
+  await expect(page.getByLabel("Search institutions")).toBeVisible();
+  await expect(page.getByLabel("Filter by state")).toBeVisible();
+  await expect(page.getByLabel("Filter by category")).toBeVisible();
+  await expect(page.getByText("Official directory records are being prepared")).toBeVisible();
+  await expect(page.getByText(/46 Government polytechnic institutes|Directory preview/i)).toHaveCount(0);
 });
