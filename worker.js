@@ -1,5 +1,5 @@
 const PUBLIC_ROUTES = new Set([
-  "/", "/login", "/forgot-password", "/reset-password", "/auth/callback", "/about", "/documentation", "/updates", "/faq", "/campus", "/business",
+  "/", "/login", "/forgot-password", "/reset-password", "/auth/callback", "/about", "/documentation", "/updates", "/faq", "/campus", "/business", "/directory",
   "/contact", "/support/tickets", "/status", "/incidents", "/security-center",
   "/security/vulnerability-disclosure", "/privacy-center", "/cookies/preferences",
   "/data-rights", "/offline", "/maintenance", "/error", "/privacy", "/terms",
@@ -34,6 +34,10 @@ const PAGE_METADATA = {
   "/business": {
     "title": "MONK Business — Business Operations Workspace",
     "description": "Explore customer, inventory, orders and team workflows in the MONK Business workspace."
+  },
+  "/directory": {
+    "title": "India Institution Directory — MONK",
+    "description": "Search published Indian universities, colleges and specialist institutions with source-aware verification information."
   },
   "/contact": {
     "title": "Contact MONK — Support & Enquiries",
