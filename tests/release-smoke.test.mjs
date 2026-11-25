@@ -246,7 +246,7 @@ test("India directory CSV importer normalizes official AISHE university records 
       "AISHE Code,Name of Institution,State,District,Year of Establishment,Location",
       'U-0003,"Acharya Nagarjuna University, Guntur",Andhra Pradesh,Guntur,1976,Rural',
       'BAD-1,"Unmapped State College",Unknown State,Unknown,2001,Urban'
-    ].join("\\n"));
+    ].join("\n"));
     const run = spawnSync(process.execPath, [
       join(root, "scripts", "import-india-directory.mjs"),
       "--input", csv,
