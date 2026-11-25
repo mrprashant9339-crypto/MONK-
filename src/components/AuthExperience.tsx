@@ -99,7 +99,11 @@ export default function AuthExperience() {
         }
         if (alive) {
           const invite = new URLSearchParams(window.location.search).get("invite");
-          navigate(invite ? "/#invite=" + encodeURIComponent(invite) : "/", { replace: true });
+          const callbackVertical = consent?.vertical ?? (currentMetadata.vertical === "education" ? "education" : "business");
+          const destination = invite
+            ? "/?vertical=" + callbackVertical + "#invite=" + encodeURIComponent(invite)
+            : "/?vertical=" + callbackVertical;
+          navigate(destination, { replace: true });
         }
       } catch (caught) {
         if (alive) setError(caught instanceof Error ? caught.message : "Google account setup could not be completed.");
