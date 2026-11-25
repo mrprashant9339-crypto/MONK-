@@ -119,7 +119,7 @@ export default function AuthExperience() {
     let alive = true;
     void (async () => {
       try {
-        const raw = sessionStorage.getItem("monk:oauth-consent");
+        const raw = localStorage.getItem("monk:oauth-consent");
         const { data: currentUserData, error: currentUserError } = await supabase.auth.getUser();
         if (currentUserError) throw currentUserError;
         const currentMetadata = currentUserData.user?.user_metadata ?? {};
@@ -143,7 +143,7 @@ export default function AuthExperience() {
             p_terms_version: consent.terms, p_privacy_version: consent.privacy
           });
           if (consentError) throw consentError;
-          if (raw) sessionStorage.removeItem("monk:oauth-consent");
+          if (raw) localStorage.removeItem("monk:oauth-consent");
         }
         if (alive) {
           const invite = new URLSearchParams(window.location.search).get("invite");
@@ -264,7 +264,7 @@ export default function AuthExperience() {
     setBusy(true); setError("");
     try {
       if (mode === "signup" || mode === "login") {
-        try { sessionStorage.setItem("monk:oauth-consent", JSON.stringify({ terms: TERMS_VERSION, privacy: PRIVACY_VERSION, vertical, role, institutionId: institutionId || null })); } catch {}
+        try { localStorage.setItem("monk:oauth-consent", JSON.stringify({ terms: TERMS_VERSION, privacy: PRIVACY_VERSION, vertical, role, institutionId: institutionId || null })); } catch {}
       }
       const inviteToken = new URLSearchParams(window.location.hash.replace(/^#/, "")).get("invite");
       const callbackUrl = new URL(window.location.origin + "/auth/callback");
