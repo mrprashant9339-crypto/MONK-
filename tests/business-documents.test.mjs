@@ -19,7 +19,9 @@ test("Business document panel uses private tenant-scoped storage and signed down
 test("Business workspace exposes Documents only to users with read permission", async () => {
   const workspace = await readFile(join(root, "src/components/BusinessOperationsLive.tsx"), "utf8");
   assert.match(workspace, /"Documents"/);
-  assert.match(workspace, /documents\.document\.read/);\n  assert.match(workspace, /documents\.document\.upload/);\n  assert.match(workspace, /documents\.document\.approve/);
+  assert.match(workspace, /documents\.document\.read/);
+  assert.match(workspace, /documents\.document\.upload/);
+  assert.match(workspace, /documents\.document\.approve/);
   assert.match(workspace, /<BusinessDocumentsPanel/);
 });
 
