@@ -1,0 +1,34 @@
+.notification-center{position:relative}
+.notification-trigger{position:relative}
+.notification-count{position:absolute;right:-5px;top:-5px;min-width:17px;height:17px;padding:0 4px;display:grid;place-items:center;border-radius:20px;background:#c8f169;color:#182015;font-size:9px;font-weight:800;border:2px solid #101611}
+.notification-popover{position:absolute;z-index:60;right:0;top:calc(100% + 13px);width:min(390px,calc(100vw - 28px));max-height:min(620px,calc(100vh - 90px));display:flex;flex-direction:column;overflow:hidden;border:1px solid rgba(190,211,177,.18);border-radius:16px;background:linear-gradient(155deg,#19221a,#101611);box-shadow:0 24px 70px rgba(0,0,0,.48);color:#e8f0e3}
+.notification-head{display:flex;justify-content:space-between;align-items:flex-start;padding:19px 19px 13px;border-bottom:1px solid rgba(190,211,177,.1)}
+.notification-kicker{font-size:9px;letter-spacing:.16em;color:#a8c77c;font-weight:700}
+.notification-head h2{font-size:19px;letter-spacing:-.04em;margin:5px 0 2px;color:#f0f5ec}
+.notification-head p{font-size:11px;color:#879584;margin:0}
+.notification-close{border:0;background:transparent;color:#91a08d;font-size:23px;line-height:1;cursor:pointer}
+.notification-mark-all{align-self:flex-end;display:flex;align-items:center;gap:6px;margin:10px 16px 4px;border:0;background:transparent;color:#c8f169;font-size:11px;font-weight:650;cursor:pointer}
+.notification-mark-all:disabled,.notification-item-actions button:disabled{opacity:.5;cursor:wait}
+.notification-error{margin:8px 15px;padding:9px 10px;border:1px solid rgba(255,130,110,.22);border-radius:8px;background:rgba(255,90,70,.07);color:#ffb6a8;font-size:11px}
+.notification-list{overflow:auto;overscroll-behavior:contain;min-height:90px}
+.notification-state,.notification-empty{display:flex;align-items:center;justify-content:center;gap:8px;padding:32px 18px;color:#9aa895;font-size:12px}
+.notification-empty{flex-direction:column;text-align:center;gap:6px}
+.notification-empty>span{display:grid;place-items:center;width:42px;height:42px;border-radius:13px;background:rgba(200,241,105,.08);color:#c8f169;margin-bottom:5px}
+.notification-empty b{font-size:13px;color:#e3ecdd}
+.notification-empty p{margin:0;color:#879584;font-size:11px}
+.notification-item{display:flex;gap:11px;padding:13px 17px;border-bottom:1px solid rgba(190,211,177,.07);transition:background .16s ease}
+.notification-item:hover{background:rgba(255,255,255,.025)}
+.notification-item.is-unread{background:rgba(200,241,105,.035)}
+.notification-dot{width:7px;height:7px;flex:none;border-radius:50%;margin-top:7px;background:#c8f169;box-shadow:0 0 0 3px rgba(200,241,105,.09)}
+.is-read .notification-dot{background:#566452;box-shadow:none}
+.notification-copy{min-width:0;flex:1}
+.notification-item-top{display:flex;align-items:center;justify-content:space-between;gap:10px;color:#a9c77b;font-size:9px;text-transform:uppercase;letter-spacing:.09em}
+.notification-item-top time{display:flex;align-items:center;gap:4px;color:#778575;text-transform:none;letter-spacing:0;white-space:nowrap}
+.notification-copy h3{margin:6px 0 3px;font-size:12px;line-height:1.4;font-weight:700;color:#e6eee1}
+.notification-copy p{margin:0;color:#9aa695;font-size:11px;line-height:1.5;overflow-wrap:anywhere}
+.notification-item-actions{display:flex;align-items:center;gap:12px;margin-top:8px}
+.notification-item-actions button{padding:0;border:0;background:transparent;color:#c8f169;font-size:10px;font-weight:650;cursor:pointer}
+.notification-item-actions span{display:flex;align-items:center;gap:4px;color:#748272;font-size:10px;text-transform:capitalize}
+.notification-footer{display:flex;justify-content:space-between;align-items:center;padding:11px 15px;border-top:1px solid rgba(190,211,177,.1);color:#71806f;font-size:9px}
+.notification-footer button{display:flex;align-items:center;gap:5px;border:0;background:transparent;color:#b7c8a9;font-size:10px;cursor:pointer}
+@media(max-width:520px){.notification-popover{position:fixed;right:12px;top:65px;width:calc(100vw - 24px);max-height:calc(100vh - 82px)}}

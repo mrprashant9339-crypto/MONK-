@@ -1,5 +1,5 @@
 const PUBLIC_ROUTES = new Set([
-  "/", "/login", "/about", "/documentation", "/updates", "/faq", "/campus", "/business",
+  "/", "/login", "/forgot-password", "/reset-password", "/auth/callback", "/about", "/documentation", "/updates", "/faq", "/campus", "/business", "/directory",
   "/contact", "/support/tickets", "/status", "/incidents", "/security-center",
   "/security/vulnerability-disclosure", "/privacy-center", "/cookies/preferences",
   "/data-rights", "/offline", "/maintenance", "/error", "/privacy", "/terms",
@@ -34,6 +34,10 @@ const PAGE_METADATA = {
   "/business": {
     "title": "MONK Business — Business Operations Workspace",
     "description": "Explore customer, inventory, orders and team workflows in the MONK Business workspace."
+  },
+  "/directory": {
+    "title": "India Institution Directory — MONK",
+    "description": "Search published Indian universities, colleges and specialist institutions with source-aware verification information."
   },
   "/contact": {
     "title": "Contact MONK — Support & Enquiries",
@@ -118,6 +122,18 @@ const PAGE_METADATA = {
   "/login": {
     "title": "Log in or Sign up — MONK",
     "description": "Sign in or create a MONK workspace account for your organization."
+  },
+  "/forgot-password": {
+    "title": "Recover Account — MONK",
+    "description": "Request a secure password reset for your MONK account."
+  },
+  "/reset-password": {
+    "title": "Set New Password — MONK",
+    "description": "Set a new password for your MONK account."
+  },
+  "/auth/callback": {
+    "title": "Secure Sign-in — MONK",
+    "description": "Complete your secure MONK account sign-in."
   }
 };
 
@@ -149,7 +165,7 @@ function withRouteMetadata(response, path) {
   const title = escapeHtml(metadata.title);
   const description = escapeHtml(metadata.description);
   const canonical = "https://monk.monster" + (path === "/" ? "/" : path);
-  const noindex = ["/login", "/thank-you", "/support/tickets", "/privacy-center", "/cookies/preferences", "/status", "/offline", "/maintenance", "/error"].includes(path) || /^\/support\/tickets\//.test(path);
+  const noindex = ["/login", "/signup", "/forgot-password", "/reset-password", "/auth/callback", "/thank-you", "/support/tickets", "/privacy-center", "/cookies/preferences", "/status", "/offline", "/maintenance", "/error"].includes(path) || /^\/support\/tickets\//.test(path);
   return response.text().then(html => {
     const patched = html
       .replace(/<title>[\s\S]*?<\/title>/i, "<title>" + title + "</title>")

@@ -1,5 +1,23 @@
 import { expect, test } from "@playwright/test";
 
+// Cloudflare Turnstile is an external anti-bot service. Browser E2E tests use a
+// deterministic client stub; server-side Siteverify is covered separately.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window, "turnstile", {
+      configurable: true,
+      value: {
+        render: (_container: HTMLElement, options: { callback: (token: string) => void }) => {
+          queueMicrotask(() => options.callback("playwright-turnstile-test-token"));
+          return "playwright-widget";
+        },
+        reset: () => undefined,
+        remove: () => undefined
+      }
+    });
+  });
+});
+
 const publicRoutes = [
   "/",
   "/about",
@@ -8,6 +26,7 @@ const publicRoutes = [
   "/faq",
   "/campus",
   "/business",
+  "/directory",
   "/privacy",
   "/terms",
   "/cookies",
@@ -22,7 +41,7 @@ const publicRoutes = [
 
 test("public routes render the application without a blank screen", async ({ page }) => {
   for (const route of publicRoutes) {
-    const response = await page.goto(route, { waitUntil: "networkidle" });
+    const response = await page.goto(route, { waitUntil: "domcontentloaded" });
     expect(response, `missing document response for ${route}`).not.toBeNull();
     expect(response!.status(), `unexpected HTTP status for ${route}`).toBe(200);
     await expect(page.locator("#root")).toBeVisible();
@@ -55,7 +74,7 @@ test("signup requires explicit terms and privacy acknowledgement", async ({ page
   await page.goto("/login?mode=signup");
   const checkbox = page.getByRole("checkbox");
   await expect(checkbox).toBeVisible();
-  const createAccount = page.getByRole("button", { name: /create account/i });
+  const createAccount = page.getByRole("button", { name: /create secure account/i });
   await expect(createAccount).toBeDisabled();
   await checkbox.check();
   await expect(createAccount).toBeEnabled();
@@ -209,8 +228,8 @@ test("homepage gives colleges and businesses distinct primary paths", async ({ p
 
 test("direct signup path opens the canonical account creation screen", async ({ page }) => {
   await page.goto("/signup");
-  await expect(page).toHaveURL(/\/login\?mode=signup$/);
-  await expect(page.getByRole("button", { name: /create account/i })).toBeVisible();
+  await expect(page).toHaveURL(/\/signup$/);
+  await expect(page.getByRole("button", { name: /create secure account/i })).toBeVisible();
   await expect(page.getByRole("checkbox")).toBeVisible();
 });
 
@@ -249,4 +268,63 @@ test("public header controls expose a visible keyboard focus indicator", async (
   expect(focusStyle).not.toBeNull();
   expect(focusStyle!.outlineStyle).not.toBe("none");
   expect(focusStyle!.outlineWidth).not.toBe("0px");
+});
+
+
+test("login, password recovery and password reset routes load the shared auth experience", async ({ page }) => {
+  for (const route of ["/login?vertical=education", "/forgot-password", "/reset-password", "/auth/callback?vertical=business"]) {
+    const response = await page.goto(route);
+    expect(response?.status()).toBe(200);
+    await expect(page.locator(".authx-card")).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  }
+  await page.goto("/forgot-password");
+  await expect(page.getByRole("button", { name: /send reset link/i })).toBeVisible();
+  await page.goto("/reset-password");
+  await expect(page.locator('.authx-form input[placeholder="At least 12 characters"]')).toBeVisible();
+  await expect(page.locator('.authx-form input[placeholder="Enter password again"]')).toBeVisible();
+});
+
+test("Campus and Business signup expose accessible role cards without granting authority", async ({ page }) => {
+  await page.goto("/login?mode=signup&vertical=education");
+  await expect(page.getByText("MONK Campus")).toBeVisible();
+  const campusRoles = page.getByRole("radiogroup", { name: "Campus account type" });
+  await expect(campusRoles.getByRole("radio", { name: /Student/i })).toHaveAttribute("aria-checked", "true");
+  await campusRoles.getByRole("radio", { name: /Teacher \/ Faculty/i }).click();
+  await expect(campusRoles.getByRole("radio", { name: /Teacher \/ Faculty/i })).toHaveAttribute("aria-checked", "true");
+  await expect(page.getByText(/does not grant permissions/i)).toBeVisible();
+  await page.goto("/login?mode=signup&vertical=business");
+  await expect(page.getByText("MONK Business")).toBeVisible();
+  const businessRoles = page.getByRole("radiogroup", { name: "Business workspace role" });
+  await expect(businessRoles.getByRole("radio", { name: /Business owner/i })).toHaveAttribute("aria-checked", "true");
+  await businessRoles.getByRole("radio", { name: /Manager/i }).click();
+  await expect(businessRoles.getByRole("radio", { name: /Manager/i })).toHaveAttribute("aria-checked", "true");
+  await expect(page.getByText(/permissions are granted by the organization owner/i)).toBeVisible();
+});
+
+test("Campus signup exposes institution selection and blocks incomplete Google profiles", async ({ page }) => {
+  await page.goto("/login?mode=signup&vertical=education");
+  await expect(page.getByText("MONK Campus")).toBeVisible();
+  await expect(page.getByRole("searchbox", { name: /college or institution/i })).toBeVisible();
+  await expect(page.getByRole("radio", { name: /Student/i })).toBeVisible();
+  await page.getByRole("checkbox").check();
+  await page.getByRole("button", { name: /Continue with Google/i }).click();
+  await expect(page.getByRole("alert")).toContainText(/Enter your full name before continuing with Google/i);
+  await expect(page).toHaveURL(/\/login\?mode=signup&vertical=education/);
+});
+
+test("India-wide directory renders live filters and honest empty state", async ({ page }) => {
+  await page.route("**/rest/v1/monk_directory_*", route => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    headers: { "content-range": "*/0" },
+    body: "[]"
+  }));
+  await page.goto("/directory");
+  await expect(page.getByRole("heading", { name: /find the right institution/i })).toBeVisible();
+  await expect(page.getByLabel("Search institutions")).toBeVisible();
+  await expect(page.getByLabel("Filter by state")).toBeVisible();
+  await expect(page.getByLabel("Filter by category")).toBeVisible();
+  await expect(page.getByText("Official directory records are being prepared")).toBeVisible();
+  await expect(page.getByText(/46 Government polytechnic institutes|Directory preview/i)).toHaveCount(0);
 });

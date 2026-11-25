@@ -1,11 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import type { FormEvent, MouseEvent, ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import "../public-site.css";
+import InstitutionDirectory from "./InstitutionDirectory";
 import LegalPage, { CookieNotice } from "./LegalPages";
 import SupportTrustPages, { isSupportTrustRoute } from "./SupportTrustPages";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ArrowRight, ArrowUpRight, GraduationCap, Store, Users, BookOpen, ShieldCheck, BarChart3, CalendarDays, ClipboardList, Package, Receipt, Menu, X, CheckCircle2, MapPin, Search, Layers3, Workflow, ChevronRight, Mail, Github, Instagram, Linkedin, Youtube } from "lucide-react";
+import { ArrowRight, ArrowUpRight, GraduationCap, Store, Users, BookOpen, ShieldCheck, BarChart3, CalendarDays, ClipboardList, Package, Receipt, Menu, X, CheckCircle2, Search, Layers3, Workflow, ChevronRight, Mail, Github, Instagram, Linkedin, Youtube } from "lucide-react";
 
 type Portal = "campus" | "business";
 
@@ -17,6 +18,7 @@ const PUBLIC_PAGE_METADATA: Record<string, { title: string; description: string 
   "/updates": { title: "MONK Updates — Product Progress", description: "Read product updates and development notes for the MONK Campus and Business workspaces." },
   "/faq": { title: "MONK FAQ — Accounts, Workspaces & Access", description: "Find answers about MONK accounts, Campus and Business workspaces, previews, access and support." },
   "/campus": { title: "MONK Campus — College & Institution Workspaces", description: "Explore a connected workspace concept for colleges, polytechnics, students, faculty and institution teams." },
+  "/directory": { title: "India Institution Directory — MONK", description: "Search published Indian universities, colleges and specialist institutions with source-aware verification information." },
   "/business": { title: "MONK Business — Business Operations Workspace", description: "Explore customer, inventory, orders and team workflows in the MONK Business workspace." },
   "/contact": { title: "Contact MONK — Support & Enquiries", description: "Contact the MONK team about account access, product questions, technical issues or privacy requests." },
   "/support/tickets": { title: "Support Tickets — MONK", description: "Submit a support request to MONK or review the local reference details available in this browser." },
@@ -89,19 +91,6 @@ function updatePublicPageMetadata(pathname: string) {
   setMeta("twitter:image:alt", "MONK Campus and Business workspaces — share image placeholder");
 }
 
-const governmentColleges = [
-  { code: "117", name: "Government Polytechnic, Muzaffarpur", city: "Muzaffarpur", branches: "Civil · Mechanical · Electrical · CSE · Electronics", tag: "North Bihar" },
-  { code: "112", name: "Government Polytechnic, Bhagalpur", city: "Bhagalpur", branches: "Civil · Mechanical · Electrical · CSE · Textile", tag: "Eastern Bihar" },
-  { code: "115", name: "Government Polytechnic, Gaya", city: "Gaya", branches: "Civil · Mechanical · Electrical · CSE · Textile", tag: "South Bihar" },
-  { code: "118", name: "Government Polytechnic, Patna-7", city: "Patna", branches: "Civil · Mechanical · Electrical · CSE · Printing", tag: "Central Bihar" },
-  { code: "119", name: "Government Polytechnic, Purnea", city: "Purnea", branches: "Civil · Mechanical · Electrical · CSE · Electronics", tag: "North-East Bihar" },
-  { code: "120", name: "Government Polytechnic, Saharsa", city: "Saharsa", branches: "Civil · Mechanical · Electrical · CSE · Automobile", tag: "Kosi region" }
-];
-const privateColleges = [
-  { name: "Badiuzzama Khan Polytechnic Institute", city: "Pupri, Sitamarhi", branches: "Civil · Mechanical · Electrical · CSE", tag: "Private demo" },
-  { name: "Maulana Azad College of Engineering & Technology", city: "Neora, Patna", branches: "Civil · Electrical · CSE", tag: "Private demo" },
-  { name: "MPS Polytechnic College", city: "Muzaffarpur", branches: "SBTE directory listing", tag: "Private demo" }
-];
 const campusFeatures = [
   { icon: Users, title: "Student & faculty space", desc: "Student profiles, faculty directories, class groups and role-specific access." },
   { icon: BookOpen, title: "Academic operations", desc: "Courses, branches, semesters, notices, assignments and learning resources." },
@@ -330,18 +319,6 @@ function HomePage() {
     <section className="closing-cta"><Reveal><span className="section-kicker">YOUR WORK. YOUR WAY.</span><h2>Start with the work<br/>you want to improve.</h2><div><button className="button-dark" onClick={() => navigate("/campus")}>Explore Campus <ArrowUpRight size={16}/></button><button className="button-light" onClick={() => navigate("/business")}>Explore Business <ArrowUpRight size={16}/></button></div></Reveal></section>
   </main><Footer/></>;
 }
-function DirectoryDemo() {
-  const [type, setType] = useState<"government" | "private">("government");
-  const [query, setQuery] = useState("");
-  const items = type === "government" ? governmentColleges : privateColleges;
-  const filtered = useMemo(() => items.filter(c => (c.name + c.city + c.branches).toLowerCase().includes(query.toLowerCase())), [items, query]);
-  return <section className="directory-demo" id="college-directory"><div className="directory-head"><div><span className="section-kicker">BIHAR POLYTECHNIC EXPLORER</span><h2>Find your college.<br/><em>Know your options.</em></h2><p>Preview of the college discovery experience. Official affiliation and course details should be verified against SBTE Bihar.</p></div><div className="directory-count"><strong>46</strong><span>Government<br/>polytechnic institutes</span></div></div>
-    <div className="directory-toolbar"><div className="directory-tabs"><button className={type === "government" ? "selected" : ""} onClick={() => setType("government")}>Government</button><button className={type === "private" ? "selected" : ""} onClick={() => setType("private")}>Private</button></div><label className="directory-search"><Search size={16}/><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search college or city"/></label></div>
-    <div className="college-grid">{filtered.map((college: any, i) => <article className="college-card" key={college.code ?? college.name} style={{animationDelay:`${i * 70}ms`}}><div className="college-card-top"><span>{college.tag}</span><span>{college.code ? `SBTE · ${college.code}` : "Directory preview"}</span></div><h3>{college.name}</h3><p><MapPin size={13}/>{college.city}</p><small>{college.branches}</small></article>)}</div>
-    {!filtered.length && <p className="no-results">No matching demo entry. Try another college or city.</p>}
-    <div className="directory-foot"><span>Sample preview · Not a complete live admission directory</span><a href={type === "government" ? "https://sbte.bihar.gov.in/government-institute" : "https://sbte.bihar.gov.in/private-institutes"} target="_blank" rel="noreferrer">Open official SBTE directory <ArrowUpRight size={15}/></a></div>
-  </section>;
-}
 function FeatureGrid({ items }: { items: Array<{ icon: LucideIcon; title: string; desc: string }> }) {
   return <div className="feature-grid">{items.map((item, i) => <Reveal key={item.title}><article className="feature-card" style={{transitionDelay:`${i * 45}ms`}}><span><item.icon size={19}/></span><h3>{item.title}</h3><p>{item.desc}</p></article></Reveal>)}</div>;
 }
@@ -349,7 +326,7 @@ function CampusPage() {
   const navigate = useNavigate();
   return <><Header active="campus"/><main className="portal-page campus-page"><section className="portal-hero"><div className="portal-hero-copy"><span className="eyebrow-pill"><GraduationCap size={14}/> MONK CAMPUS</span><h1>One campus.<br/><em>Every connection.</em></h1><p>Bring students, faculty, departments and college operations into one organized digital space—built for institutions and the people who make them work.</p><div className="hero-actions"><button className="button-dark" onClick={() => navigate("/login?vertical=education&mode=signup")}>Create a college workspace <ArrowRight size={17}/></button><a href="#college-directory">Explore colleges <ChevronRight size={16}/></a></div><div className="demo-label"><span className="demo-pulse"/> IN DEVELOPMENT · PREVIEW AVAILABLE · No login required</div></div><div className="campus-preview"><div className="preview-top"><span><MonkMark/> CAMPUS OVERVIEW</span><span className="preview-status">DEMO</span></div><div className="preview-welcome">Good morning, <b>Campus team</b><small>Your institution at a glance</small></div><div className="preview-metrics"><div><strong>2,480</strong><small>Students</small></div><div><strong>86</strong><small>Faculty</small></div><div><strong>94%</strong><small>Attendance</small></div></div><div className="preview-schedule"><span>UPCOMING</span><div><b>Mechanical Engineering · 3rd Sem</b><small>Workshop practice · 10:30 AM</small></div><CalendarDays size={18}/></div><div className="preview-notice"><span><BookOpen size={15}/> Academic notice</span><b>Internal assessment schedule published</b></div><small className="preview-disclaimer">Illustrative demo data — not a live college record</small></div></section>
     <section className="portal-benefits"><div className="section-intro"><span className="section-kicker">BUILT FOR INSTITUTIONS</span><h2>Campus life, connected<br/><em>from one place.</em></h2><p>Keep everyday academic work structured, visible and permission-aware.</p></div><FeatureGrid items={campusFeatures}/></section>
-    <DirectoryDemo/>
+    <InstitutionDirectory/>
     <section className="roles-section"><span className="section-kicker">ONE INSTITUTION. CLEAR RESPONSIBILITIES.</span><h2>Every role gets<br/><em>the right view.</em></h2><div className="role-chips">{["Principal / Admin","HOD","Faculty","Student","Office staff","Parent / Guardian"].map(role=><span key={role}><CheckCircle2 size={15}/>{role}</span>)}</div><p>Role access is configured by the institution. A role name in this preview does not grant access to real student records.</p></section>
     <section className="portal-bottom-cta"><div><span className="section-kicker">FOR YOUR INSTITUTION</span><h2>Give your campus<br/>one clear workspace.</h2><p>Start with a secure institution account, then invite the people who need access.</p></div><button className="button-dark" onClick={() => navigate("/login?vertical=education&mode=signup")}>Set up MONK Campus <ArrowUpRight size={17}/></button></section>
   </main><Footer/></>;
@@ -373,6 +350,7 @@ export default function PublicSite() {
   if (location.pathname === "/updates") return <><ProjectInfoPage page="updates"/><CookieNotice/></>;
   if (location.pathname === "/faq") return <><ProjectInfoPage page="faq"/><CookieNotice/></>;
   if (location.pathname === "/campus") return <><CampusPage/><CookieNotice/></>;
+  if (location.pathname === "/directory") return <><Header active="campus"/><main className="portal-page"><InstitutionDirectory/></main><Footer/><CookieNotice/></>;
   if (location.pathname === "/business") return <><BusinessPage/><CookieNotice/></>;
   if (["/privacy","/terms","/cookies","/refunds","/disclaimer","/security","/accessibility","/data-rights"].includes(location.pathname)) return <><LegalPage/><CookieNotice/></>;
   if (location.pathname === "/") return <><HomePage/><CookieNotice/></>;

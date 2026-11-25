@@ -26,7 +26,7 @@ function json(data: unknown, status: number, origin: string | null) {
 
 const categories = new Set([
   "General enquiry", "Account access", "Workspace or product issue",
-  "Privacy or data request", "Security vulnerability", "Accessibility issue",
+  "Privacy or data request", "Privacy request", "Security vulnerability", "Accessibility issue",
   "Technical issue", "Billing or refund", "Campus workspace",
   "Business workspace", "Security concern", "Other",
 ]);
@@ -61,6 +61,39 @@ Deno.serve(async (req: Request) => {
 
     // Honeypot: silently accept bots without storing or notifying.
     if (clean(body.website, 200)) return json({ ok: true, ticketRef: "MONK-RECEIVED" }, 200, origin);
+
+    const turnstileSecret = Deno.env.get("TURNSTILE_SECRET");
+    const captchaToken = clean(body.captchaToken, 2048);
+    if (!turnstileSecret) {
+      console.error("Turnstile server secret is not configured.");
+      return json({ error: "Security verification is temporarily unavailable. Please try again later." }, 503, origin);
+    }
+    if (!captchaToken) return json({ error: "Complete the security verification and try again." }, 400, origin);
+
+    const verificationData = new FormData();
+    verificationData.set("secret", turnstileSecret);
+    verificationData.set("response", captchaToken);
+    const clientIp = req.headers.get("cf-connecting-ip") ||
+      (req.headers.get("x-forwarded-for") || "").split(",")[0].trim();
+    if (clientIp) verificationData.set("remoteip", clientIp);
+
+    let verification: { success?: boolean; hostname?: string; "error-codes"?: string[] };
+    try {
+      const verifyResponse = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+        method: "POST",
+        body: verificationData,
+      });
+      if (!verifyResponse.ok) throw new Error("Siteverify returned a non-success status.");
+      verification = await verifyResponse.json();
+    } catch (verifyError) {
+      console.error("Turnstile verification request failed:", verifyError instanceof Error ? verifyError.message : "Unknown error");
+      return json({ error: "Security verification could not be completed. Please try again." }, 503, origin);
+    }
+
+    const allowedHostnames = new Set(["monk.monster", "www.monk.monster", "localhost", "127.0.0.1"]);
+    if (verification.success !== true || !verification.hostname || !allowedHostnames.has(verification.hostname)) {
+      return json({ error: "Security verification failed. Please complete it again." }, 403, origin);
+    }
 
     const fullName = clean(body.fullName, 80);
     const email = clean(body.email, 254).toLowerCase();

@@ -1,5 +1,5 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import PublicSite from "./components/PublicSite";
 import { ArrowUpRight, Bell, Check, ChevronRight, Command, LayoutGrid, Plus, Search, ShieldCheck, Sparkles, Target, Zap, LoaderCircle, LogOut, Pencil, Trash2, Play, Pause, RotateCcw, Users, Activity, GraduationCap, Briefcase, FolderKanban, CheckSquare, FileText, BarChart3, Wallet, Store, Bot, Settings, Building2 } from "lucide-react";
 import type { Session } from "@supabase/supabase-js";
@@ -7,6 +7,9 @@ import { isSupabaseConfigured, supabase } from "./lib/supabase";
 import WorkspaceManagement from "./components/WorkspaceManagement";
 import EducationManagement from "./components/EducationManagement";
 import CRMManagement from "./components/CRMManagement";
+import BusinessProfile from "./components/BusinessProfile";
+import AuthExperience from "./components/AuthExperience";
+import NotificationsCenter from "./components/NotificationsCenter";
 
 type Project = { id: string; name: string; code: string; description?: string | null; due_date?: string | null; visibility?: "internal" | "client_visible"; status?: "draft" | "active" | "at_risk" | "in_review" | "completed" };
 type Task = { id: string; title: string; status: "todo" | "in_progress" | "blocked" | "review" | "done"; priority: "low" | "medium" | "high" | "urgent"; due_date: string | null; project_id: string };
@@ -18,14 +21,7 @@ const demoTasks: Task[] = [
 
 export default function App() {
   const location = useLocation();
-  const navigate = useNavigate();
   const [session, setSession] = useState<Session | null>(null);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [authBusy, setAuthBusy] = useState(false);
-  const [authMessage, setAuthMessage] = useState("");
-  const [legalAccepted, setLegalAccepted] = useState(false);
-  const [authMode, setAuthMode] = useState<"login" | "signup">(new URLSearchParams(window.location.search).get("mode") === "signup" || window.location.pathname === "/signup" ? "signup" : "login");
   const [tasks, setTasks] = useState<Task[]>(demoTasks);
   const [projects, setProjects] = useState<Project[]>([]);
   const [projectId, setProjectId] = useState("");
@@ -110,6 +106,13 @@ export default function App() {
   }, [session, loadWorkspace]);
 
   useEffect(() => {
+    const profileVertical = session?.user.user_metadata?.vertical;
+    if (!organizationId && (profileVertical === "education" || profileVertical === "business")) {
+      setOrganizationVertical(profileVertical);
+    }
+  }, [session, organizationId]);
+
+  useEffect(() => {
     if (organizationVertical !== "education" && active === "Education") setActive("Overview");
   }, [organizationVertical, active]);
 
@@ -131,8 +134,6 @@ export default function App() {
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const mode = params.get("mode");
-    if (mode === "login" || mode === "signup") setAuthMode(mode);
     const vertical = params.get("vertical");
     if (vertical === "education" || vertical === "business") setOrganizationVertical(vertical);
   }, [location.search]);
@@ -151,7 +152,7 @@ export default function App() {
 
   useEffect(() => {
     if (!session || !supabase) return;
-    const token = new URLSearchParams(window.location.hash.replace(/^#/, "")).get("invite");
+    const token = new URLSearchParams(window.location.hash.replace(/^#/, "")).get("invite") ?? new URLSearchParams(window.location.search).get("invite");
     if (!token) return;
     let active = true;
     void (async () => {
@@ -164,51 +165,7 @@ export default function App() {
       await loadWorkspace();
     })();
     return () => { active = false; };
-  }, [session, loadWorkspace]);
-
-  async function signIn(mode: "login" | "signup") {
-    if (!supabase) return;
-    if (!email.trim() || password.length < 8) { setAuthMessage("Enter a valid email and a password with at least 8 characters."); return; }
-    if (mode === "signup" && !legalAccepted) { setAuthMessage("Please accept the Terms of Service and acknowledge the Privacy Policy before creating an account."); return; }
-    setAuthBusy(true); setAuthMessage("");
-    try {
-      const result = mode === "login"
-        ? await supabase.auth.signInWithPassword({ email: email.trim(), password })
-        : await supabase.auth.signUp({ email: email.trim(), password, options: { emailRedirectTo: `${window.location.origin}/login?vertical=${organizationVertical}`, data: { terms_version: "2026-11-22", privacy_version: "2026-11-22" } } });
-      if (result.error) {
-        setAuthMessage(result.error.message);
-        return;
-      }
-      const userMetadata = result.data.user?.user_metadata as Record<string, unknown> | undefined;
-      const termsVersion = typeof userMetadata?.terms_version === "string" ? userMetadata.terms_version : null;
-      const privacyVersion = typeof userMetadata?.privacy_version === "string" ? userMetadata.privacy_version : null;
-      // Email-confirmation projects return no session at signup. The immutable
-      // consent record is written on the first authenticated sign-in instead.
-      if (result.data.session && termsVersion && privacyVersion) {
-        const { error: consentError } = await supabase.rpc("record_legal_consent", {
-          p_terms_version: termsVersion,
-          p_privacy_version: privacyVersion
-        });
-        if (consentError) {
-          await supabase.auth.signOut();
-          setAuthMessage("We could not save the legal acceptance record. Please try again or contact admin@monk.monster.");
-          return;
-        }
-      }
-      if (mode === "signup") {
-        try { sessionStorage.setItem("monk:thank-you-context", JSON.stringify({ kind: "signup" })); } catch {}
-        if (result.data.session) setSession(result.data.session);
-        navigate("/thank-you");
-        return;
-      }
-      setAuthMessage("Authentication successful.");
-      if (result.data.session) setSession(result.data.session);
-    } catch (error) {
-      setAuthMessage(error instanceof Error ? error.message : "Authentication request failed. Check your connection and try again.");
-    } finally {
-      setAuthBusy(false);
-    }
-  }
+  }, [session, loadWorkspace, location.hash, location.search]);
 
   async function createOrganization(e: FormEvent) {
     e.preventDefault();
@@ -220,6 +177,9 @@ export default function App() {
     });
     setSaving(false);
     if (error) { setWorkspaceError(error.message); return; }
+    // Route education owners directly into institution setup; reuse the existing
+    // education module as the canonical onboarding surface and avoid duplicate data models.
+    setActive(organizationVertical === "education" ? "Education" : "Overview");
     setOrganizationId("created");
     await loadWorkspace();
   }
@@ -308,25 +268,11 @@ export default function App() {
   const completed = tasks.filter(task => task.status === "done").length;
   const focusTime = `${String(Math.floor(focusSeconds / 60)).padStart(2, "0")}:${String(focusSeconds % 60).padStart(2, "0")}`;
   const openTasks = tasks.length - completed;
-  const nav = [{ name: "Overview", icon: LayoutGrid, group: "WORKSPACE" }, { name: "Projects", icon: FolderKanban, group: "WORKSPACE" }, { name: "Tasks", icon: CheckSquare, group: "WORKSPACE" }, ...(organizationVertical === "business" ? [{ name: "CRM", icon: Briefcase, group: "GROWTH" }] : []), { name: "Sales", icon: BarChart3, group: "GROWTH" }, { name: "Documents", icon: FileText, group: "WORKSPACE" }, { name: "Team", icon: Users, group: "MANAGE" }, { name: "Analytics", icon: Activity, group: "MANAGE" }, { name: "Finance", icon: Wallet, group: "MANAGE" }, { name: "Marketplace", icon: Store, group: "EXPLORE" }, { name: "AI Copilot", icon: Bot, group: "EXPLORE" }, ...(organizationVertical === "education" ? [{ name: "Education", icon: GraduationCap, group: "MANAGE" }] : []), { name: "Focus", icon: Target, group: "PERSONAL" }, { name: "Settings", icon: Settings, group: "PERSONAL" }];
+  const nav = [{ name: "Overview", icon: LayoutGrid, group: "WORKSPACE" }, { name: "Projects", icon: FolderKanban, group: "WORKSPACE" }, { name: "Tasks", icon: CheckSquare, group: "WORKSPACE" }, ...(organizationVertical === "business" ? [{ name: "CRM", icon: Briefcase, group: "GROWTH" }, { name: "Company Profile", icon: Building2, group: "MANAGE" }] : []), { name: "Sales", icon: BarChart3, group: "GROWTH" }, { name: "Documents", icon: FileText, group: "WORKSPACE" }, { name: "Team", icon: Users, group: "MANAGE" }, { name: "Analytics", icon: Activity, group: "MANAGE" }, { name: "Finance", icon: Wallet, group: "MANAGE" }, { name: "Marketplace", icon: Store, group: "EXPLORE" }, { name: "AI Copilot", icon: Bot, group: "EXPLORE" }, ...(organizationVertical === "education" ? [{ name: "Education", icon: GraduationCap, group: "MANAGE" }] : []), { name: "Focus", icon: Target, group: "PERSONAL" }, { name: "Settings", icon: Settings, group: "PERSONAL" }];
 
-  if (location.pathname === "/signup") return <Navigate to="/login?mode=signup" replace />;
+  if (["/login", "/signup", "/forgot-password", "/reset-password", "/auth/callback"].includes(location.pathname)) return <AuthExperience />;
   if (location.pathname === "/thank-you") return <PublicSite />;
-  if (!session && location.pathname !== "/login") return <PublicSite />;
-
-  if (!session && location.pathname === "/login") return (
-    <main className="auth-page"><div className="auth-card">
-      <a className="brand" href="/"><img className="brand-mark-image" src="/brand/monk-icon.svg" alt="" /> MONK<span className="brand-dot">.</span></a>
-      <p className="eyebrow">YOUR WORKSPACE, REIMAGINED</p><h1>Make room for<br /><em>meaningful work.</em></h1>
-      <p className="muted">{authMode === "signup" ? "Create your account to set up a secure MONK workspace." : "Sign in to continue to your MONK workspace."}</p>
-      <label>Email address<input type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.com" /></label>
-      <label>Password<input type="password" autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} placeholder="At least 8 characters" /></label>
-      {authMode === "signup" && <label className="legal-acceptance"><input type="checkbox" checked={legalAccepted} onChange={e => setLegalAccepted(e.target.checked)} /><span>I agree to the <a href="/terms" target="_blank" rel="noreferrer">Terms of Service</a> and acknowledge the <a href="/privacy" target="_blank" rel="noreferrer">Privacy Policy</a>.</span></label>}
-      <button className="primary full" disabled={authBusy || (authMode === "signup" && !legalAccepted)} onClick={() => signIn(authMode)}>{authBusy ? "Please wait…" : authMode === "signup" ? "Create account" : "Sign in"} <ArrowUpRight size={17} /></button>
-      <button className="text-button full" disabled={authBusy} onClick={() => { setAuthMode(current => current === "login" ? "signup" : "login"); setLegalAccepted(false); setAuthMessage(""); }}>{authMode === "signup" ? "Already have an account? Sign in" : "New to MONK? Create an account"}</button>
-      {authMessage && <p className="notice">{authMessage}</p>}<p className="tiny">Protected by Supabase Authentication · <a href="/">Back to public website</a></p>
-    </div></main>
-  );
+  if (!session) return <PublicSite />;
 
   if (isSupabaseConfigured && session && !workspaceReady) return (
     <main className="auth-page"><section className="auth-card">
@@ -335,6 +281,28 @@ export default function App() {
       <p className="muted">{loading ? "Checking your organization membership and workspace access." : "Your session is active, but MONK could not retrieve your workspace."}</p>
       {workspaceError && <p className="notice" role="alert">{workspaceError}</p>}
       <button className="primary full" disabled={loading} onClick={() => void loadWorkspace()}>{loading ? "Please wait…" : "Retry workspace loading"} <ArrowUpRight size={17} /></button>
+      <button className="text-button full" onClick={async () => { await supabase?.auth.signOut(); setSession(null); setWorkspaceReady(false); setOrganizationId(null); }}>Sign out</button>
+    </section></main>
+  );
+
+  const intendedRole = typeof session?.user.user_metadata?.intended_role === "string" ? session.user.user_metadata.intended_role : "";
+  // Only an explicitly registered Business owner can self-provision a workspace.
+  // Campus workspaces are provisioned after institution verification; all other roles join by invitation.
+  const canCreateBusinessWorkspace = organizationVertical === "business" && intendedRole === "owner";
+  const mustJoinExistingWorkspace = !canCreateBusinessWorkspace;
+
+  if (isSupabaseConfigured && session && workspaceReady && !organizationId && mustJoinExistingWorkspace) return (
+    <main className="auth-page"><section className="auth-card">
+      <a className="brand" href="/"><img className="brand-mark-image" src="/brand/monk-icon.svg" alt="" /> MONK<span className="brand-dot">.</span></a>
+      <p className="eyebrow">VERIFIED WORKSPACE ACCESS</p><h1>Join your<br /><em>{organizationVertical === "education" ? "institution." : "organization."}</em></h1>
+      <p className="muted">{organizationVertical === "education"
+        ? intendedRole === "institution"
+          ? "Institution administrator accounts require official institution verification before a Campus workspace can be provisioned. Contact MONK institution onboarding with your institution's official details."
+          : "Student, parent, teacher, HOD and principal accounts must be linked to an institution by an authorized administrator. Your selected role does not grant access by itself."
+        : "Team members, managers and invited partners must join through an invitation from a Business owner or administrator. Only Business owners can create a new workspace."}</p>
+      {workspaceError && <p className="notice" role="alert">{workspaceError}</p>}
+      <p className="tiny">If you already received an invitation, open its original link in this browser and sign in with the invited email address. Your verified email must match the invitation or institution record.</p>
+      <button className="primary full" onClick={() => window.location.assign(organizationVertical === "education" ? "/campus" : "/business")}>Explore {organizationVertical === "education" ? "Campus" : "Business"} <ArrowUpRight size={17}/></button>
       <button className="text-button full" onClick={async () => { await supabase?.auth.signOut(); setSession(null); setWorkspaceReady(false); setOrganizationId(null); }}>Sign out</button>
     </section></main>
   );
@@ -377,7 +345,7 @@ export default function App() {
         </div>
       </aside>
       <main className="main">
-        <header className="topbar"><div className="crumb"><span className="crumb-mark">M</span> Workspace <span>/</span> {active}</div><div className="top-actions"><button className="icon-btn" aria-label="Search"><Search size={18} /></button><button className="icon-btn" aria-label="Notifications"><Bell size={18} /></button><div className="top-avatar">P</div></div></header>
+        <header className="topbar"><div className="crumb"><span className="crumb-mark">M</span> Workspace <span>/</span> {active}</div><div className="top-actions"><button className="icon-btn" aria-label="Search"><Search size={18} /></button>{organizationId && session ? <NotificationsCenter organizationId={organizationId} userId={session.user.id} /> : <button className="icon-btn" aria-label="Notifications" disabled><Bell size={18} /></button>}<div className="top-avatar">P</div></div></header>
         <div className="content">
           <div className="welcome-row"><div><p className="eyebrow"><Sparkles size={13} /> THE OPERATING SYSTEM FOR YOUR WORK</p><h1>{active === "Overview" ? "One workspace. Entire operation." : active === "Tasks" ? "Turn plans into progress." : active === "Focus" ? "Protect your focus." : `${active}, in one place.`}<span>.</span></h1><p className="muted">{active === "Overview" ? "Projects, customers, people and execution — connected in one calm workspace." : `Bring your ${active.toLowerCase()} workflow into the MONK workspace.`}</p></div>{(["Overview","Tasks","Focus"].includes(active)) && <button className="primary" onClick={() => { setActive("Tasks"); window.setTimeout(() => document.getElementById("new-task")?.focus(), 0); }}><Plus size={17} /> New task</button>}</div>
           {!isSupabaseConfigured && <div className="config-banner"><Zap size={17} /><span><b>Preview mode</b> — add Supabase environment variables to enable persistent tasks and authentication.</span></div>}
@@ -400,7 +368,8 @@ export default function App() {
           </>}
           {isSupabaseConfigured && session && organizationId && organizationVertical === "education" && active === "Education" && <EducationManagement organizationId={organizationId} />}
           {isSupabaseConfigured && session && organizationId && organizationVertical === "business" && (active === "CRM" || active === "Sales") && <CRMManagement organizationId={organizationId} />}
-          {!["Overview","Focus","Tasks","Projects","Team","Activity","CRM","Sales","Education"].includes(active) && <section className="module-hub"><div className="module-hub-head"><div><span className="module-kicker">MONK WORKSPACE / {active.toUpperCase()}</span><h2>{active === "AI Copilot" ? "Your intelligent work companion." : active === "Documents" ? "Every important file, in context." : active === "Analytics" ? "Clarity across your operation." : active === "Finance" ? "Keep the numbers connected." : active === "Marketplace" ? "Extend your workspace." : "Make MONK work your way."}</h2><p>One connected system for your team. This area is being brought online in the approved MVP rollout.</p></div><span className="module-orb"><Sparkles size={22}/></span></div><div className="module-cards">{(active === "Documents" ? [{icon:FileText,title:"Shared documents",desc:"Organize project briefs, contracts and working files.",status:"Storage integration pending"},{icon:ShieldCheck,title:"Access controls",desc:"Keep sensitive files scoped to the right workspace.",status:"Security foundation"}] : active === "Analytics" ? [{icon:BarChart3,title:"Workspace performance",desc:"Understand delivery, workload and customer momentum.",status:"Metrics foundation"},{icon:Activity,title:"Activity insights",desc:"Track meaningful changes across teams and projects.",status:"Event aggregation pending"}] : active === "Finance" ? [{icon:Wallet,title:"Revenue overview",desc:"Bring invoices, expenses and cash visibility together.",status:"Finance module pending"},{icon:Building2,title:"Client accounts",desc:"Connect commercial records with customer work.",status:"CRM foundation available"}] : active === "Marketplace" ? [{icon:Store,title:"Connected tools",desc:"Discover integrations that extend MONK workflows.",status:"Integration catalog pending"},{icon:Zap,title:"Automation recipes",desc:"Connect repetitive work across your stack.",status:"Coming in a later phase"}] : active === "AI Copilot" ? [{icon:Bot,title:"Workspace assistant",desc:"Summarize work, prepare updates and find next actions.",status:"AI runtime not connected"},{icon:Sparkles,title:"AI-assisted reports",desc:"Turn project activity into clear client-ready updates.",status:"Report workflow pending"}] : [{icon:Settings,title:"Workspace preferences",desc:"Manage profile, organization and security preferences.",status:"Settings foundation"}]).map(card => <article className="module-card" key={card.title}><span className="module-card-icon"><card.icon size={18}/></span><h3>{card.title}</h3><p>{card.desc}</p><small>{card.status}</small></article>)}</div><div className="module-hub-foot"><ShieldCheck size={16}/><span>MONK uses organization-scoped access. Features are enabled only when their secure backend workflows are ready.</span></div></section>}
+          {isSupabaseConfigured && session && organizationId && organizationVertical === "business" && active === "Company Profile" && <BusinessProfile organizationId={organizationId} />}
+          {!["Overview","Focus","Tasks","Projects","Team","Activity","CRM","Sales","Education","Company Profile"].includes(active) && <section className="module-hub"><div className="module-hub-head"><div><span className="module-kicker">MONK WORKSPACE / {active.toUpperCase()}</span><h2>{active === "AI Copilot" ? "Your intelligent work companion." : active === "Documents" ? "Every important file, in context." : active === "Analytics" ? "Clarity across your operation." : active === "Finance" ? "Keep the numbers connected." : active === "Marketplace" ? "Extend your workspace." : "Make MONK work your way."}</h2><p>One connected system for your team. This area is being brought online in the approved MVP rollout.</p></div><span className="module-orb"><Sparkles size={22}/></span></div><div className="module-cards">{(active === "Documents" ? [{icon:FileText,title:"Shared documents",desc:"Organize project briefs, contracts and working files.",status:"Storage integration pending"},{icon:ShieldCheck,title:"Access controls",desc:"Keep sensitive files scoped to the right workspace.",status:"Security foundation"}] : active === "Analytics" ? [{icon:BarChart3,title:"Workspace performance",desc:"Understand delivery, workload and customer momentum.",status:"Metrics foundation"},{icon:Activity,title:"Activity insights",desc:"Track meaningful changes across teams and projects.",status:"Event aggregation pending"}] : active === "Finance" ? [{icon:Wallet,title:"Revenue overview",desc:"Bring invoices, expenses and cash visibility together.",status:"Finance module pending"},{icon:Building2,title:"Client accounts",desc:"Connect commercial records with customer work.",status:"CRM foundation available"}] : active === "Marketplace" ? [{icon:Store,title:"Connected tools",desc:"Discover integrations that extend MONK workflows.",status:"Integration catalog pending"},{icon:Zap,title:"Automation recipes",desc:"Connect repetitive work across your stack.",status:"Coming in a later phase"}] : active === "AI Copilot" ? [{icon:Bot,title:"Workspace assistant",desc:"Summarize work, prepare updates and find next actions.",status:"AI runtime not connected"},{icon:Sparkles,title:"AI-assisted reports",desc:"Turn project activity into clear client-ready updates.",status:"Report workflow pending"}] : [{icon:Settings,title:"Workspace preferences",desc:"Manage profile, organization and security preferences.",status:"Settings foundation"}]).map(card => <article className="module-card" key={card.title}><span className="module-card-icon"><card.icon size={18}/></span><h3>{card.title}</h3><p>{card.desc}</p><small>{card.status}</small></article>)}</div><div className="module-hub-foot"><ShieldCheck size={16}/><span>MONK uses organization-scoped access. Features are enabled only when their secure backend workflows are ready.</span></div></section>}
           {isSupabaseConfigured && session && organizationId && (active === "Projects" || active === "Team" || active === "Activity") && <WorkspaceManagement
             view={active}
             organizationId={organizationId}
