@@ -107,7 +107,7 @@ test("contact page exposes email support without publishing a personal phone num
   await page.goto("/contact");
   await expect(page.getByRole("heading", { name: /a clear path to the right help/i })).toBeVisible();
   await expect(page.getByRole("link", { name: /WhatsApp support/i })).toHaveCount(0);
-  await expect(page.getByRole("complementary").getByRole("link", { name: /admin@monk.monster/i })).toBeVisible();
+  await expect(page.getByRole("complementary").getByRole("link", { name: /support@monk.monster/i })).toBeVisible();
   await expect(page.locator("body")).not.toContainText(/WhatsApp|92884\s*35641|919288435641/i);
 });
 
