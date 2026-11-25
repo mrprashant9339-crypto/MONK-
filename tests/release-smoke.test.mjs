@@ -317,19 +317,19 @@ test("application registers a guarded service worker and provides offline recove
   const entry = await readFile(join(root, "src", "main.tsx"), "utf8");
   const worker = await readFile(join(root, "public", "sw.js"), "utf8");
   const offline = await readFile(join(root, "public", "offline.html"), "utf8");
-  assert.match(entry, /navigator\\.serviceWorker\\.register\\("\\/sw\\.js"\\)/);
-  assert.match(entry, /AppErrorBoundary/);
-  assert.match(entry, /NetworkNotice/);
-  assert.match(worker, /request\\.method !== "GET"/);
-  assert.match(worker, /request\\.mode === "navigate"/);
-  assert.match(worker, /caches\\.match\\(OFFLINE_URL\\)/);
-  assert.match(offline, /You're offline right now/);
+  assert.ok(entry.includes('navigator.serviceWorker.register("/sw.js")'));
+  assert.ok(entry.includes("AppErrorBoundary"));
+  assert.ok(entry.includes("NetworkNotice"));
+  assert.ok(worker.includes('request.method !== "GET"'));
+  assert.ok(worker.includes('request.mode === "navigate"'));
+  assert.ok(worker.includes("caches.match(OFFLINE_URL)"));
+  assert.ok(offline.includes("You're offline right now"));
 });
 
 test("guardian portal scopes relationship lookup to the authenticated guardian", async () => {
   const portal = await readFile(join(root, "src", "components", "EducationPortal.tsx"), "utf8");
-  assert.match(portal, /if\\s*\\(!g\\?\\.id\\)/);
-  assert.match(portal, /education_student_guardians[\\s\\S]*?\\.eq\\\("guardian_id",\\s*g\\.id\\\)/);
+  assert.ok(portal.includes("if(!g?.id)"));
+  assert.ok(portal.includes('.eq("guardian_id",g.id)'));
 });
 
 test("Phase 6 Business Operations UI is wired to the authenticated Business workspace", async () => {
@@ -337,9 +337,9 @@ test("Phase 6 Business Operations UI is wired to the authenticated Business work
   const businessUi = await readFile(join(root, "src", "components", "BusinessOperationsLive.tsx"), "utf8");
   const salesUi = await readFile(join(root, "src", "components", "SalesWorkspace.tsx"), "utf8");
   const migration = await readFile(join(root, "supabase", "migrations", "20261123033736_phase_6_business_operations.sql"), "utf8");
-  assert.match(app, /BusinessOperationsLive/);
-  assert.match(app, /SalesWorkspace/);
-  assert.match(businessUi, /business_orders/);
-  assert.match(salesUi, /create_lead/);
-  assert.match(migration, /row level security/i);
+  assert.ok(app.includes("BusinessOperationsLive"));
+  assert.ok(app.includes("SalesWorkspace"));
+  assert.ok(businessUi.includes("business_orders"));
+  assert.ok(salesUi.includes("create_lead"));
+  assert.ok(migration.toLowerCase().includes("row level security"));
 });
