@@ -51,5 +51,5 @@
 ## Verification
 - Supabase migration application succeeded and the new business tables were observed with RLS enabled.
 - Security inspection confirms Phase 6 RPCs are not SECURITY DEFINER, cannot be called by anon, and are executable by authenticated users.
-- Run GitHub CI against the exact latest branch head: production build, release smoke tests and browser E2E.
+- GitHub Actions run #1073 passed on implementation commit aed68d164e3a0395014649e9033c565cdd1acefd (production build, release smoke tests and browser E2E). The later documentation-only branch head still requires a fresh exact-head CI run.
 - CI does not prove production deployment or end-to-end behavior for every authenticated role; owner/admin/manager/sales/auditor test-tenant verification remains required.
