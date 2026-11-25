@@ -286,17 +286,20 @@ export default function App() {
   );
 
   const intendedRole = typeof session?.user.user_metadata?.intended_role === "string" ? session.user.user_metadata.intended_role : "";
-  const mustJoinExistingWorkspace = organizationVertical === "education"
-    ? ["student", "parent", "teacher", "hod", "principal"].includes(intendedRole)
-    : ["admin", "manager", "sales", "accounts", "operations", "staff", "contributor", "auditor", "client", "vendor"].includes(intendedRole);
+  // Only an explicitly registered Business owner can self-provision a workspace.
+  // Campus workspaces are provisioned after institution verification; all other roles join by invitation.
+  const canCreateBusinessWorkspace = organizationVertical === "business" && intendedRole === "owner";
+  const mustJoinExistingWorkspace = !canCreateBusinessWorkspace;
 
   if (isSupabaseConfigured && session && workspaceReady && !organizationId && mustJoinExistingWorkspace) return (
     <main className="auth-page"><section className="auth-card">
       <a className="brand" href="/"><img className="brand-mark-image" src="/brand/monk-icon.svg" alt="" /> MONK<span className="brand-dot">.</span></a>
       <p className="eyebrow">VERIFIED WORKSPACE ACCESS</p><h1>Join your<br /><em>{organizationVertical === "education" ? "institution." : "organization."}</em></h1>
       <p className="muted">{organizationVertical === "education"
-        ? "Student, parent, teacher, HOD and principal accounts must be linked to an institution by an authorized administrator. Your selected role does not grant access by itself."
-        : "Team members, managers and invited partners must join through an invitation from an organization owner or administrator."}</p>
+        ? intendedRole === "institution"
+          ? "Institution administrator accounts require official institution verification before a Campus workspace can be provisioned. Contact MONK institution onboarding with your institution's official details."
+          : "Student, parent, teacher, HOD and principal accounts must be linked to an institution by an authorized administrator. Your selected role does not grant access by itself."
+        : "Team members, managers and invited partners must join through an invitation from a Business owner or administrator. Only Business owners can create a new workspace."}</p>
       {workspaceError && <p className="notice" role="alert">{workspaceError}</p>}
       <p className="tiny">If you already received an invitation, open its original link in this browser and sign in with the invited email address. Your verified email must match the invitation or institution record.</p>
       <button className="primary full" onClick={() => window.location.assign(organizationVertical === "education" ? "/campus" : "/business")}>Explore {organizationVertical === "education" ? "Campus" : "Business"} <ArrowUpRight size={17}/></button>
