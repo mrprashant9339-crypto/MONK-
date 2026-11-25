@@ -229,5 +229,5 @@ test("authentication callback exchanges PKCE codes once and preserves onboarding
   const migration = await readFile(join(root, "supabase", "migrations", "20261125041500_harden_organization_self_service_creation.sql"), "utf8");
   assert.match(migration, /current_user_email_verified/);
   assert.match(migration, /Campus workspaces require institution verification/);
-  assert.match(migration, /intended_role' <> 'owner'/);
+  assert.match(migration, /intended_role' is distinct from 'owner'/);
 });
