@@ -40,6 +40,7 @@ This document distinguishes shipped code, production database configuration, aut
 - A Resend API key named `MONK Production Email` exists. The key value is secret and is not retrievable through the list operation.
 - Hostinger Mail currently exposes only `admin@monk.monster`; `support@monk.monster` is not yet a mailbox or verified forwarding alias. The website can display the preferred support address, but inbound replies are not confirmed until that alias is created. Transactional support notifications therefore default to the existing `admin@monk.monster` mailbox.
 - The connected Supabase integration can deploy functions and apply migrations, but does not expose the Edge Function secret values or the Auth SMTP/CAPTCHA dashboard settings. Therefore secret presence and real mailbox delivery must be verified in Supabase/Resend dashboards.
+- Vercel's deployment API currently returns `api-deployments-free-per-day` (more than 100 deployments in the rolling day; retry after 24 hours). The Cloudflare production workflow waits for the Vercel origin to be ready before deploying the Worker. The current source changes must not be called live until a new Vercel origin deployment is published and the Cloudflare live tests pass.
 - `send-welcome-email` is ACTIVE with JWT verification enabled; the delivery ledger migration is applied.
 - Supabase project is ACTIVE_HEALTHY.
 - Production directory institution count is zero; no fake college records have been inserted.
@@ -52,7 +53,7 @@ This document distinguishes shipped code, production database configuration, aut
 3. In Google Cloud and Supabase Auth Providers, verify the MONK OAuth consent screen, credentials, authorized domain and callback URL.
 4. Use controlled test mailboxes and separate Campus/Business test tenants to run the full acceptance matrix.
 5. Confirm official institution-data reuse rights before importing or publishing any dataset.
-6. Run exact-head GitHub CI and the Cloudflare production deployment workflow. Review the deployment commit and run the live smoke tests. Preserve the existing asset fallback and rollback path until the new origin is verified.
+6. Wait for the Vercel daily deployment quota to reset or resolve the account limit, publish the exact approved Vercel build, then run the Cloudflare production deployment workflow. Review the deployment commit and run the live smoke tests. Preserve the existing asset fallback and rollback path until the new origin is verified.
 
 ## Release decision
 
