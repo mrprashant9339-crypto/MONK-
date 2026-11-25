@@ -142,6 +142,9 @@ export default function AuthExperience() {
           : typeof currentMetadata.terms_version === "string" && typeof currentMetadata.privacy_version === "string"
             ? { terms: currentMetadata.terms_version, privacy: currentMetadata.privacy_version }
             : null;
+        if (!consent) {
+          throw new Error("Your Google account was not linked to a completed MONK profile. Return to MONK, choose Campus or Business, complete your profile details and accept the current Terms and Privacy Policy, then try Google sign-in again.");
+        }
         if (consent) {
           if (raw && consent.vertical && consent.role) {
             const existingRole = currentMetadata.intended_role;
