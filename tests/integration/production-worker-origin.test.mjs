@@ -11,7 +11,7 @@ async function assertHealthyMonkResponse(response, label) {
   );
   const html = await response.text();
   assert.match(html, /id="root"/i, label);
-  assert.doesNotMatch(html, /Vercel Security Checkpoint|Failed to verify your browser|Code\\s*21/i, label);
+  assert.doesNotMatch(html, /Vercel Security Checkpoint|Failed to verify your browser|Code\s*21/i, label);
 }
 
 test("production Worker serves the signup app without a Vercel challenge", async () => {
