@@ -153,7 +153,7 @@ function isApplicationRoute(pathname) {
 
 function isStaticAssetPath(pathname) {
   return pathname.startsWith("/assets/") || pathname.startsWith("/brand/") ||
-    ["/favicon.svg", "/manifest.webmanifest", "/robots.txt", "/sitemap.xml", "/404.html"].includes(pathname) ||
+    ["/favicon.svg", "/manifest.webmanifest", "/robots.txt", "/sitemap.xml", "/404.html", "/offline.html"].includes(pathname) ||
     /\.(?:css|js|mjs|map|svg|png|jpe?g|webp|gif|ico|woff2?|ttf|otf|webmanifest|txt|xml)$/i.test(pathname);
 }
 
@@ -306,12 +306,12 @@ export default {
     if (isStaticAssetPath(path)) {
       try {
         const response = await fetchVercelOrigin(request, env, url, path);
-        if (response && !(response.headers.get("content-type") || "").includes("text/html")) return response;
+        if (response && (!(response.headers.get("content-type") || "").includes("text/html") || ["/offline.html", "/404.html"].includes(path))) return response;
       } catch {
         // Try the already-deployed static asset bundle.
       }
       const asset = await env.ASSETS.fetch(request);
-      if (asset.status === 404 || (asset.headers.get("content-type") || "").includes("text/html")) return notFoundResponse(request.method);
+      if (asset.status === 404 || ((asset.headers.get("content-type") || "").includes("text/html") && !["/offline.html", "/404.html"].includes(path))) return notFoundResponse(request.method);
       return asset;
     }
 
