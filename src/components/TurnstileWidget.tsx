@@ -39,15 +39,26 @@ export default function TurnstileWidget({ onToken, onError, resetKey = 0 }: Prop
   useEffect(() => {
     let cancelled = false;
     let script = document.getElementById(SCRIPT_ID) as HTMLScriptElement | null;
+    const handleScriptError = () => {
+      if (script) script.remove();
+      script = null;
+      onTokenRef.current("");
+      onErrorRef.current?.();
+    };
     const render = () => {
       if (cancelled || !containerRef.current || !window.turnstile || widgetIdRef.current) return;
-      widgetIdRef.current = window.turnstile.render(containerRef.current, {
-        sitekey: SITE_KEY,
-        theme: "auto",
-        callback: token => onTokenRef.current(token),
-        "expired-callback": () => onTokenRef.current(""),
-        "error-callback": () => { onTokenRef.current(""); onErrorRef.current?.(); }
-      });
+      try {
+        widgetIdRef.current = window.turnstile.render(containerRef.current, {
+          sitekey: SITE_KEY,
+          theme: "auto",
+          callback: token => onTokenRef.current(token),
+          "expired-callback": () => onTokenRef.current(""),
+          "error-callback": () => { onTokenRef.current(""); onErrorRef.current?.(); }
+        });
+      } catch {
+        onTokenRef.current("");
+        onErrorRef.current?.();
+      }
     };
 
     if (window.turnstile) render();
@@ -61,12 +72,15 @@ export default function TurnstileWidget({ onToken, onError, resetKey = 0 }: Prop
         document.head.appendChild(script);
       }
       script.addEventListener("load", render);
-      script.addEventListener("error", () => onErrorRef.current?.(), { once: true });
+      script.addEventListener("error", handleScriptError, { once: true });
     }
 
     return () => {
       cancelled = true;
-      if (script) script.removeEventListener("load", render);
+      if (script) {
+        script.removeEventListener("load", render);
+        script.removeEventListener("error", handleScriptError);
+      }
       if (widgetIdRef.current && window.turnstile) {
         window.turnstile.remove(widgetIdRef.current);
         widgetIdRef.current = null;
