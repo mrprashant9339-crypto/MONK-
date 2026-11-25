@@ -38,7 +38,7 @@ At the previous implementation snapshot:
 - `npm run test:release`: passed.
 - `npm run test:e2e`: passed.
 
-The Business Documents MIME fallback, test addition and later database hardening were committed after that sandbox snapshot. They require a fresh exact-branch run before merge. A reproducible `package-lock.json` was generated in the sandbox but is not yet committed to this branch; the temporary PR bootstrap workflow is intended to generate it through GitHub Actions.
+The Business Documents MIME fallback, security regressions and later database hardening are included in the PR head. Exact-head GitHub CI is running; its final result is the merge gate. A reproducible `package-lock.json` is now committed. Both GitHub CI and Cloudflare deployment workflows use `npm ci --no-audit --no-fund`. The temporary bootstrap workflow ran successfully on the PR and removed itself.
 
 ## Hosting observations
 
