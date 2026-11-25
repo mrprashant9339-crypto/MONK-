@@ -1,4 +1,22 @@
-import { expect, test } from "@playwright/test";
+import { beforeEach, expect, test } from "@playwright/test";
+
+// Cloudflare Turnstile is an external anti-bot service. Browser E2E tests use a
+// deterministic client stub; server-side Siteverify is covered separately.
+beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window, "turnstile", {
+      configurable: true,
+      value: {
+        render: (_container: HTMLElement, options: { callback: (token: string) => void }) => {
+          queueMicrotask(() => options.callback("playwright-turnstile-test-token"));
+          return "playwright-widget";
+        },
+        reset: () => undefined,
+        remove: () => undefined
+      }
+    });
+  });
+});
 
 const publicRoutes = [
   "/",
@@ -22,7 +40,7 @@ const publicRoutes = [
 
 test("public routes render the application without a blank screen", async ({ page }) => {
   for (const route of publicRoutes) {
-    const response = await page.goto(route, { waitUntil: "networkidle" });
+    const response = await page.goto(route, { waitUntil: "domcontentloaded" });
     expect(response, `missing document response for ${route}`).not.toBeNull();
     expect(response!.status(), `unexpected HTTP status for ${route}`).toBe(200);
     await expect(page.locator("#root")).toBeVisible();
