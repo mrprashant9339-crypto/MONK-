@@ -19,7 +19,7 @@ const readList = <T,>(key: string): T[] => {
 const storeList = <T,>(key: string, value: T[]) => {
   try { localStorage.setItem(key, JSON.stringify(value)); return true; } catch { return false; }
 };
-const emailAddress = "admin@monk.monster";
+const emailAddress = "support@monk.monster";
 
 function Shell({ eyebrow, title, intro, children }: { eyebrow: string; title: string; intro: string; children: ReactNode }) {
   useEffect(() => { document.title = `${title} | MONK`; const meta = document.querySelector('meta[name="description"]'); if (meta) meta.setAttribute("content", intro.slice(0, 155)); }, [title, intro]);
@@ -60,7 +60,7 @@ function ThankYouPage() {
       <span className="st-icon"><CheckCircle2/></span>
       <h2>{context ? (signup ? "Next step: verify your email" : "Support request received") : "No recent submission found"}</h2>
       {context?.reference && <p>Support reference: <strong>{context.reference}</strong></p>}
-      {context?.kind === "support" && <p>{context.notification === "sent" ? "A support notification email was sent." : context.notification === "failed" ? "Your request is stored, but the notification email failed. Contact admin@monk.monster if the matter is urgent." : "Your request is stored. Email alerts are not configured; contact admin@monk.monster if the matter is urgent."}</p>}
+      {context?.kind === "support" && <p>{context.notification === "sent" ? "A support notification email was sent." : context.notification === "failed" ? "Your request is stored, but the notification email failed. Contact support@monk.monster if the matter is urgent." : "Your request is stored. Email alerts are not configured; contact support@monk.monster if the matter is urgent."}</p>}
       {!context && <p>This page is only a confirmation destination. To send a request, use the contact form.</p>}
       <div className="st-thank-you-actions">
         <button className="st-primary" type="button" onClick={() => navigate(signup ? "/login" : "/")}>{signup ? "Continue to sign in" : "Back to MONK"} <ArrowRight size={16}/></button>
@@ -85,7 +85,7 @@ function ContactPage() {
       if(!data?.ok || !data?.ticketRef) throw new Error(data?.error || "Your request could not be submitted.");
       try { sessionStorage.setItem("monk:thank-you-context", JSON.stringify({ kind: "support", reference: data.ticketRef, notification: data.notification || "not_configured" })); } catch {}
       navigate("/thank-you");
-    } catch(error) { setSubmitError(error instanceof Error ? error.message : "Unable to submit your request. Please contact admin@monk.monster."); }
+    } catch(error) { setSubmitError(error instanceof Error ? error.message : "Unable to submit your request. Please contact support@monk.monster."); }
     finally { setCaptchaToken(""); setCaptchaResetKey(value=>value+1); setSending(false); }
   }
   return <Shell eyebrow="CONTACT SUPPORT" title="A clear path to the right help." intro="Submit a support request directly to MONK. A reference number is shown after the server confirms that your request has been stored.">
@@ -101,7 +101,7 @@ function ContactPage() {
       <TurnstileWidget resetKey={captchaResetKey} onToken={setCaptchaToken} onError={()=>setSubmitError("Security verification could not load. Refresh the page and try again.")}/>
       <button className="st-primary" type="submit" disabled={!valid||!captchaToken||sending}>{sending?<><RefreshCw size={16} className="st-spin"/> Submitting securely…</>:<><Mail size={16}/> Submit support request <ArrowUpRight size={16}/></>}</button>
     </form><aside className="st-card st-side-card"><span className="st-icon"><LifeBuoy/></span><h2>Other support routes</h2>
-      <Link to="/support/tickets"><ClipboardList/> Support tickets <ArrowRight/></Link><a href="" target="_blank" rel="noreferrer"><MessageSquare/> Email support <ArrowUpRight/></a><Link to="/security-center"><ShieldCheck/> Security center <ArrowRight/></Link><Link to="/privacy-center"><LockKeyhole/> Privacy center <ArrowRight/></Link><Link to="/status"><Activity/> Service status <ArrowRight/></Link>
+      <Link to="/support/tickets"><ClipboardList/> Support tickets <ArrowRight/></Link><a href={`mailto:${emailAddress}`}><MessageSquare/> Email support <ArrowUpRight/></a><Link to="/security-center"><ShieldCheck/> Security center <ArrowRight/></Link><Link to="/privacy-center"><LockKeyhole/> Privacy center <ArrowRight/></Link><Link to="/status"><Activity/> Service status <ArrowRight/></Link>
       <div className="st-divider"/><p className="st-small">Prefer email? Use the published support address.</p><div className="st-email"><a href={`mailto:${emailAddress}`}>{emailAddress}</a><button type="button" aria-label="Copy support email" onClick={()=>{void navigator.clipboard?.writeText(emailAddress);setCopied(true);}}><Copy size={15}/></button></div>{copied&&<small className="st-success">Email address copied when clipboard permission is available.</small>}
     </aside></div>
   </Shell>;
