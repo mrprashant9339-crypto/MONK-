@@ -30,7 +30,14 @@ const ALLOWED_TYPES = new Set([
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 ]);
 
-function detectedMimeType(file: File) {\n  if (file.type) return file.type;\n  const extension = file.name.toLowerCase().split(".").pop() || "";\n  const byExtension: Record<string, string> = { pdf: "application/pdf", jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp", txt: "text/plain", csv: "text/csv", doc: "application/msword", docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", xls: "application/vnd.ms-excel", xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" };\n  return byExtension[extension] || "";\n}\n\nfunction safeFileName(name: string) {
+function detectedMimeType(file: File) {
+  if (file.type) return file.type;
+  const extension = file.name.toLowerCase().split(".").pop() || "";
+  const byExtension: Record<string, string> = { pdf: "application/pdf", jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp", txt: "text/plain", csv: "text/csv", doc: "application/msword", docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", xls: "application/vnd.ms-excel", xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" };
+  return byExtension[extension] || "";
+}
+
+function safeFileName(name: string) {
   return name.normalize("NFKC").replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(-120) || "document";
 }
 
@@ -86,7 +93,8 @@ export default function BusinessDocumentsPanel({
       setError("Choose a file between 1 byte and 25 MB.");
       return;
     }
-    const mimeType = detectedMimeType(file);\n    if (!ALLOWED_TYPES.has(mimeType)) {
+    const mimeType = detectedMimeType(file);
+    if (!ALLOWED_TYPES.has(mimeType)) {
       setError("Unsupported file type. Upload PDF, JPG, PNG, WEBP, TXT, CSV, DOC/DOCX or XLS/XLSX.");
       return;
     }
@@ -147,7 +155,14 @@ export default function BusinessDocumentsPanel({
       setError(signedError?.message || "A secure download link could not be created.");
       return;
     }
-    const anchor = document.createElement("a");\n    anchor.href = data.signedUrl;\n    anchor.target = "_blank";\n    anchor.rel = "noopener noreferrer";\n    anchor.download = row.file_name;\n    document.body.appendChild(anchor);\n    anchor.click();\n    anchor.remove();
+    const anchor = document.createElement("a");
+    anchor.href = data.signedUrl;
+    anchor.target = "_blank";
+    anchor.rel = "noopener noreferrer";
+    anchor.download = row.file_name;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
   }
 
   async function remove(row: DocumentRow) {
