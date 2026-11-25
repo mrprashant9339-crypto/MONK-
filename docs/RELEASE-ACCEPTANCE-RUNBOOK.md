@@ -82,6 +82,7 @@ After the correct project is linked to `mrprashant9339-crypto/MONK-`:
 ## 8. Database acceptance tests
 - `supabase/tests/tenant-isolation.sql` was executed against Supabase in a transaction and rolled back. It passed two synthetic tenants' project/task read isolation, active-organization resolution, cross-tenant update denial and cross-tenant insert denial.
 - `supabase/tests/invitation-acceptance.sql` was executed against Supabase in a transaction and rolled back. It passed authorized teacher invitation acceptance, one-time token use, mismatched-email rejection, unverified-email rejection and prevention of Campus student roles in a Business workspace.
+- `supabase/tests/workspace-provisioning.sql` was executed against Supabase in a transaction and rolled back. It passed the Business-owner self-provisioning path and blocked Campus institution self-provisioning and student self-provisioning.
 - These are database regression tests with synthetic users; they do not replace live signup/login or production-user acceptance.
 
 ## 9. Current evidence boundary
