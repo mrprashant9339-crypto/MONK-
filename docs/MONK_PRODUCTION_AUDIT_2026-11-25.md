@@ -1,17 +1,17 @@
 # MONK Production Audit and Remediation Plan
 **Audit date:** 25 November 2026  
 **Repository:** `mrprashant9339-crypto/MONK-`  
-**Production baseline:** `75fe54d733ab782cea9ae2bf3af8f2053144d57e`  
+**Production main baseline at PR creation:** `6e3a079ca65124db95153c9971505e563f048488`  
 **Product baseline:** India-first multi-tenant platform with separate Campus and Business journeys.
 
 ## Executive summary
-The production `main` commit passes GitHub Actions run #1058. That proves the configured build and browser suite pass; it does not prove that every product workflow is complete or that external providers are configured. This audit separates source-code defects, unmerged implementation, live configuration and acceptance evidence.
+PR #36 implementation commit `aed68d164e3a0395014649e9033c565cdd1acefd` passed GitHub Actions run #1073 (type-check, production build, release smoke tests and browser E2E). A later documentation-only update changed the branch head to `714b2bd40f6bd96eed987e5b1cb2ae5f8814acb1`; no exact-head run is yet recorded for that update. Vercel preview deployment then failed due to the Free plan daily deployment limit. CI success does not prove external provider configuration or live role acceptance. This audit separates source-code defects, unmerged implementation, live configuration and acceptance evidence.
 
 ## Findings
 
 | ID | Priority | Area | Finding | Required remediation |
 |---|---|---|---|---|
-| MONK-001 | P0 | Business | Phase 6 UI was not integrated into production `main`; PR #22 remains open/unmerged. Its production database migrations are already applied. | Integrate the existing Sales and Business Operations UI; run role and tenant-isolation tests. |
+| MONK-001 | P0 | Business | Phase 6 UI was not integrated into production `main`; The UI integration is included in PR #36; it remains unmerged. Its production database migrations are already applied. | Integrate the existing Sales and Business Operations UI; run role and tenant-isolation tests. |
 | MONK-002 | P0 | Campus | Phase 7 is not fully accepted. PR #23 is a draft based on `frontend-first-complete`; PR #36 ports the source-aware India directory and guardian-scope regression work onto the current production baseline, but the full role workflows remain untested. | Directory UI and guardian scope are integrated in PR #36; complete Principal/HOD/Faculty/Student/Parent live acceptance. |
 | MONK-003 | P0 | Auth E2E | Three existing Auth users are confirmed, but their role metadata is unset. One linked Google identity does not prove fresh-account OAuth. | Test signup, verification, login, Google OAuth, reset, invitation acceptance/revocation with isolated test identities. |
 | MONK-004 | P0 | CAPTCHA | Cloudflare Turnstile widget and secret presence are verified; Supabase Auth CAPTCHA dashboard enablement/secret configuration is not readable from the connected integration. | Operator verifies Supabase Auth → Bot and Abuse Protection and tests valid/missing/invalid tokens. |
@@ -34,8 +34,8 @@ The production `main` commit passes GitHub Actions run #1058. That proves the co
 
 ## Verified infrastructure snapshot
 - GitHub `main` includes audit-document commit `bfabf4777a59817e7e8304c1ec0f48dbcaba05e0`; application source baseline is `75fe54d733ab782cea9ae2bf3af8f2053144d57e`.
-- GitHub Actions run #1058: success.
-- Vercel `monk-platform`: latest production deployment READY on that commit; project metadata reports `live=false`.
+- GitHub Actions run #1073: success on implementation commit aed68d164e3a0395014649e9033c565cdd1acefd; later documentation-only commit has no new run recorded.
+- Vercel `monk-platform`: PR preview deployment failed due to the daily Free plan deployment quota; earlier project metadata reported `live=false`.
 - Vercel `monk.monster` domain: verified; Cloudflare nameservers are active.
 - Cloudflare Worker `monk`: custom domain `monk.monster` enabled; ASSETS binding serves static Vite output.
 - Supabase production: active; 3 confirmed Auth users; 1 Google identity; institution directory empty.
@@ -60,7 +60,7 @@ The production `main` commit passes GitHub Actions run #1058. That proves the co
 7. Vercel origin hostname/protection decision before Worker reverse-proxy cutover.
 
 ## Release acceptance gates
-- [ ] Exact-head GitHub CI passes on the remediation branch.
+- [ ] Exact-head GitHub CI passes on the latest remediation branch head.
 - [ ] Phase 6 tested with owner/admin/manager/sales/auditor roles and cross-tenant denial.
 - [ ] Campus Principal/HOD/Faculty/Student/Parent workflows pass with two isolated institutions.
 - [ ] CAPTCHA, Google OAuth, email verification and password reset pass with fresh controlled accounts.
@@ -71,4 +71,4 @@ The production `main` commit passes GitHub Actions run #1058. That proves the co
 - [ ] Production smoke tests pass after an explicitly approved release.
 
 ## Scope boundary
-Do not merge this branch or perform a production DNS/Worker/Vercel cutover until CI and external release gates are reviewed. Do not create fake student, faculty, institution, sales, inventory or finance records to make tests appear successful.
+PR #36 remains open and unmerged. Do not merge or perform a production DNS/Worker/Vercel cutover until exact-head CI, mergeability, code review and external release gates are reviewed. Do not create fake student, faculty, institution, sales, inventory or finance records to make tests appear successful.
