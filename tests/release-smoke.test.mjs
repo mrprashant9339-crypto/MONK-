@@ -306,4 +306,8 @@ test("workspace dashboard routing is organization-scoped and database regression
   assert.match(inviteSql, /mismatched invitation email/);
   assert.match(inviteSql, /unverified email accepted invitation/);
   assert.match(inviteSql, /invitation token reuse/);
+  const provisioningSql = await readFile(join(root, "supabase", "tests", "workspace-provisioning.sql"), "utf8");
+  assert.match(provisioningSql, /Campus workspace self-provisioning was allowed/);
+  assert.match(provisioningSql, /Student role self-created a Business workspace/);
+  assert.match(provisioningSql, /Business owner workspace creation/);
 });
