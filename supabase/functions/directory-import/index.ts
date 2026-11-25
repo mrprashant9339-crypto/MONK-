@@ -10,6 +10,39 @@ const ALLOWED_ORIGINS = new Set([
   "https://monk-platform-git-feature-auth-registrat-3476eb-makto-community.vercel.app",
 ]);
 
+
+const STATE_CODES: Record<string, string> = {
+  "andaman and nicobar islands":"AN","andhra pradesh":"AP","arunachal pradesh":"AR","assam":"AS","bihar":"BR",
+  "chandigarh":"CH","chhattisgarh":"CT","dadra and nagar haveli":"DN","daman and diu":"DD","delhi":"DL","goa":"GA",
+  "gujarat":"GJ","haryana":"HR","himachal pradesh":"HP","jammu and kashmir":"JK","jharkhand":"JH","karnataka":"KA",
+  "kerala":"KL","ladakh":"LA","lakshadweep":"LD","madhya pradesh":"MP","maharashtra":"MH","manipur":"MN",
+  "meghalaya":"ML","mizoram":"MZ","nagaland":"NL","odisha":"OD","orissa":"OD","puducherry":"PY","pondicherry":"PY",
+  "punjab":"PB","rajasthan":"RJ","sikkim":"SK","tamil nadu":"TN","telangana":"TS","tripura":"TR",
+  "uttar pradesh":"UP","uttarakhand":"UK","uttaranchal":"UK","west bengal":"WB"
+};
+const AICTE_ENDPOINT = "https://facilities.aicte-india.org/dashboard/pages/php/approvedinstituteserver.php";
+
+function normalizeAicteRows(payload: unknown): Record<string, unknown>[] {
+  const root = payload && typeof payload === "object" && !Array.isArray(payload)
+    ? ((payload as Record<string, unknown>).data ?? (payload as Record<string, unknown>).combined ?? payload)
+    : payload;
+  if (!Array.isArray(root)) return [];
+  const keys = ["aicte_id","institute_name","address","district","institution_type","women","minority","other_id"];
+  return root.map((item) => {
+    if (Array.isArray(item)) return Object.fromEntries(item.map((value, index) => [keys[index] ?? "extra_"+index, value]));
+    return item && typeof item === "object" ? item as Record<string, unknown> : {};
+  });
+}
+function aicteOwnership(value: unknown): string {
+  const text = String(value ?? "").toLowerCase();
+  if (text.includes("central")) return "central_government";
+  if (text.includes("state government") || text === "government" || text.includes("govt")) return "state_government";
+  if (text.includes("aided")) return "government_aided";
+  if (text.includes("private") || text.includes("self financing")) return "private";
+  if (text.includes("trust") || text.includes("society")) return "trust_society";
+  return "other";
+}
+
 function response(body: unknown, status: number, origin: string | null) {
   const headers = new Headers({
     "content-type": "application/json; charset=utf-8",
@@ -79,6 +112,86 @@ Deno.serve(async (req: Request) => {
       publishedInstitutions: published.count ?? 0,
       fullyVerifiedInstitutions: verified.count ?? 0,
       sources: sources.data ?? [],
+    }, 200, origin);
+  }
+
+  if (body.action === "sync_aicte") {
+    const stateName = typeof body.state === "string" ? body.state.trim() : "";
+    const stateCode = STATE_CODES[stateName.toLowerCase()];
+    const academicYear = typeof body.academicYear === "string" ? body.academicYear : "2025-2026";
+    if (!stateCode) return response({ error: "Provide a supported Indian state or union territory name." }, 400, origin);
+    if (!["2025-2026", "2026-2027"].includes(academicYear)) {
+      return response({ error: "Only explicitly supported AICTE academic years can be synchronized." }, 400, origin);
+    }
+    const params = new URLSearchParams({
+      method: "fetchdata", year: academicYear, program: "1", level: "1",
+      institutiontype: "1", Women: "1", Minority: "1", state: stateName, course: "1"
+    });
+    const upstreamUrl = AICTE_ENDPOINT + "?" + params.toString();
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 25000);
+    let upstream: Response;
+    try {
+      upstream = await fetch(upstreamUrl, {
+        headers: {
+          accept: "application/json, text/javascript, */*; q=0.01",
+          "x-requested-with": "XMLHttpRequest"
+        },
+        signal: controller.signal
+      });
+    } catch (error) {
+      clearTimeout(timeout);
+      console.error("AICTE upstream fetch failed:", String(error));
+      return response({ error: "AICTE source could not be reached. No records were changed." }, 502, origin);
+    }
+    clearTimeout(timeout);
+    if (!upstream.ok) return response({ error: "AICTE source returned HTTP " + upstream.status + ". No records were changed." }, 502, origin);
+    let payload: unknown;
+    try { payload = await upstream.json(); }
+    catch { return response({ error: "AICTE source did not return JSON. No records were changed." }, 502, origin); }
+    const sourceRows = normalizeAicteRows(payload);
+    if (!sourceRows.length) return response({ state: stateName, academicYear, fetched: 0, imported: 0, message: "AICTE returned no rows for this filter." }, 200, origin);
+    if (sourceRows.length > 5000) return response({ error: "AICTE returned an unexpectedly large state response. Split or review the source query before importing." }, 413, origin);
+
+    const records = sourceRows.flatMap((row) => {
+      const id = String(row.aicte_id ?? row.AICTE_ID ?? row.id ?? "").trim();
+      const name = String(row.institute_name ?? row.instituteName ?? row.name ?? "").trim();
+      if (!id || !name) return [];
+      return [{
+        source_record_id: id,
+        aicte_id: id,
+        canonical_name: name,
+        state_code: stateCode,
+        district: String(row.district ?? "").trim() || null,
+        address: String(row.address ?? "").trim() || null,
+        category_key: "other",
+        institution_kind: "college",
+        ownership_key: aicteOwnership(row.institution_type ?? row.institutionType),
+        academic_year: academicYear
+      }];
+    });
+    if (!records.length) return response({ error: "AICTE response contained no usable institution IDs and names." }, 422, origin);
+
+    let totals = { inserted: 0, updated: 0, rejected: 0, published_from_official_sources: 0 };
+    for (let offset = 0; offset < records.length; offset += 200) {
+      const { data, error } = await adminClient.rpc("ingest_monk_directory_batch", {
+        p_source_key: "aicte_live_approved_institutes",
+        p_records: records.slice(offset, offset + 200)
+      });
+      if (error) {
+        console.error("AICTE directory batch rejected:", error.message);
+        return response({ error: "An AICTE batch failed validation. Earlier batches remain imported; rerun this state to safely resume.", partial: totals }, 422, origin);
+      }
+      for (const key of Object.keys(totals) as Array<keyof typeof totals>) totals[key] += Number(data?.[key] ?? 0);
+    }
+    return response({
+      source: "AICTE official approved-institutes endpoint",
+      state: stateName,
+      stateCode,
+      academicYear,
+      fetched: sourceRows.length,
+      normalized: records.length,
+      ...totals
     }, 200, origin);
   }
 
