@@ -1,13 +1,20 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Content-Type": "application/json",
-};
-function json(status: number, body: Record<string, unknown>) {
-  return new Response(JSON.stringify(body), { status, headers: corsHeaders });
+const allowedOrigins = new Set([
+  "https://monk.monster",
+  "https://www.monk.monster",
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+]);
+
+function corsHeaders(origin: string | null) {
+  const headers = new Headers({
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Vary": "Origin",
+  });
+  if (origin && allowedOrigins.has(origin)) headers.set("Access-Control-Allow-Origin", origin);
+  return headers;
 }
 function escapeHtml(value: string) {
   return value.replace(/[&<>"']/g, (char) => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" })[char] ?? char);
@@ -18,7 +25,13 @@ async function sha256Hex(value: string) {
 }
 
 Deno.serve(async (request) => {
-  if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  const origin = request.headers.get("origin");
+  const json = (status: number, body: Record<string, unknown>) => new Response(JSON.stringify(body), {
+    status,
+    headers: { ...Object.fromEntries(corsHeaders(origin)), "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" },
+  });
+  if (origin && !allowedOrigins.has(origin)) return json(403, { error: "Origin not allowed." });
+  if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders(origin) });
   if (request.method !== "POST") return json(405, { error: "Method not allowed" });
   const authorization = request.headers.get("Authorization");
   if (!authorization?.startsWith("Bearer ")) return json(401, { error: "Authentication required" });
@@ -33,7 +46,13 @@ Deno.serve(async (request) => {
   if (!resendKey || !fromAddress) return json(503, { error: "Email delivery is not configured. Share the generated secure invitation link instead.", code: "EMAIL_NOT_CONFIGURED" });
 
   let body: { organizationId?: string; email?: string; role?: string; token?: string };
-  try { body = await request.json(); } catch { return json(400, { error: "Invalid JSON body." }); }
+  try {
+    const rawBody = await request.text();
+    if (new TextEncoder().encode(rawBody).byteLength > 12000) return json(413, { error: "Request is too large." });
+    const parsed: unknown = JSON.parse(rawBody);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return json(400, { error: "Invalid JSON body." });
+    body = parsed as typeof body;
+  } catch { return json(400, { error: "Invalid JSON body." }); }
   const organizationId = body.organizationId?.trim() ?? "";
   const email = body.email?.trim().toLowerCase() ?? "";
   const role = body.role?.trim() ?? "";
