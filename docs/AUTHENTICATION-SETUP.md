@@ -30,7 +30,27 @@ The frontend calls Supabase Auth with provider `google` and redirects to `/auth/
 
 For Google signup, the user must enter a full name and accept the current Terms and Privacy Policy before leaving MONK. Do not treat Google's account chooser as a completed MONK profile. The callback validates the stored onboarding context, records legal consent, and updates the caller's own existing `profiles` row through the narrow `update_my_profile` RPC. If the callback has no valid MONK onboarding context or no usable full name, the session is rejected and the user must restart from the MONK signup/login page.
 
-Google sign-in cannot succeed until provider credentials and redirect allowlists are configured in the dashboard. In Google Cloud OAuth consent-screen branding, set the application name to `MONK`; the hostname shown by the Google account chooser is the Supabase Auth callback host, not a project name entered by the user.
+Google sign-in cannot succeed until provider credentials and redirect allowlists are configured in the dashboard.
+
+### Google consent-screen branding (required before production)
+1. Open Google Cloud Console → Google Auth Platform → Branding (older projects: APIs & Services → OAuth consent screen).
+2. Set **App name** to `MONK`. Set the user-support email and developer contact email to mailboxes controlled by the legal operator.
+3. Add `monk.monster` to authorized domains. Use the production privacy policy URL `https://monk.monster/privacy` and terms URL `https://monk.monster/terms`. Add the official MONK logo only if it meets Google's branding requirements.
+4. Verify the publishing status and audience. If the app remains in Testing, add each controlled test Google account to the test-user list; do not use a public user's account for testing.
+5. In Google Auth Platform → Clients, confirm the Web OAuth client has the exact Supabase callback URI from Step 1. Save the client ID and secret in Supabase Auth → Providers → Google. Never commit the client secret or send it in chat.
+6. Test both a new Google account and an existing account. The Google account chooser should display **MONK**, not the internal Supabase project name.
+
+Changing the Supabase project name does not change the Google account chooser branding; that name is controlled by the Google OAuth consent-screen branding configuration.
+
+### Supabase Auth CAPTCHA (required before production)
+1. Open Supabase Dashboard → Authentication → Bot and Abuse Protection.
+2. Enable CAPTCHA protection and select Cloudflare Turnstile.
+3. Enter the existing MONK Turnstile site key and its secret in this Auth CAPTCHA setting, then save.
+4. The Auth CAPTCHA secret is separate from the Edge Function `TURNSTILE_SECRET`. Configuring one does not configure the other.
+5. Test signup, password sign-in and password recovery with a real browser-generated token. A Playwright mock token is only an automated UI test and is not live Siteverify evidence.
+6. Confirm a missing/invalid token is rejected and a valid token is accepted. Review Supabase Auth logs and the Edge Function logs separately.
+
+The connected Supabase integration does not expose the Auth CAPTCHA dashboard toggle/provider secret or Google Cloud OAuth branding settings. Do not mark these items complete until an operator verifies them in the respective dashboards. In Google Cloud OAuth consent-screen branding, set the application name to `MONK`; the hostname shown by the Google account chooser is the Supabase Auth callback host, not a project name entered by the user.
 
 ### Email and password security
 
