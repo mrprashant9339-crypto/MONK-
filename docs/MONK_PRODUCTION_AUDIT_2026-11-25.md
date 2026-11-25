@@ -26,8 +26,9 @@ The production `main` commit passes GitHub Actions run #1058. That proves the co
 | MONK-013 | P1 | Business files | Phase 6 describes Documents as a local browser preview, not secure persistent storage. | Implement private Storage, tenant-scoped policies, signed URL lifecycle, metadata, retention and file validation. |
 | MONK-014 | P2 | PWA | Production `main` did not register a service worker or verified offline fallback. | Add GET-only same-origin caching, offline page, network notice and error boundary; never cache authenticated API responses or POSTs. |
 | MONK-015 | P2 | Guardian portal | Client relationship lookup was broader than the signed-in guardian, although database RLS already scopes rows. | Add guardian-id filter and explicit no-guardian empty state. |
-| MONK-016 | P2 | Design | PR #24 is a separate preview-only draft and is unmergeable/dirty. | Review against approved brand assets; integrate only approved, functional screens. |
-| MONK-017 | P2 | Docs | Some README/release-runbook statements are historical or contradictory. | Keep release evidence aligned to exact commit, deployment, settings and tests. |
+| MONK-016 | P2 | Dependency reproducibility | The repository has no committed package-lock.json, so `npm ci` cannot run and CI currently relies on `npm install`. | Generate and commit a reviewed lockfile, then switch CI to `npm ci`. |
+| MONK-017 | P2 | Design | PR #24 is a separate preview-only draft and is unmergeable/dirty. | Review against approved brand assets; integrate only approved, functional screens. |
+| MONK-018 | P2 | Docs | Some README/release-runbook statements are historical or contradictory. | Keep release evidence aligned to exact commit, deployment, settings and tests. |
 
 ## Verified infrastructure snapshot
 - GitHub `main`: `75fe54d733ab782cea9ae2bf3af8f2053144d57e`.
@@ -43,7 +44,7 @@ The production `main` commit passes GitHub Actions run #1058. That proves the co
 - Matching Phase 6 migrations are added to source control; they are already applied in production and must not be re-applied blindly.
 - Parent portal relationship lookup is being narrowed to the authenticated guardian.
 - Offline recovery, GET-only same-origin service-worker caching, network status notice and React error boundary are being added.
-- CI dependency installation is being changed to `npm ci`.
+- CI remains on `npm install` because the repository has no lockfile; the failed `npm ci` experiment is recorded as MONK-016.
 - Release smoke tests cover these changes.
 
 ## External/operator blockers (not safe to fake)
