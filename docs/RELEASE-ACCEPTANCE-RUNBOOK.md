@@ -22,6 +22,9 @@ This runbook separates automated CI coverage from live provider/account acceptan
 4. Do not send credentials through chat, source code, GitHub commits, or Vite `VITE_*` variables.
 5. Create an invitation for a controlled test mailbox; verify provider acceptance, mailbox delivery, and acceptance by only that confirmed mailbox.
 
+## 3. Welcome email delivery
+Follow `docs/WELCOME-EMAIL-DELIVERY.md`. Verify the Resend sender domain and configure `RESEND_API_KEY`, `MONK_EMAIL_FROM=MONK Support <support@monk.monster>`, `MONK_APP_URL=https://monk.monster`, and `MONK_SUPPORT_EMAIL=support@monk.monster` in Supabase Edge Function secrets. Apply the welcome-email migration and deploy `send-welcome-email` with JWT verification enabled. Separately configure Supabase Auth custom SMTP for confirmation and recovery messages; the Resend welcome-email function does not configure Auth SMTP. Test a fresh email signup and Google signup, then confirm existing-user login and repeated callback do not send duplicates.
+
 ## 3. Supabase Auth hardening
 Open [Supabase Auth Rate Limits](https://supabase.com/dashboard/project/yucwackrbekwaxiyuobt/auth/rate-limits), [Auth Providers](https://supabase.com/dashboard/project/yucwackrbekwaxiyuobt/auth/providers), and the Auth Bot and Abuse Protection settings.
 - Keep email confirmation enabled.
