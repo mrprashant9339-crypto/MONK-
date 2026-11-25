@@ -78,6 +78,9 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy
 
+      - name: Verify production Worker is using Vercel origin
+        run: node --test tests/integration/production-worker-origin.test.mjs
+
       - name: Live production Chromium tests
         env:
           MONK_BASE_URL: https://monk.monster
