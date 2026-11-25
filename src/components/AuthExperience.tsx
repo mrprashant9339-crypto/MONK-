@@ -138,8 +138,8 @@ export default function AuthExperience() {
         const { data: currentUserData, error: currentUserError } = await supabase.auth.getUser();
         if (currentUserError) throw currentUserError;
         const currentMetadata = currentUserData.user?.user_metadata ?? {};
-        const consent: { terms: string; privacy: string; vertical?: Vertical; role?: IntendedRole; institutionId?: string | null; fullName?: string; phone?: string } | null = raw
-          ? JSON.parse(raw) as { terms: string; privacy: string; vertical: Vertical; role: IntendedRole; institutionId?: string | null; fullName?: string; phone?: string }
+        const consent: { terms: string; privacy: string; vertical?: Vertical; role?: IntendedRole; institutionId?: string | null; fullName?: string; phone?: string; flow?: string } | null = raw
+          ? JSON.parse(raw) as { terms: string; privacy: string; vertical: Vertical; role: IntendedRole; institutionId?: string | null; fullName?: string; phone?: string; flow?: string }
           : typeof currentMetadata.terms_version === "string" && typeof currentMetadata.privacy_version === "string"
             ? { terms: currentMetadata.terms_version, privacy: currentMetadata.privacy_version }
             : null;
@@ -165,6 +165,7 @@ export default function AuthExperience() {
           if (consentError) throw consentError;
           if (raw) localStorage.removeItem("monk:oauth-consent");
         }
+        const shouldSendWelcome = params.get("flow") === "signup" || consent.flow === "signup";
         const resolvedFullName = typeof consent.fullName === "string" && consent.fullName.trim()
           ? consent.fullName.trim()
           : typeof currentMetadata.full_name === "string" && currentMetadata.full_name.trim()
@@ -173,6 +174,10 @@ export default function AuthExperience() {
         if (resolvedFullName.length < 2) throw new Error("Complete your MONK profile with your full name before opening a workspace.");
         const { error: profileError } = await supabase.rpc("update_my_profile", { p_full_name: resolvedFullName });
         if (profileError) throw profileError;
+        if (shouldSendWelcome) {
+          const { error: welcomeError } = await supabase.functions.invoke("send-welcome-email");
+          if (welcomeError) console.error("MONK welcome email could not be delivered:", welcomeError.message);
+        }
         if (alive) {
           const invite = new URLSearchParams(window.location.search).get("invite");
           const callbackVertical = consent?.vertical ?? (currentMetadata.vertical === "education" ? "education" : "business");
@@ -242,7 +247,7 @@ export default function AuthExperience() {
           email: email.trim().toLowerCase(),
           password,
           options: {
-            emailRedirectTo: (() => { const url = new URL(window.location.origin + "/auth/callback"); url.searchParams.set("vertical", vertical); const invite = new URLSearchParams(window.location.hash.replace(/^#/, "")).get("invite"); if (invite) url.searchParams.set("invite", invite); return url.toString(); })(),
+            emailRedirectTo: (() => { const url = new URL(window.location.origin + "/auth/callback"); url.searchParams.set("vertical", vertical); url.searchParams.set("flow", "signup"); const invite = new URLSearchParams(window.location.hash.replace(/^#/, "")).get("invite"); if (invite) url.searchParams.set("invite", invite); return url.toString(); })(),
             captchaToken: currentCaptchaToken,
             data: {
               full_name: fullName.trim(),
@@ -264,6 +269,8 @@ export default function AuthExperience() {
             await supabase.auth.signOut();
             throw new Error("We could not securely record your legal acceptance. Please try again or contact support.");
           }
+          const { error: welcomeError } = await supabase.functions.invoke("send-welcome-email");
+          if (welcomeError) console.error("MONK welcome email could not be delivered:", welcomeError.message);
           navigate("/", { replace: true });
         } else {
           setMode("pending");
@@ -296,7 +303,7 @@ export default function AuthExperience() {
     setBusy(true); setError("");
     try {
       if (mode === "signup" || mode === "login") {
-        try { localStorage.setItem("monk:oauth-consent", JSON.stringify({ terms: TERMS_VERSION, privacy: PRIVACY_VERSION, vertical, role, institutionId: institutionId || null, fullName: fullName.trim(), phone: phone.trim() })); } catch {}
+        try { localStorage.setItem("monk:oauth-consent", JSON.stringify({ terms: TERMS_VERSION, privacy: PRIVACY_VERSION, vertical, role, institutionId: institutionId || null, fullName: fullName.trim(), phone: phone.trim(), flow: mode === "signup" ? "signup" : "login" })); } catch {}
       }
       const inviteToken = new URLSearchParams(window.location.hash.replace(/^#/, "")).get("invite");
       const callbackUrl = new URL(window.location.origin + "/auth/callback");
