@@ -19,7 +19,7 @@ test("welcome email CORS is scoped to the configured app origin, not production 
 test("welcome email retries use a stable provider idempotency key", async () => {
   const fn = await read("../supabase/functions/send-welcome-email/index.ts");
   assert.match(fn, /"Idempotency-Key": `monk-welcome-\$\{user\.id\}`/);
-  assert.match(fn, /status: "failed"/);
+  assert.match(fn, /const nextStatus = uncertain \? "manual_review" : "failed"/);
   assert.match(fn, /status: "manual_review"/);
   assert.match(fn, /status: "sent"/);
   assert.match(fn, /provider_message_id: delivery\.id/);
@@ -46,4 +46,6 @@ test("email delivery ledger is server-only and its claim RPC is restricted to se
   assert.match(sqlTest, /no client policies/i);
   assert.match(sqlTest, /security invoker/i);
   assert.match(sqlTest, /service_role/i);
+  assert.match(sqlTest, /manual_review delivery state constraint is missing/i);
+  assert.match(sqlTest, /24-hour retry window/i);
 });

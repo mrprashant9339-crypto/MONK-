@@ -69,6 +69,20 @@ begin
   if expected_unique_columns is null then
     raise exception 'Unique (user_id, event_type) idempotency constraint is missing';
   end if;
+
+  if not exists (
+    select 1 from pg_constraint
+    where conrelid = 'public.email_delivery_events'::regclass
+      and contype = 'c'
+      and pg_get_constraintdef(oid) ilike '%manual_review%'
+  ) then
+    raise exception 'manual_review delivery state constraint is missing';
+  end if;
+
+  if pg_get_functiondef(claim_fn) not ilike '%24 hours%'
+     or pg_get_functiondef(claim_fn) not ilike '%manual_review%' then
+    raise exception 'claim_welcome_email is missing its 24-hour retry window';
+  end if;
 end;
 $test$;
 
