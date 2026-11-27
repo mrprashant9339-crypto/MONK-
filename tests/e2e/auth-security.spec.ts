@@ -107,3 +107,75 @@ test("signup enforces the full password policy and verification resend sends a T
   expect(resendRequest?.body.type).toBe("signup");
   expect((resendRequest?.body.gotrue_meta_security as Record<string, unknown>)?.captcha_token).toMatch(/^e2e-turnstile-token-/);
 });
+
+
+test("login and forgot-password requests both forward the current Turnstile token", async ({ page }) => {
+  const authRequests: Array<{ path: string; body: Record<string, unknown> }> = [];
+
+  await page.addInitScript(() => {
+    let nextWidgetId = 0;
+    const containers = new Map<string, HTMLElement>();
+    Object.defineProperty(window, "turnstile", {
+      configurable: true,
+      value: {
+        render: (container: HTMLElement, options: { callback: (token: string) => void }) => {
+          const id = "mock-turnstile-" + (++nextWidgetId);
+          containers.set(id, container);
+          const verifyButton = document.createElement("button");
+          verifyButton.type = "button";
+          verifyButton.textContent = "Verify test CAPTCHA";
+          verifyButton.setAttribute("data-testid", "mock-turnstile-verify");
+          verifyButton.addEventListener("click", () => options.callback("e2e-turnstile-token-" + nextWidgetId));
+          container.replaceChildren(verifyButton);
+          return id;
+        },
+        remove: (id: string) => {
+          containers.get(id)?.replaceChildren();
+          containers.delete(id);
+        },
+        reset: (id?: string) => {
+          if (id) containers.get(id)?.replaceChildren();
+        }
+      }
+    });
+  });
+
+  await page.route("https://yucwackrbekwaxiyuobt.supabase.co/auth/v1/**", async route => {
+    const request = route.request();
+    const url = new URL(request.url());
+    const body = request.postDataJSON?.() as Record<string, unknown> | undefined;
+    authRequests.push({ path: url.pathname, body: body ?? {} });
+
+    if (url.pathname === "/auth/v1/token") {
+      await route.fulfill({
+        status: 400,
+        contentType: "application/json",
+        body: JSON.stringify({ code: 400, error_code: "invalid_credentials", msg: "Invalid login credentials" })
+      });
+      return;
+    }
+
+    await route.fulfill({ status: 200, contentType: "application/json", body: "{}" });
+  });
+
+  await page.goto("/login?vertical=business");
+  await page.locator('input[type="email"]').fill("MONK-TEST@EXAMPLE.TEST");
+  await page.locator('input[autocomplete="current-password"]').fill("DemoPassword2026!");
+  await page.getByTestId("mock-turnstile-verify").click();
+  await page.getByRole("button", { name: /Sign in/ }).click();
+
+  await expect(page.getByRole("alert")).toContainText("Invalid login credentials");
+  const loginRequest = authRequests.find(request => request.path === "/auth/v1/token");
+  expect(loginRequest?.body.email).toBe("monk-test@example.test");
+  expect((loginRequest?.body.gotrue_meta_security as Record<string, unknown>)?.captcha_token).toMatch(/^e2e-turnstile-token-/);
+
+  await page.getByRole("button", { name: "Forgot password?" }).click();
+  await page.locator('input[type="email"]').fill("MONK-TEST@EXAMPLE.TEST");
+  await page.getByTestId("mock-turnstile-verify").click();
+  await page.getByRole("button", { name: "Send reset link" }).click();
+
+  await expect(page.getByRole("status")).toContainText("password-reset email has been sent");
+  const recoveryRequest = authRequests.find(request => request.path === "/auth/v1/recover");
+  expect(recoveryRequest?.body.email).toBe("monk-test@example.test");
+  expect((recoveryRequest?.body.gotrue_meta_security as Record<string, unknown>)?.captcha_token).toMatch(/^e2e-turnstile-token-/);
+});
