@@ -101,7 +101,7 @@ test("signup enforces the full password policy and verification resend sends a T
   await expect(resendButton).toBeEnabled();
   await resendButton.click();
 
-  await expect(page.getByRole("status")).toContainText("new confirmation email has been sent");
+  await expect(page.locator(".authx-pending")).toContainText("new confirmation email has been sent");
   const resendRequest = authRequests.find(request => request.path === "/auth/v1/resend");
   expect(resendRequest?.body.email).toBe("monk-auth-regression@example.test");
   expect(resendRequest?.body.type).toBe("signup");
