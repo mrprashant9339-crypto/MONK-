@@ -60,9 +60,9 @@ Use one mailbox controlled by the project owner/tester. Do not use a customer ma
 
 1. Open the staging preview in a clean browser session and verify the staging Turnstile widget loads without a hostname error.
 2. Register a new test account with a valid password meeting all five rules: at least 12 characters, uppercase, lowercase, digit, and special character.
-3. Verify that a verification email arrives, its link opens the staging callback, and the account becomes confirmed.
-4. Sign in with the new account; verify normalized email handling and successful session creation.
-5. On the pending-verification path, request a resend; verify the new CAPTCHA challenge is required and the resend email arrives.
+3. Confirm the initial verification email arrives, then remain on the pending-verification screen without opening its link.
+4. Request a verification resend; verify a fresh CAPTCHA challenge is required and the second verification email arrives. Use the resent email's link to open the staging callback and confirm the account.
+5. Sign in with the newly verified account; verify normalized email handling and successful session creation.
 6. Request password recovery; verify the reset email arrives and its link opens the staging reset route.
 7. Set a new compliant password and sign in with it. Verify the old password no longer works.
 8. Verify the welcome email is sent once for the verified account; inspect the Resend event and the staging `email_delivery_events` row.

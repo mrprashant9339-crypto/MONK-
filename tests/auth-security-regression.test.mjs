@@ -30,3 +30,20 @@ test("signup and password recovery enforce the same password policy", async () =
   assert.match(widget, /onExpired\?: \(\) => void/);
   assert.match(widget, /onExpiredRef\.current\?\.\(\)/);
 });
+
+test("successful CAPTCHA completion clears only CAPTCHA errors, not authentication failures", async () => {
+  const auth = await read("../src/components/AuthExperience.tsx");
+  const tokenStart = auth.indexOf("function handleCaptchaToken(token: string)");
+  const tokenEnd = auth.indexOf("\n  function handleCaptchaError()", tokenStart);
+  const tokenHandler = auth.slice(tokenStart, tokenEnd);
+  const errorStart = auth.indexOf("function handleCaptchaError()");
+  const expiredStart = auth.indexOf("function handleCaptchaExpired()", errorStart);
+  const captchaErrorHandler = auth.slice(errorStart, expiredStart);
+
+  assert.ok(tokenStart >= 0 && tokenEnd > tokenStart, "CAPTCHA token handler must exist");
+  assert.match(tokenHandler, /setCaptchaError\(""\)/);
+  assert.doesNotMatch(tokenHandler, /setError\(/);
+  assert.match(captchaErrorHandler, /setCaptchaError\(/);
+  assert.doesNotMatch(captchaErrorHandler, /setError\(/);
+  assert.match(auth, /const \[captchaError, setCaptchaError\] = useState\(""\)/);
+});

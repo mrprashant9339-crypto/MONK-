@@ -53,6 +53,7 @@ export default function AuthExperience() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [captchaError, setCaptchaError] = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
   const [callbackSession, setCallbackSession] = useState(false);
   const [captchaToken, setCaptchaToken] = useState("");
@@ -200,7 +201,7 @@ export default function AuthExperience() {
     : [{ value: "owner", label: "Business owner" }, { value: "admin", label: "Administrator" }, { value: "manager", label: "Manager" }, { value: "sales", label: "Sales" }, { value: "contributor", label: "Team contributor (Operations / Accounts / Staff)" }, { value: "auditor", label: "Auditor" }, { value: "client", label: "Client" }, { value: "vendor", label: "Vendor" }];
 
   function changeMode(next: Mode) {
-    setError(""); setMessage(""); setMode(next);
+    setError(""); setCaptchaError(""); setMessage(""); setMode(next);
     const path = next === "signup" ? "/signup" : next === "forgot" ? "/forgot-password" : next === "reset" ? "/reset-password" : "/login";
     navigate(path + (next === "login" || next === "signup" ? "?vertical=" + vertical : ""), { replace: true });
   }
@@ -208,7 +209,7 @@ export default function AuthExperience() {
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (!supabase) { setError("Authentication is not configured. Please contact MONK support."); return; }
-    setBusy(true); setError(""); setMessage("");
+    setBusy(true); setError(""); setCaptchaError(""); setMessage("");
     try {
       const requiresCaptcha = mode === "signup" || mode === "login" || mode === "forgot";
       if (requiresCaptcha && !captchaToken) throw new Error("Complete the security verification before continuing.");
@@ -328,27 +329,27 @@ export default function AuthExperience() {
     setCaptchaToken(token);
     if (token) {
       setCaptchaFailed(false);
-      setError("");
+      setCaptchaError("");
     }
   }
 
   function handleCaptchaError() {
     setCaptchaToken("");
     setCaptchaFailed(true);
-    setError("Cloudflare security verification could not connect. Check your network or browser content blocker, then retry.");
+    setCaptchaError("Cloudflare security verification could not connect. Check your network or browser content blocker, then retry.");
   }
 
   function handleCaptchaExpired() {
     setCaptchaToken("");
     setCaptchaFailed(false);
-    setError("Security verification expired. Complete the new challenge before continuing.");
+    setCaptchaError("Security verification expired. Complete the new challenge before continuing.");
     setCaptchaResetKey(value => value + 1);
   }
 
   function retryCaptcha() {
     setCaptchaToken("");
     setCaptchaFailed(false);
-    setError("");
+    setCaptchaError("");
     setCaptchaResetKey(value => value + 1);
   }
 
@@ -359,12 +360,13 @@ export default function AuthExperience() {
       return;
     }
     if (!captchaToken) {
-      setError("Complete the Cloudflare security verification before requesting another verification email.");
+      setCaptchaError("Complete the Cloudflare security verification before requesting another verification email.");
       return;
     }
 
     setBusy(true);
     setError("");
+    setCaptchaError("");
     setMessage("");
     const currentCaptchaToken = captchaToken;
     try {
@@ -426,6 +428,7 @@ export default function AuthExperience() {
             <label>Email address<input type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" /></label>
             <div className="authx-captcha-wrap">
               <TurnstileWidget resetKey={captchaResetKey} onToken={handleCaptchaToken} onError={handleCaptchaError} onExpired={handleCaptchaExpired}/>
+              {captchaError && <p className="authx-alert" role="alert">{captchaError}</p>}
               {captchaFailed && <button className="authx-link" type="button" onClick={retryCaptcha}>Retry security verification</button>}
             </div>
             <button className="authx-secondary" type="button" onClick={() => void resendVerification()} disabled={busy || !email.trim() || !captchaToken || resendCooldown > 0}>{busy ? "Sending…" : resendCooldown > 0 ? "Resend available in " + resendCooldown + "s" : "Resend verification email"}</button>
@@ -461,6 +464,7 @@ export default function AuthExperience() {
               {mode === "login" && <button className="authx-link authx-forgot" type="button" onClick={() => changeMode("forgot")}>Forgot password?</button>}
               {mode !== "reset" && <div className="authx-captcha-wrap">
                 <TurnstileWidget resetKey={captchaResetKey} onToken={handleCaptchaToken} onError={handleCaptchaError} onExpired={handleCaptchaExpired}/>
+                {captchaError && <p className="authx-alert" role="alert">{captchaError}</p>}
                 {captchaFailed && <button className="authx-link" type="button" onClick={retryCaptcha}>Retry security verification</button>}
               </div>}
               {error && <p className="authx-alert" role="alert">{error}</p>}
