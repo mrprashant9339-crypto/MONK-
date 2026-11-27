@@ -38,6 +38,6 @@ test("email delivery ledger is server-only and its claim RPC is restricted to se
   assert.match(sqlTest, /has_table_privilege\('anon'/i);
   assert.match(sqlTest, /has_table_privilege\('authenticated'/i);
   assert.match(sqlTest, /no client policies/i);
-  assert.match(sqlTest, /security definer/i);
+  assert.match(sqlTest, /security invoker/i);
   assert.match(sqlTest, /service_role/i);
 });
