@@ -20,6 +20,7 @@ declare global {
 type Props = {
   onToken: (token: string) => void;
   onError?: () => void;
+  onExpired?: () => void;
   resetKey?: number;
 };
 
@@ -32,9 +33,11 @@ export default function TurnstileWidget({ onToken, onError, resetKey = 0 }: Prop
   const widgetIdRef = useRef<string | null>(null);
   const onTokenRef = useRef(onToken);
   const onErrorRef = useRef(onError);
+  const onExpiredRef = useRef(onExpired);
 
   useEffect(() => { onTokenRef.current = onToken; }, [onToken]);
   useEffect(() => { onErrorRef.current = onError; }, [onError]);
+  useEffect(() => { onExpiredRef.current = onExpired; }, [onExpired]);
 
   useEffect(() => {
     let cancelled = false;
@@ -52,7 +55,7 @@ export default function TurnstileWidget({ onToken, onError, resetKey = 0 }: Prop
           sitekey: SITE_KEY,
           theme: "auto",
           callback: token => onTokenRef.current(token),
-          "expired-callback": () => onTokenRef.current(""),
+          "expired-callback": () => { onTokenRef.current(""); onExpiredRef.current?.(); },
           "error-callback": () => { onTokenRef.current(""); onErrorRef.current?.(); }
         });
       } catch {
