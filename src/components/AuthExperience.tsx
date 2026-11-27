@@ -354,7 +354,7 @@ export default function AuthExperience() {
 
   async function resendVerification() {
     if (!supabase || !email.trim() || resendCooldown > 0) return;
-    if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email.trim())) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       setError("Enter a valid email address before requesting another verification email.");
       return;
     }
