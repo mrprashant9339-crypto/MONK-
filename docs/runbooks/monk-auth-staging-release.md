@@ -20,7 +20,10 @@ This runbook covers the authentication fix in PR #40 and its staged acceptance p
 - Staging migration `20261125143000_welcome_email_delivery` is applied.
 - Staging Edge Function `send-welcome-email` is active with JWT verification enabled.
 - Staging currently has zero auth users, zero email delivery events, and zero notification outbox rows.
-- `email_delivery_events` exists and has RLS enabled with no client policies, keeping it server-only.
+- `email_delivery_events` exists and has RLS enabled; `anon` and `authenticated` have no table privileges and no client policies exist. Staging catalog checks confirmed only `service_role` can read/write the ledger.
+- `claim_welcome_email(uuid)` is `SECURITY INVOKER`, with EXECUTE granted only to `service_role`.
+- A staging SQL assertion script is committed at `supabase/tests/auth_email_delivery_security.sql`.
+- Welcome email delivery now sends a stable per-user Resend idempotency key so retries do not create duplicate provider messages within Resend's idempotency window.
 
 ## Manual staging prerequisites
 
@@ -45,7 +48,8 @@ Complete these only in the staging Supabase project, never in production during 
 4. **Edge Function secrets**
    - In staging Edge Functions → Secrets, configure `RESEND_API_KEY`, `MONK_EMAIL_FROM`, `MONK_APP_URL`, and `MONK_SUPPORT_EMAIL`.
    - Confirm the function's Supabase server-side API key is available through the platform-provided environment.
-   - `MONK_APP_URL` must point to the staging preview origin.
+   - `MONK_APP_URL` must be the exact staging Preview origin (for example, `https://monk-platform-git-fix-auth-captcha-resen-873234-makto-community.vercel.app`), with no path, query, or fragment. The function allows that one configured origin plus localhost development origins; it does not hard-code preview hostnames or allow production origins on staging.
+   - For the production Edge Function, configure its own `MONK_APP_URL=https://monk.monster` (and `www` routing as needed); do not reuse staging's app URL.
    - The sender must use the verified `monk.monster` domain. Never expose secret values.
 
 ## Controlled live acceptance test
@@ -72,7 +76,8 @@ Do not merge or deploy production until all of these are true:
 - Signup, email verification, resend, login, forgot-password, reset-password, and welcome-email delivery all pass live tests.
 - Supabase Auth logs contain no relevant CAPTCHA/SMTP errors.
 - Resend reports the expected messages as delivered (not merely accepted/queued).
-- No duplicate welcome email is produced by retries or repeated verification callbacks.
+- No duplicate welcome email is produced by retries or repeated verification callbacks. The Edge Function reuses a stable Resend idempotency key for the same user; Resend's idempotency keys are time-bounded (24 hours).
+- `supabase/tests/auth_email_delivery_security.sql` passes in staging.
 - The final PR diff and deployment environment variables are reviewed.
 - Production migration/function/env changes, if any, have a separate explicit rollout and rollback plan.
 
@@ -80,11 +85,12 @@ Do not merge or deploy production until all of these are true:
 
 1. Mark PR #40 ready for review and merge only after release gates pass.
 2. Confirm the resulting main commit and CI checks.
-3. Deploy the exact merged commit to the existing `monk-platform` production project; do not create a replacement project.
-4. Confirm the deployment is READY and aliases include `monk.monster` and `www.monk.monster`.
-5. Verify production environment variables still reference the production Supabase project and production CAPTCHA site key.
-6. Run non-destructive production smoke tests only; do not create an unsolicited real customer account or send test email to a customer.
-7. Monitor Auth, Edge Function, Resend, and Vercel errors. Roll back to the previous production deployment if authentication or email delivery regresses.
+3. Apply any reviewed additive Supabase migration and deploy the reviewed `send-welcome-email` Edge Function to production with `verify_jwt=true` and production-only secrets/`MONK_APP_URL=https://monk.monster`.
+4. Deploy the exact merged commit to the existing `monk-platform` production project; do not create a replacement project.
+5. Confirm the deployment is READY and aliases include `monk.monster` and `www.monk.monster`.
+6. Verify production environment variables still reference the production Supabase project and production CAPTCHA site key.
+7. Run non-destructive production smoke tests only; do not create an unsolicited real customer account or send test email to a customer.
+8. Monitor Auth, Edge Function, Resend, and Vercel errors. Roll back to the previous production deployment if authentication or email delivery regresses.
 
 ## Rollback
 

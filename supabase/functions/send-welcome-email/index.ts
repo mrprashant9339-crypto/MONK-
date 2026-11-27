@@ -1,10 +1,27 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+function getConfiguredAppUrl(): URL | null {
+  const raw = Deno.env.get("MONK_APP_URL");
+  if (!raw) return null;
+
+  try {
+    const url = new URL(raw);
+    const isSecureOrigin = url.protocol === "https:";
+    const isLocalDevelopmentOrigin = url.protocol === "http:" &&
+      ["localhost", "127.0.0.1"].includes(url.hostname);
+    if (!isSecureOrigin && !isLocalDevelopmentOrigin) return null;
+    if (url.username || url.password || url.pathname !== "/" || url.search || url.hash) return null;
+    return url;
+  } catch {
+    return null;
+  }
+}
+
+const configuredAppUrl = getConfiguredAppUrl();
 const allowedOrigins = new Set([
-  "https://monk.monster",
-  "https://www.monk.monster",
   "http://localhost:5173",
   "http://127.0.0.1:5173",
+  ...(configuredAppUrl ? [configuredAppUrl.origin] : []),
 ]);
 
 function corsHeaders(origin: string | null) {
@@ -44,7 +61,10 @@ Deno.serve(async (request) => {
   const serviceKey = secretKeysRaw ? (JSON.parse(secretKeysRaw) as Record<string, string>).default : Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const resendKey = Deno.env.get("RESEND_API_KEY");
   const fromAddress = Deno.env.get("MONK_EMAIL_FROM");
-  const appUrl = (Deno.env.get("MONK_APP_URL") ?? "https://monk.monster").replace(/\/+$/, "");
+  if (!configuredAppUrl) {
+    return json(500, { error: "MONK_APP_URL is missing or invalid." });
+  }
+  const appUrl = configuredAppUrl.origin;
   const supportEmail = Deno.env.get("MONK_SUPPORT_EMAIL") ?? "admin@monk.monster";
   if (!supabaseUrl || !anonKey || !serviceKey) return json(500, { error: "Supabase email function configuration is incomplete." });
   if (!resendKey || !fromAddress) return json(503, { error: "Welcome email delivery is not configured.", code: "EMAIL_NOT_CONFIGURED" });
@@ -106,7 +126,11 @@ Deno.serve(async (request) => {
   try {
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
-      headers: { Authorization: "Bearer " + resendKey, "Content-Type": "application/json" },
+      headers: {
+        Authorization: "Bearer " + resendKey,
+        "Content-Type": "application/json",
+        "Idempotency-Key": `monk-welcome-${user.id}`,
+      },
       body: JSON.stringify({
         from: fromAddress,
         to: [user.email],
