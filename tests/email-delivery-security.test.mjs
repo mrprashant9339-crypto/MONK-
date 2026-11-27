@@ -20,12 +20,15 @@ test("welcome email retries use a stable provider idempotency key", async () => 
   const fn = await read("../supabase/functions/send-welcome-email/index.ts");
   assert.match(fn, /"Idempotency-Key": `monk-welcome-\$\{user\.id\}`/);
   assert.match(fn, /status: "failed"/);
+  assert.match(fn, /status: "manual_review"/);
   assert.match(fn, /status: "sent"/);
   assert.match(fn, /provider_message_id: delivery\.id/);
+  assert.match(fn, /DELIVERY_UNCERTAIN/);
 });
 
 test("email delivery ledger is server-only and its claim RPC is restricted to service_role", async () => {
   const migration = await read("../supabase/migrations/20261125143000_welcome_email_delivery.sql");
+  const retryGuard = await read("../supabase/migrations/20261127173500_welcome_email_retry_guard.sql");
   const sqlTest = await read("../supabase/tests/auth_email_delivery_security.sql");
   assert.match(migration, /enable row level security/i);
   assert.match(migration, /revoke all on table public\.email_delivery_events from public, anon, authenticated/i);
@@ -34,6 +37,9 @@ test("email delivery ledger is server-only and its claim RPC is restricted to se
   assert.match(migration, /revoke all on function public\.claim_welcome_email\(uuid\) from public, anon, authenticated/i);
   assert.match(migration, /grant execute on function public\.claim_welcome_email\(uuid\) to service_role/i);
   assert.match(migration, /unique \(user_id, event_type\)/i);
+  assert.match(retryGuard, /'manual_review'/i);
+  assert.match(retryGuard, /updated_at < now\(\) - interval '24 hours'/i);
+  assert.match(retryGuard, /updated_at >= now\(\) - interval '24 hours'/i);
   assert.match(sqlTest, /RLS is disabled/i);
   assert.match(sqlTest, /has_table_privilege\('anon'/i);
   assert.match(sqlTest, /has_table_privilege\('authenticated'/i);

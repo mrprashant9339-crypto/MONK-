@@ -23,7 +23,8 @@ This runbook covers the authentication fix in PR #40 and its staged acceptance p
 - `email_delivery_events` exists and has RLS enabled; `anon` and `authenticated` have no table privileges and no client policies exist. Staging catalog checks confirmed only `service_role` can read/write the ledger.
 - `claim_welcome_email(uuid)` is `SECURITY INVOKER`, with EXECUTE granted only to `service_role`.
 - A staging SQL assertion script is committed at `supabase/tests/auth_email_delivery_security.sql`.
-- Welcome email delivery now sends a stable per-user Resend idempotency key so retries do not create duplicate provider messages within Resend's idempotency window.
+- Welcome email delivery sends a stable per-user Resend idempotency key. If provider delivery is uncertain, the event moves to `manual_review`; stale sends older than the 24-hour provider idempotency window are not retried automatically.
+- The retry guard migration is `supabase/migrations/20261127173500_welcome_email_retry_guard.sql`.
 
 ## Manual staging prerequisites
 
@@ -76,8 +77,10 @@ Do not merge or deploy production until all of these are true:
 - Signup, email verification, resend, login, forgot-password, reset-password, and welcome-email delivery all pass live tests.
 - Supabase Auth logs contain no relevant CAPTCHA/SMTP errors.
 - Resend reports the expected messages as delivered (not merely accepted/queued).
-- No duplicate welcome email is produced by retries or repeated verification callbacks. The Edge Function reuses a stable Resend idempotency key for the same user; Resend's idempotency keys are time-bounded (24 hours).
-- `supabase/tests/auth_email_delivery_security.sql` passes in staging.
+- No duplicate welcome email is produced by retries or repeated verification callbacks. The Edge Function reuses a stable Resend idempotency key for the same user.
+- Simulate a provider timeout/5xx and confirm the ledger enters `manual_review`. Simulate a clearly rejected 4xx and confirm it enters `failed` for a safe retry.
+- Confirm stale `sending` events older than 24 hours move to `manual_review`, never automatic retry. Reconcile provider events before an operator changes the state back to `failed`.
+- `supabase/tests/auth_email_delivery_security.sql` passes in staging, including the 24-hour retry guard and `manual_review` status.
 - The final PR diff and deployment environment variables are reviewed.
 - Production migration/function/env changes, if any, have a separate explicit rollout and rollback plan.
 
@@ -96,5 +99,5 @@ Do not merge or deploy production until all of these are true:
 
 - Vercel: promote the last known-good production deployment through the existing project rollback workflow.
 - Git: revert the merge commit; do not force-push main.
-- Supabase: do not blindly reverse the welcome-email migration or delete delivery records. Roll back only a reviewed, additive schema/function change using a tested forward-fix or migration.
+- Supabase: do not blindly reverse the welcome-email migration or delete delivery records. Preserve `manual_review` records for reconciliation. Roll back only a reviewed, additive schema/function change using a tested forward-fix or migration.
 - Cloudflare: leave the dedicated staging widget isolated; do not modify the production widget while rolling back staging.

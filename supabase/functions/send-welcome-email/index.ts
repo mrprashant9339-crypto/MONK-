@@ -148,24 +148,39 @@ Deno.serve(async (request) => {
     });
     if (!response.ok) {
       const detail = (await response.text()).slice(0, 500);
-      await admin.from("email_delivery_events").update({
-        status: "failed", last_error: "Resend HTTP " + response.status + ": " + detail, updated_at: new Date().toISOString(),
+      const uncertain = response.status === 408 || response.status >= 500;
+      const nextStatus = uncertain ? "manual_review" : "failed";
+      const message = (uncertain ? "DELIVERY_UNCERTAIN: " : "") +
+        "Resend HTTP " + response.status + ": " + detail;
+      const { error: ledgerError } = await admin.from("email_delivery_events").update({
+        status: nextStatus, last_error: message, updated_at: new Date().toISOString(),
       }).eq("user_id", user.id).eq("event_type", "welcome").eq("status", "sending");
-      console.error("Resend rejected welcome email:", response.status, detail);
-      return json(502, { error: "The welcome email provider rejected delivery." });
+      if (ledgerError) console.error("Could not persist welcome email failure state:", ledgerError.message);
+      console.error("Resend rejected or could not confirm welcome email:", response.status, detail);
+      return json(502, {
+        error: uncertain
+          ? "The provider outcome is uncertain. Delivery requires reconciliation before another attempt."
+          : "The welcome email provider rejected delivery.",
+      });
     }
     const delivery = await response.json();
-    await admin.from("email_delivery_events").update({
+    const { error: ledgerError } = await admin.from("email_delivery_events").update({
       status: "sent", provider_message_id: delivery.id ?? null, last_error: null,
       sent_at: new Date().toISOString(), updated_at: new Date().toISOString(),
     }).eq("user_id", user.id).eq("event_type", "welcome").eq("status", "sending");
+    if (ledgerError) {
+      console.error("Resend accepted welcome email but ledger update failed:", ledgerError.message);
+      return json(502, { error: "Email was accepted by the provider, but delivery state needs reconciliation." });
+    }
     return json(200, { sent: true });
   } catch (error) {
-    await admin.from("email_delivery_events").update({
-      status: "failed", last_error: error instanceof Error ? error.message.slice(0, 500) : "Unknown provider error",
+    const detail = error instanceof Error ? error.message.slice(0, 500) : "Unknown provider error";
+    const { error: ledgerError } = await admin.from("email_delivery_events").update({
+      status: "manual_review", last_error: "DELIVERY_UNCERTAIN: " + detail,
       updated_at: new Date().toISOString(),
     }).eq("user_id", user.id).eq("event_type", "welcome").eq("status", "sending");
-    console.error("Welcome email delivery failed:", error instanceof Error ? error.message : "Unknown error");
-    return json(502, { error: "Welcome email delivery failed. It can be retried safely." });
+    if (ledgerError) console.error("Could not persist uncertain welcome email state:", ledgerError.message);
+    console.error("Welcome email delivery outcome is uncertain:", detail);
+    return json(502, { error: "Welcome email delivery outcome is uncertain. Reconcile provider events before retrying." });
   }
 });
