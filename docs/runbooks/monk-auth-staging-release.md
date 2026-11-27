@@ -13,18 +13,19 @@ This runbook covers the authentication fix in PR #40 and its staged acceptance p
 ## Verified automated setup
 
 - PR #40 contains the CAPTCHA resend fix, shared password policy, expiry handling, unit/regression tests, and mocked Playwright coverage.
-- CI run 46034273600 completed successfully.
+- Latest CI run `46043548117` for commit `199c35d9c4d35fa7ced9d8a55f59a350423d8547` completed successfully (build, release/security smoke tests, Playwright E2E, Cloudflare Worker → Vercel Preview, and artifact upload).
 - A dedicated Cloudflare Turnstile widget named `MONK Auth Staging - November 2026` was created for the staging preview hostname.
 - The staging Turnstile site key is configured only on the Vercel Preview environment for this branch.
-- The staging Vercel deployment built successfully from commit `47680dffe6c3fac875c18bceedbcc08a2dd79d1b`.
+- Latest staging Vercel Preview deployment `dpl_4BKpE9Yq5S8uMZVTRh9xR2XWJoQc` is READY for commit `199c35d9c4d35fa7ced9d8a55f59a350423d8547`; the public Preview HTML and JS bundle return HTTP 200. The bundle contains staging Supabase and Turnstile config and excludes the production Turnstile site key.
 - Staging migration `20261125143000_welcome_email_delivery` is applied.
-- Staging Edge Function `send-welcome-email` is active with JWT verification enabled.
+- Staging Edge Function `send-welcome-email` is ACTIVE at version 4 with `verify_jwt=true`.
 - Staging currently has zero auth users, zero email delivery events, and zero notification outbox rows.
 - `email_delivery_events` exists and has RLS enabled; `anon` and `authenticated` have no table privileges and no client policies exist. Staging catalog checks confirmed only `service_role` can read/write the ledger.
 - `claim_welcome_email(uuid)` is `SECURITY INVOKER`, with EXECUTE granted only to `service_role`.
+- Staging's Supabase Security Advisor separately reports 37 warnings for existing authenticated-executable `SECURITY DEFINER` RPCs across organization, project, team and business workflows. These are outside this auth/email change; do not blanket-revoke them. Each RPC requires a separate function-by-function review of authorization checks and grants before claiming platform-wide security sign-off.
 - A staging SQL assertion script is committed at `supabase/tests/auth_email_delivery_security.sql`.
 - Welcome email delivery sends a stable per-user Resend idempotency key. If provider delivery is uncertain, the event moves to `manual_review`; stale sends older than the 24-hour provider idempotency window are not retried automatically.
-- The retry guard migration is `supabase/migrations/20261127173500_welcome_email_retry_guard.sql`.
+- The retry guard migration `welcome_email_retry_guard` is applied in staging (migration ledger version `20261127173753`); the updated `supabase/tests/auth_email_delivery_security.sql` assertion passes after the migration.
 
 ## Manual staging prerequisites
 
