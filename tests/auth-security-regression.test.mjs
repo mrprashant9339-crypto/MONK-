@@ -16,7 +16,7 @@ test("verification resend renders its own Turnstile widget and submits the fresh
   assert.ok(resendStart >= 0 && resendEnd > resendStart, "resend handler must exist");
   assert.match(resend, /if \(!captchaToken\)/);
   assert.match(resend, /captchaToken:\s*currentCaptchaToken/);
-  assert.match(resend, /setCaptchaToken\("")/);
+  assert.ok(resend.includes('setCaptchaToken("")'));
   assert.match(resend, /setCaptchaResetKey/);
   assert.match(pending, /<TurnstileWidget/);
   assert.match(pending, /!captchaToken/);
