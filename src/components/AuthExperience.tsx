@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Eye, EyeOff, GraduationCap, BriefcaseBusiness, ShieldCheck, Mail, LockKeyhole, CheckCircle2, LoaderCircle } from "lucide-react";
 import { supabase } from "../lib/supabase";
+import { getPasswordPolicyError, PASSWORD_POLICY_HINT } from "../lib/password-policy.mjs";
 import TurnstileWidget from "./TurnstileWidget";
 import "./auth-experience.css";
 
@@ -223,7 +224,8 @@ export default function AuthExperience() {
         return;
       }
       if (mode === "reset") {
-        if (password.length < 12) throw new Error("Use at least 12 characters for your new password.");
+        const passwordPolicyError = getPasswordPolicyError(password);
+        if (passwordPolicyError) throw new Error(passwordPolicyError);
         if (password !== confirmPassword) throw new Error("The new passwords do not match.");
         const { error: updateError } = await supabase.auth.updateUser({ password });
         if (updateError) throw updateError;
@@ -235,9 +237,8 @@ export default function AuthExperience() {
       if (mode === "signup") {
         if (fullName.trim().length < 2) throw new Error("Enter your full name.");
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) throw new Error("Enter a valid email address.");
-        if (password.length < 12 || !/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
-          throw new Error("Use at least 12 characters with uppercase, lowercase and a number.");
-        }
+        const passwordPolicyError = getPasswordPolicyError(password);
+        if (passwordPolicyError) throw new Error(passwordPolicyError);
         if (password !== confirmPassword) throw new Error("The passwords do not match.");
         if (vertical === "education" && institutionOptions.length > 0 && !institutionId) {
           throw new Error("Select your college or institution to continue.");
@@ -323,17 +324,74 @@ export default function AuthExperience() {
     }
   }
 
+  function handleCaptchaToken(token: string) {
+    setCaptchaToken(token);
+    if (token) {
+      setCaptchaFailed(false);
+      setError("");
+    }
+  }
+
+  function handleCaptchaError() {
+    setCaptchaToken("");
+    setCaptchaFailed(true);
+    setError("Cloudflare security verification could not connect. Check your network or browser content blocker, then retry.");
+  }
+
+  function handleCaptchaExpired() {
+    setCaptchaToken("");
+    setCaptchaFailed(false);
+    setError("Security verification expired. Complete the new challenge before continuing.");
+    setCaptchaResetKey(value => value + 1);
+  }
+
+  function retryCaptcha() {
+    setCaptchaToken("");
+    setCaptchaFailed(false);
+    setError("");
+    setCaptchaResetKey(value => value + 1);
+  }
+
   async function resendVerification() {
     if (!supabase || !email.trim() || resendCooldown > 0) return;
-    setBusy(true); setError(""); setMessage("");
+    if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email.trim())) {
+      setError("Enter a valid email address before requesting another verification email.");
+      return;
+    }
+    if (!captchaToken) {
+      setError("Complete the Cloudflare security verification before requesting another verification email.");
+      return;
+    }
+
+    setBusy(true);
+    setError("");
+    setMessage("");
+    const currentCaptchaToken = captchaToken;
     try {
-      const { error: resendError } = await supabase.auth.resend({ type: "signup", email: email.trim().toLowerCase(), options: { emailRedirectTo: (() => { const url = new URL(window.location.origin + "/auth/callback"); url.searchParams.set("vertical", vertical); const invite = new URLSearchParams(window.location.hash.replace(/^#/, "")).get("invite"); if (invite) url.searchParams.set("invite", invite); return url.toString(); })() } });
+      const callbackUrl = new URL(window.location.origin + "/auth/callback");
+      callbackUrl.searchParams.set("vertical", vertical);
+      callbackUrl.searchParams.set("flow", "signup");
+      const invite = new URLSearchParams(window.location.hash.replace(/^#/, "")).get("invite");
+      if (invite) callbackUrl.searchParams.set("invite", invite);
+
+      const { error: resendError } = await supabase.auth.resend({
+        type: "signup",
+        email: email.trim().toLowerCase(),
+        options: {
+          emailRedirectTo: callbackUrl.toString(),
+          captchaToken: currentCaptchaToken
+        }
+      });
       if (resendError) throw resendError;
       setMessage("If verification is still pending, a new confirmation email has been sent.");
       setResendCooldown(60);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Could not resend the verification email.");
-    } finally { setBusy(false); }
+    } finally {
+      setCaptchaToken("");
+      setCaptchaResetKey(value => value + 1);
+      setBusy(false);
+    }
   }
 
   const isSignup = mode === "signup";
@@ -366,7 +424,11 @@ export default function AuthExperience() {
         {mode === "pending" ? (
           <div className="authx-pending"><span><Mail size={24}/></span><h2>Verification email sent</h2><p>{message || "Open the confirmation link sent to your email address. The link returns you to MONK securely."}</p>{error && <p className="authx-alert" role="alert">{error}</p>}
             <label>Email address<input type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" /></label>
-            <button className="authx-secondary" type="button" onClick={() => void resendVerification()} disabled={busy || !email.trim() || resendCooldown > 0}>{busy ? "Sending…" : resendCooldown > 0 ? "Resend available in " + resendCooldown + "s" : "Resend verification email"}</button>
+            <div className="authx-captcha-wrap">
+              <TurnstileWidget resetKey={captchaResetKey} onToken={handleCaptchaToken} onError={handleCaptchaError} onExpired={handleCaptchaExpired}/>
+              {captchaFailed && <button className="authx-link" type="button" onClick={retryCaptcha}>Retry security verification</button>}
+            </div>
+            <button className="authx-secondary" type="button" onClick={() => void resendVerification()} disabled={busy || !email.trim() || !captchaToken || resendCooldown > 0}>{busy ? "Sending…" : resendCooldown > 0 ? "Resend available in " + resendCooldown + "s" : "Resend verification email"}</button>
             <button className="authx-link" type="button" onClick={() => changeMode("login")}>Return to sign in</button>
           </div>
         ) : (
@@ -391,15 +453,15 @@ export default function AuthExperience() {
               </>}
               {mode !== "reset" && <label>Email address<input type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} required maxLength={254} placeholder="you@example.com"/></label>}
               {isPasswordMode && <>
-                <label>{mode === "reset" ? "New password" : "Password"}<span className="authx-password"><input type={showPassword ? "text" : "password"} autoComplete={mode === "login" ? "current-password" : "new-password"} value={password} onChange={e => setPassword(e.target.value)} required minLength={mode === "login" ? 1 : 12} placeholder={mode === "login" ? "Enter your password" : "At least 12 characters"}/><button type="button" aria-label={showPassword ? "Hide password" : "Show password"} onClick={() => setShowPassword(v => !v)}>{showPassword ? <EyeOff size={17}/> : <Eye size={17}/>}</button></span></label>
+                <label>{mode === "reset" ? "New password" : "Password"}<span className="authx-password"><input type={showPassword ? "text" : "password"} autoComplete={mode === "login" ? "current-password" : "new-password"} value={password} onChange={e => setPassword(e.target.value)} required minLength={mode === "login" ? 1 : 12} placeholder={mode === "login" ? "Enter your password" : "12+ chars, mixed case, number and symbol"}/><button type="button" aria-label={showPassword ? "Hide password" : "Show password"} onClick={() => setShowPassword(v => !v)}>{showPassword ? <EyeOff size={17}/> : <Eye size={17}/>}</button></span></label>
                 {(isSignup || mode === "reset") && <label>Confirm password<span className="authx-password"><input type={showConfirm ? "text" : "password"} autoComplete="new-password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required minLength={12} placeholder="Enter password again"/><button type="button" aria-label={showConfirm ? "Hide confirmation" : "Show confirmation"} onClick={() => setShowConfirm(v => !v)}>{showConfirm ? <EyeOff size={17}/> : <Eye size={17}/>}</button></span></label>}
-                {isSignup && <p className="authx-hint"><LockKeyhole size={13}/> Use 12+ characters with uppercase, lowercase and a number. Never share your password or OTP.</p>}
+                {isSignup && <p className="authx-hint"><LockKeyhole size={13}/> {PASSWORD_POLICY_HINT}. Never share your password or OTP.</p>}
               </>}
               {isSignup && <label className="authx-consent"><input type="checkbox" checked={accepted} onChange={e => setAccepted(e.target.checked)} required/><span>I agree to the <a href="/terms" target="_blank" rel="noreferrer">Terms of Service</a> and acknowledge the <a href="/privacy" target="_blank" rel="noreferrer">Privacy Policy</a>.</span></label>}
               {mode === "login" && <button className="authx-link authx-forgot" type="button" onClick={() => changeMode("forgot")}>Forgot password?</button>}
               {mode !== "reset" && <div className="authx-captcha-wrap">
-                <TurnstileWidget resetKey={captchaResetKey} onToken={token => { setCaptchaToken(token); if (token) { setCaptchaFailed(false); setError(""); } }} onError={() => { setCaptchaToken(""); setCaptchaFailed(true); setError("Cloudflare security verification could not connect. Check your network or browser content blocker, then retry."); }}/>
-                {captchaFailed && <button className="authx-link" type="button" onClick={() => { setCaptchaToken(""); setCaptchaFailed(false); setError(""); setCaptchaResetKey(value => value + 1); }}>Retry security verification</button>}
+                <TurnstileWidget resetKey={captchaResetKey} onToken={handleCaptchaToken} onError={handleCaptchaError} onExpired={handleCaptchaExpired}/>
+                {captchaFailed && <button className="authx-link" type="button" onClick={retryCaptcha}>Retry security verification</button>}
               </div>}
               {error && <p className="authx-alert" role="alert">{error}</p>}
               {message && <p className="authx-success" role="status"><CheckCircle2 size={16}/>{message}</p>}
