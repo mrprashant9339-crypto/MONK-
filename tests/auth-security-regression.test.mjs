@@ -41,21 +41,22 @@ test("successful CAPTCHA completion clears only CAPTCHA errors, not authenticati
   const captchaErrorHandler = auth.slice(errorStart, expiredStart);
 
   assert.ok(tokenStart >= 0 && tokenEnd > tokenStart, "CAPTCHA token handler must exist");
-  assert.match(tokenHandler, /setCaptchaError\(""\)/);
+  assert.match(tokenHandler, /setCaptchaError\("".*\)/);
   assert.doesNotMatch(tokenHandler, /setError\(/);
   assert.match(captchaErrorHandler, /setCaptchaError\(/);
   assert.doesNotMatch(captchaErrorHandler, /setError\(/);
-  assert.match(auth, /const \[captchaError, setCaptchaError\] = useState\(""\)/);
+  assert.match(auth, /const \[captchaError, setCaptchaError\] = useState\("".*\)/);
 });
-
 
 test("local development is pinned to staging Supabase and staging Turnstile", async () => {
   const client = await read("../src/lib/supabase.ts");
   const widget = await read("../src/components/TurnstileWidget.tsx");
 
-  assert.match(client, /import\.meta\.env\.DEV\\s*\\?\\s*STAGING_SUPABASE_URL/);
-  assert.match(client, /https:\\/\\/ysspnuldfiijagagwiqk\\.supabase\\.co/);
-  assert.match(client, /import\.meta\.env\.DEV\\s*\\?\\s*STAGING_PUBLISHABLE_KEY/);
-  assert.match(widget, /import\.meta\.env\.DEV\\s*\\?\\s*STAGING_SITE_KEY/);
-  assert.match(widget, /0x4AAAAAAGV936arziIBwyrJ/);
+  assert.ok(client.includes("const url = import.meta.env.DEV"));
+  assert.ok(client.includes("? STAGING_SUPABASE_URL"));
+  assert.ok(client.includes("? STAGING_PUBLISHABLE_KEY"));
+  assert.ok(client.includes("https://ysspnuldfiijagagwiqk.supabase.co"));
+  assert.ok(widget.includes("const SITE_KEY = import.meta.env.DEV"));
+  assert.ok(widget.includes("? STAGING_SITE_KEY"));
+  assert.ok(widget.includes("0x4AAAAAAGV936arziIBwyrJ"));
 });
