@@ -36,6 +36,10 @@ begin
 end;
 $function$;
 
+-- Trigger functions are invoked by existing triggers, not directly by API clients.
+revoke all on function public.education_audit_row()
+  from public, anon, authenticated, service_role;
+
 -- Only trusted server-side code may call the audit helper directly.
 -- postgres-owned SECURITY DEFINER functions retain owner privileges when calling it.
 revoke all on function public.record_audit(uuid, text, text, text, jsonb, jsonb, text, boolean)
