@@ -285,6 +285,14 @@ test("login, password recovery and password reset routes load the shared auth ex
   await expect(page.locator('.authx-form input[placeholder="Enter password again"]')).toBeVisible();
 });
 
+test("password reset enforces the same strong-password rules as signup", async ({ page }) => {
+  await page.goto("/reset-password");
+  await page.locator('.authx-form input[placeholder="At least 12 characters"]').fill("alllowercase123");
+  await page.locator('.authx-form input[placeholder="Enter password again"]').fill("alllowercase123");
+  await page.getByRole("button", { name: /update password/i }).click();
+  await expect(page.getByRole("alert")).toContainText(/12 characters with uppercase, lowercase and a number/i);
+});
+
 test("Campus and Business signup expose accessible role cards without granting authority", async ({ page }) => {
   await page.goto("/login?mode=signup&vertical=education");
   await expect(page.getByText("MONK Campus")).toBeVisible();
