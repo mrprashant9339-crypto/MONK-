@@ -168,3 +168,11 @@
   .authx-page:before,.authx-page:after,.authx-card,.authx-aside{animation:none!important}
   .authx-google,.authx-submit,.authx-secondary,.authx-role-option{transition:none!important}
 }
+
+
+/* Social sign-in follows the completed form and its consent controls. */
+.authx-social-actions{display:grid;gap:12px;margin-top:2px}
+.authx-google-consent{margin:0}
+@media(max-width:520px){
+  .authx-social-actions{gap:10px}
+}
