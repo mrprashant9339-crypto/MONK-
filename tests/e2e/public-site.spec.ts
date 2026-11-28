@@ -313,6 +313,12 @@ test("Campus signup exposes institution selection and blocks incomplete Google p
   await expect(page).toHaveURL(/\/login\?mode=signup&vertical=education/);
 });
 
+test("cancelled OAuth callback returns a clear recoverable error", async ({ page }) => {
+  await page.goto("/auth/callback?error=access_denied");
+  await expect(page.getByRole("alert")).toContainText(/Google sign-in was cancelled or could not be completed/i);
+  await expect(page.getByRole("button", { name: /Return to sign in/i })).toBeVisible();
+});
+
 test("split-screen authentication panel remains visible and fits desktop, tablet and mobile", async ({ page }) => {
   for (const [width, height] of [[1440, 900], [768, 1024], [390, 844], [360, 800]]) {
     await page.setViewportSize({ width, height });
