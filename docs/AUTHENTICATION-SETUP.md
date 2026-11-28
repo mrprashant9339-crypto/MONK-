@@ -63,7 +63,8 @@ Supabase Auth system emails and MONK's post-verification welcome email are separ
 
 - Keep email confirmations enabled for production.
 - Configure a verified custom SMTP sender for reliable verification and password-reset delivery.
-- Set a minimum password length of at least 12 characters and enable the project's leaked-password protection.
+- Set a minimum password length of at least 12 characters and enable the project's leaked-password protection where the plan supports it.
+- Current linked Supabase organization is on the Free plan. Supabase documents leaked-password protection as Pro-plan-and-above; the production Security Advisor currently reports this control as not enabled. The existing client-side 12-character/uppercase/lowercase/number rule is not equivalent to breached-password screening. Do not mark this control complete unless the plan is upgraded and the Auth setting is enabled and verified.
 - Review Auth rate limits for signup, password sign-in, OTP/confirmation resend, and password recovery.
 - Enable CAPTCHA (Cloudflare Turnstile or another supported provider) for public signup and recovery once site/secret keys are available.
 - Configure security notification emails for password and email changes where available.
