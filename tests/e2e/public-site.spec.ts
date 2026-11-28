@@ -313,6 +313,30 @@ test("Campus signup exposes institution selection and blocks incomplete Google p
   await expect(page).toHaveURL(/\/login\?mode=signup&vertical=education/);
 });
 
+test("split-screen authentication panel remains visible and fits desktop, tablet and mobile", async ({ page }) => {
+  for (const [width, height] of [[1440, 900], [768, 1024], [390, 844], [360, 800]]) {
+    await page.setViewportSize({ width, height });
+    await page.goto("/login?vertical=business");
+    await expect(page.locator(".authx-card")).toBeVisible();
+    await expect(page.locator(".authx-aside")).toBeVisible();
+    const dimensions = await page.evaluate(() => ({
+      viewport: document.documentElement.clientWidth,
+      document: document.documentElement.scrollWidth
+    }));
+    expect(dimensions.document, `authentication overflow at ${width}px`).toBeLessThanOrEqual(dimensions.viewport + 2);
+  }
+});
+
+test("Google sign-in controls appear after the required auth form and legal acknowledgement", async ({ page }) => {
+  await page.goto("/login?mode=signup&vertical=education");
+  const order = await page.locator(".authx-form").evaluate(form => {
+    const google = document.querySelector(".authx-google");
+    return Boolean(google && (form.compareDocumentPosition(google) & Node.DOCUMENT_POSITION_FOLLOWING));
+  });
+  expect(order).toBe(true);
+  await expect(page.getByRole("button", { name: /Continue with Google/i })).toBeVisible();
+});
+
 test("India-wide directory renders source-aware filters and an honest empty state", async ({ page }) => {
   await page.route("**/rest/v1/monk_directory_*", route => route.fulfill({
     status: 200,
