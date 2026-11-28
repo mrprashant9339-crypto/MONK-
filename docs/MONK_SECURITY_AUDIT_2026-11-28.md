@@ -170,6 +170,21 @@ Do not declare MONK production-security-ready until all are true:
 - [ ] Production migrations and deployment have a reviewed rollback plan and explicit release approval.
 - [ ] Post-deployment, non-destructive production smoke tests pass.
 
+
+## Integrated candidate verification — 28 November 2026
+
+- Consolidated candidate: PR #48, branch `security/monk-30-point-hardening-2026-11-28`.
+- Integrated head at CI verification: `bcce35c1667245750b52caccf9b39968d981d782`.
+- GitHub Actions run #46148099854: **PASS** — `npm ci`, TypeScript/production build, combined release/security tests, Playwright browser E2E, Cloudflare Worker → Vercel preview verification and artifact upload.
+- Staging SQL suites: **PASS** — `security_definer_review.sql`, `phase_3_security_definer_review.sql`, `audit_rpc_security.sql`, `organization_role_assignment_behavior.sql`, `role_permission_delegation_behavior.sql`, `education_principal_role_boundary_behavior.sql`, `soft_deleted_org_access_behavior.sql`, `deleted_org_invitation_acceptance_behavior.sql`, `auth_email_delivery_security.sql`, `business_private_document_storage.sql`, and `business_tenant_isolation.sql`.
+- Two false-positive conditions in the SECURITY DEFINER regression script were corrected in the integration branch only: the test now allows the intentionally narrower pinned path on `education_audit_row()`, and it uses literal source checks instead of a mis-escaped regex for caller/tenant guards. No database function or privilege was weakened by this test correction.
+- Post-test residue check: zero matching synthetic Auth users, organizations, invitations or memberships.
+- Staging currently has zero active organizations with members, so the separate live two-real-tenant test was not run. The rollback-only synthetic two-tenant and role-boundary tests passed; real two-account acceptance remains a release gate.
+- Current Security Advisor snapshot after staging validation: staging 36 authenticated SECURITY DEFINER WARN, 3 RLS/no-policy INFO; production 31 authenticated SECURITY DEFINER WARN, 3 RLS/no-policy INFO and 1 leaked-password-protection WARN.
+- Production Supabase, production Worker, production DNS, Vercel production routing and production secrets remain unchanged.
+
+PR #48 is an integration candidate, not a production release. Independent review, live provider acceptance, production password-protection enablement and approved production rollout remain outstanding.
+
 ## Explicit non-goals / safety constraints
 
 - Do not run destructive SQL, production load tests or credential-value dumps.
