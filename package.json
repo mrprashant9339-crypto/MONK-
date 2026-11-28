@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "tsc -b && vite build",
-    "test:release": "node --test tests/release-smoke.test.mjs tests/worker-routing.test.mjs",
+    "test:release": "node --test tests/release-smoke.test.mjs tests/worker-routing.test.mjs tests/education-principal-role-boundary.test.mjs",
     "test:e2e": "playwright test",
     "preview": "vite preview --host 0.0.0.0"
   },
