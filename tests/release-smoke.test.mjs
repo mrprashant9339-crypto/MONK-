@@ -232,6 +232,9 @@ test("authentication callback exchanges PKCE codes once and preserves onboarding
   assert.match(auth, /Your Google account was not linked to a completed MONK profile/);
   assert.match(auth, /update_my_profile/);
   assert.match(auth, /Retry security verification/);
+  assert.match(auth, /isStrongPassword/);
+  assert.match(auth, /PASSWORD_POLICY_MESSAGE/);
+  assert.match(auth, /already registered\|already exists\|email\.\*registered/);
   const app = await readFile(join(root, "src", "App.tsx"), "utf8");
   assert.match(app, /canCreateBusinessWorkspace = organizationVertical === "business" && intendedRole === "owner"/);
   const migration = await readFile(join(root, "supabase", "migrations", "20261125041500_harden_organization_self_service_creation.sql"), "utf8");
