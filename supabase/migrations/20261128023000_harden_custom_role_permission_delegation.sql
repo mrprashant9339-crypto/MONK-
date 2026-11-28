@@ -42,20 +42,20 @@ begin
   if exists (
     select 1
     from unnest(coalesce(permission_keys,'{}'::text[])) requested(permission_id)
-    where not public.has_org_permission(target_org, requested.permission_id)
-  ) then
-    raise exception 'You may only delegate permissions that you currently hold'
-      using errcode='42501';
-  end if;
-
-  if exists (
-    select 1
-    from unnest(coalesce(permission_keys,'{}'::text[])) requested(permission_id)
     where not exists (
       select 1 from public.permissions p where p.id=requested.permission_id
     )
   ) then
     raise exception 'Unknown permission key' using errcode='22023';
+  end if;
+
+  if exists (
+    select 1
+    from unnest(coalesce(permission_keys,'{}'::text[])) requested(permission_id)
+    where not public.has_org_permission(target_org, requested.permission_id)
+  ) then
+    raise exception 'You may only delegate permissions that you currently hold'
+      using errcode='42501';
   end if;
 
   delete from public.organization_role_permissions
