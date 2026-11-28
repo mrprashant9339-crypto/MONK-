@@ -20,7 +20,10 @@ declare
   caller_metadata jsonb;
 begin
   if auth.uid() is null then raise exception 'Authentication required' using errcode = '42501'; end if;
-  if not public.current_user_email_verified() then raise exception 'Verify your email before creating a workspace' using errcode = '42501'; end if;
+  if not exists (
+    select 1 from auth.users u
+    where u.id = auth.uid() and u.email_confirmed_at is not null
+  ) then raise exception 'Verify your email before creating a workspace' using errcode = '42501'; end if;
   if not exists (select 1 from public.legal_consents lc where lc.user_id = auth.uid()) then
     raise exception 'Accept the current MONK Terms and Privacy Policy before creating a workspace' using errcode = '42501';
   end if;
