@@ -19,10 +19,10 @@ This runbook covers the authentication fix in PR #40 and its staged acceptance p
 ## Verified automated setup
 
 - PR #40 contains the CAPTCHA resend fix, shared password policy, expiry handling, unit/regression tests, and mocked Playwright coverage.
-- Latest CI run `46150026651` for the current PR head `9cfa26bbcb313b14fd85432ccd91982861e94a97` completed successfully (build, release/security smoke tests, Playwright E2E, Cloudflare Worker → Vercel Preview, and artifact upload). The browser tests mock Supabase and Turnstile and are not live-provider acceptance.
+- Auth-code CI run `46150026651` for commit `9cfa26bbcb313b14fd85432ccd91982861e94a97` passed. The latest CI run `46154694694` for current PR head `c2e2932b92dbfdcee0d2304dddfcc35d1aa2e789` also passed (TypeScript production build, release/security smoke tests, Playwright E2E, Cloudflare Worker → Vercel Preview, and artifact upload). The browser tests mock Supabase and Turnstile and are not live-provider acceptance.
 - A dedicated Cloudflare Turnstile widget named `MONK Auth Staging - November 2026` is restricted to the staging Preview hostname plus `localhost` and `127.0.0.1` for local testing.
 - The staging Turnstile site key is configured only on the Vercel Preview environment for this branch.
-- Current staging Vercel Preview deployment `dpl_4deymNJWtJa4A8wfiQ5bvjURk5tt` is READY for the current PR head `9cfa26bbcb313b14fd85432ccd91982861e94a97`. Its deployment URL is `https://monk-platform-jowbeg56f-makto-community.vercel.app`; its stable branch alias is `https://monk-platform-git-fix-auth-captcha-resen-873234-makto-community.vercel.app`. The deployment reports `aliasError=null`. The branch-specific Preview environment contains the staging Supabase URL, staging publishable key and dedicated staging Turnstile site key.
+- Current staging Vercel Preview deployment `dpl_4QmgtNHfQV3iAJF7Bd8UT2h6tnX5` is READY for current PR head `c2e2932b92dbfdcee0d2304dddfcc35d1aa2e789`. Its deployment URL is `https://monk-platform-41ky1byks-makto-community.vercel.app`; its stable branch alias is `https://monk-platform-git-fix-auth-captcha-resen-873234-makto-community.vercel.app`. The deployment reports `aliasError=null`. The branch-specific Preview environment contains the staging Supabase URL, staging publishable key and dedicated staging Turnstile site key.
 - Staging migration `20261125143000_welcome_email_delivery` is applied.
 - Staging Edge Function `send-welcome-email` is ACTIVE at version 4 with `verify_jwt=true`.
 - Staging currently has zero auth users, zero email delivery events, and zero notification outbox rows.
@@ -46,7 +46,7 @@ Complete these only in the staging Supabase project, never in production during 
 2. **Auth URL configuration**
    - Set the staging Site URL to the stable branch Preview alias: `https://monk-platform-git-fix-auth-captcha-resen-873234-makto-community.vercel.app`. Prefer this over a per-deployment URL so the default redirect does not become stale on the next Preview deployment.
    - Add exact redirect URLs for both `/auth/callback` and `/reset-password` on the stable branch Preview alias above.
-   - The currently tested per-deployment Preview origin is `https://monk-platform-jowbeg56f-makto-community.vercel.app`; keep its exact callback and reset redirect URLs allowlisted while using that URL for testing.
+   - Use the stable branch alias to open the staging Preview; do not depend on a per-deployment hostname for redirect configuration.
    - For local development, also allow exactly `http://localhost:5173/auth/callback`, `http://localhost:5173/reset-password`, `http://127.0.0.1:5173/auth/callback`, and `http://127.0.0.1:5173/reset-password`. Keep all Preview and localhost URLs in staging only.
    - Keep production URLs and settings separate.
 
