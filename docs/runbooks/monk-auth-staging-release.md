@@ -19,16 +19,16 @@ This runbook covers the authentication fix in PR #40 and its staged acceptance p
 ## Verified automated setup
 
 - PR #40 contains the CAPTCHA resend fix, shared password policy, expiry handling, unit/regression tests, and mocked Playwright coverage.
-- Latest CI run `46044071710` for commit `979e9579d831286e3de9ad14785cc6cb44f81a94` completed successfully (build, release/security smoke tests, Playwright E2E, Cloudflare Worker → Vercel Preview, and artifact upload).
+- Latest CI run `46150026651` for the current PR head `9cfa26bbcb313b14fd85432ccd91982861e94a97` completed successfully (build, release/security smoke tests, Playwright E2E, Cloudflare Worker → Vercel Preview, and artifact upload). The browser tests mock Supabase and Turnstile and are not live-provider acceptance.
 - A dedicated Cloudflare Turnstile widget named `MONK Auth Staging - November 2026` is restricted to the staging Preview hostname plus `localhost` and `127.0.0.1` for local testing.
 - The staging Turnstile site key is configured only on the Vercel Preview environment for this branch.
-- Latest staging Vercel Preview deployment `dpl_6ftsCCdpbHq8PJ5EyBYZYmWta1vG` is READY for commit `979e9579d831286e3de9ad14785cc6cb44f81a94`; the public Preview HTML and JS bundle return HTTP 200. The bundle contains staging Supabase and Turnstile config and excludes the production Turnstile site key.
+- Current staging Vercel Preview deployment `dpl_4deymNJWtJa4A8wfiQ5bvjURk5tt` is READY for the current PR head `9cfa26bbcb313b14fd85432ccd91982861e94a97`. Its deployment URL is `https://monk-platform-jowbeg56f-makto-community.vercel.app`; its stable branch alias is `https://monk-platform-git-fix-auth-captcha-resen-873234-makto-community.vercel.app`. The deployment reports `aliasError=null`. The branch-specific Preview environment contains the staging Supabase URL, staging publishable key and dedicated staging Turnstile site key.
 - Staging migration `20261125143000_welcome_email_delivery` is applied.
 - Staging Edge Function `send-welcome-email` is ACTIVE at version 4 with `verify_jwt=true`.
 - Staging currently has zero auth users, zero email delivery events, and zero notification outbox rows.
 - `email_delivery_events` exists and has RLS enabled; `anon` and `authenticated` have no table privileges and no client policies exist. Staging catalog checks confirmed only `service_role` can read/write the ledger.
 - `claim_welcome_email(uuid)` is `SECURITY INVOKER`, with EXECUTE granted only to `service_role`.
-- Separate follow-up issue [#41](https://github.com/mrprashant9339-crypto/MONK-/issues/41) tracks the 37 existing authenticated-executable `SECURITY DEFINER` RPC warnings identified by staging's Supabase Security Advisor. Staging's Advisor reports 37 warnings for existing authenticated-executable `SECURITY DEFINER` RPCs across organization, project, team and business workflows. These are outside this auth/email change; do not blanket-revoke them. Each RPC requires a separate function-by-function review of authorization checks and grants before claiming platform-wide security sign-off.
+- Separate follow-up issue [#41](https://github.com/mrprashant9339-crypto/MONK-/issues/41) tracks the pre-existing authenticated-executable `SECURITY DEFINER` RPC warnings. The latest staging Security Advisor snapshot on 2026-11-28 reports 36 such findings across organization, project, team and business workflows (the issue was originally opened when 37 were reported). These are outside this auth/email change; do not blanket-revoke them. Each RPC requires a separate function-by-function review of authorization checks and grants before claiming platform-wide security sign-off.
 - A staging SQL assertion script is committed at `supabase/tests/auth_email_delivery_security.sql`.
 - Welcome email delivery sends a stable per-user Resend idempotency key. If provider delivery is uncertain, the event moves to `manual_review`; stale sends older than the 24-hour provider idempotency window are not retried automatically.
 - The retry guard migration `welcome_email_retry_guard` is applied in staging (migration ledger version `20261127173753`); the updated `supabase/tests/auth_email_delivery_security.sql` assertion passes after the migration.
@@ -44,14 +44,16 @@ Complete these only in the staging Supabase project, never in production during 
    - Save, then verify the setting is enabled. Do not expose the secret in chat or logs.
 
 2. **Auth URL configuration**
-   - Set the staging Site URL to the staging preview origin.
-   - Add exact redirect URLs used by the app, including `/auth/callback` and `/reset-password` on the staging preview origin.
-   - For local development, also allow exactly `http://localhost:5173/auth/callback`, `http://localhost:5173/reset-password`, `http://127.0.0.1:5173/auth/callback`, and `http://127.0.0.1:5173/reset-password`. Keep these in staging only.
+   - Set the staging Site URL to the stable branch Preview alias: `https://monk-platform-git-fix-auth-captcha-resen-873234-makto-community.vercel.app`. Prefer this over a per-deployment URL so the default redirect does not become stale on the next Preview deployment.
+   - Add exact redirect URLs for both `/auth/callback` and `/reset-password` on the stable branch Preview alias above.
+   - The currently tested per-deployment Preview origin is `https://monk-platform-jowbeg56f-makto-community.vercel.app`; keep its exact callback and reset redirect URLs allowlisted while using that URL for testing.
+   - For local development, also allow exactly `http://localhost:5173/auth/callback`, `http://localhost:5173/reset-password`, `http://127.0.0.1:5173/auth/callback`, and `http://127.0.0.1:5173/reset-password`. Keep all Preview and localhost URLs in staging only.
    - Keep production URLs and settings separate.
 
 3. **Auth SMTP**
-   - Configure staging Auth SMTP with an authorized sender/domain and valid SMTP credentials.
-   - Confirm sender address and delivery provider are approved for verification and password recovery messages.
+   - Enable Custom SMTP and configure Resend using host `smtp.resend.com`, port `465`, username `resend`, and a dedicated Resend API key as the password.
+   - Use sender address `support@monk.monster` and sender name `MONK Support`; the `monk.monster` sending domain is verified and sending-enabled in Resend.
+   - Confirm sender address and delivery provider are approved for verification and password recovery messages. See [Resend SMTP credentials](https://resend.com/changelog/smtp-service).
    - Do not use production SMTP credentials unless explicitly intended and approved for staging.
 
 4. **Edge Function secrets**
