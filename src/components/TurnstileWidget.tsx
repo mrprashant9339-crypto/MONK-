@@ -20,21 +20,30 @@ declare global {
 type Props = {
   onToken: (token: string) => void;
   onError?: () => void;
+  onExpired?: () => void;
   resetKey?: number;
 };
 
-const SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || "0x4AAAAAAGRN064WbzkNKlkA";
+// Local development uses the dedicated staging widget, whose hostname allowlist
+// includes localhost and 127.0.0.1. Hosted builds use their environment-specific key.
+const STAGING_SITE_KEY = "0x4AAAAAAGV936arziIBwyrJ";
+const PRODUCTION_SITE_KEY = "0x4AAAAAAGRN064WbzkNKlkA";
+const SITE_KEY = import.meta.env.DEV
+  ? STAGING_SITE_KEY
+  : (import.meta.env.VITE_TURNSTILE_SITE_KEY || PRODUCTION_SITE_KEY);
 const SCRIPT_ID = "monk-cloudflare-turnstile-script";
 const SCRIPT_URL = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
 
-export default function TurnstileWidget({ onToken, onError, resetKey = 0 }: Props) {
+export default function TurnstileWidget({ onToken, onError, onExpired, resetKey = 0 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
   const onTokenRef = useRef(onToken);
   const onErrorRef = useRef(onError);
+  const onExpiredRef = useRef(onExpired);
 
   useEffect(() => { onTokenRef.current = onToken; }, [onToken]);
   useEffect(() => { onErrorRef.current = onError; }, [onError]);
+  useEffect(() => { onExpiredRef.current = onExpired; }, [onExpired]);
 
   useEffect(() => {
     let cancelled = false;
@@ -52,7 +61,7 @@ export default function TurnstileWidget({ onToken, onError, resetKey = 0 }: Prop
           sitekey: SITE_KEY,
           theme: "auto",
           callback: token => onTokenRef.current(token),
-          "expired-callback": () => onTokenRef.current(""),
+          "expired-callback": () => { onTokenRef.current(""); onExpiredRef.current?.(); },
           "error-callback": () => { onTokenRef.current(""); onErrorRef.current?.(); }
         });
       } catch {

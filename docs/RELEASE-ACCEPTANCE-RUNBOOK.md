@@ -6,7 +6,8 @@ This runbook separates automated CI coverage from live provider/account acceptan
 - Supabase project: `yucwackrbekwaxiyuobt`
 - Production application origin: `https://monk.monster`
 - Invitation Edge Function: `send-education-invitation` (deployed, JWT verification enabled)
-- Email secrets read by the function: `RESEND_API_KEY` and `MONK_EMAIL_FROM` (required); `MONK_APP_URL` (optional, defaults to `https://monk.monster`).
+- For the `send-education-invitation` function, `RESEND_API_KEY` and `MONK_EMAIL_FROM` are required; `MONK_APP_URL` is an optional override because that invitation function has a production-origin fallback.
+- For the separate `send-welcome-email` function, `RESEND_API_KEY`, `MONK_EMAIL_FROM`, and `MONK_APP_URL` are all required. `MONK_APP_URL` must be an HTTPS origin (or HTTP localhost/127.0.0.1 for development), with no credentials, non-root path, query, or fragment; the function fails closed when missing or invalid.
 - Platform-managed function variables also required: `SUPABASE_URL`, `SUPABASE_ANON_KEY` or `SUPABASE_PUBLISHABLE_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`. Never expose the service-role key to a browser or commit it to Git.
 
 ## 1. Configure Google OAuth
@@ -18,7 +19,7 @@ This runbook separates automated CI coverage from live provider/account acceptan
 ## 2. Configure invitation email delivery
 1. Verify the sending domain in Resend and create an API key with email-send permission.
 2. Open [Supabase Edge Function Secrets](https://supabase.com/dashboard/project/yucwackrbekwaxiyuobt/functions/secrets).
-3. Set `RESEND_API_KEY`, `MONK_EMAIL_FROM`, and optionally `MONK_APP_URL=https://monk.monster`.
+3. For `send-education-invitation`, set `RESEND_API_KEY` and `MONK_EMAIL_FROM`; set `MONK_APP_URL` only if overriding that function's built-in production-origin fallback. For `send-welcome-email`, set all three values and treat `MONK_APP_URL` as mandatory using the strict origin format above.
 4. Do not send credentials through chat, source code, GitHub commits, or Vite `VITE_*` variables.
 5. Create an invitation for a controlled test mailbox; verify provider acceptance, mailbox delivery, and acceptance by only that confirmed mailbox.
 
