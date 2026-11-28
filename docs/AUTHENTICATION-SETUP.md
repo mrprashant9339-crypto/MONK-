@@ -54,6 +54,13 @@ The connected Supabase integration does not expose the Auth CAPTCHA dashboard to
 
 ### Email and password security
 
+Supabase Auth system emails and MONK's post-verification welcome email are separate delivery paths:
+
+- Configure Supabase Auth custom SMTP with a verified MONK sender address, using `support@monk.monster` as the requested sender identity once the domain and mailbox are verified with the provider. This path sends signup verification, resend and password-recovery messages.
+- Configure the existing Resend Edge Function with server-side secrets only: `RESEND_API_KEY`, `MONK_EMAIL_FROM` (for example, `MONK <support@monk.monster>` after sender verification), `MONK_SUPPORT_EMAIL=support@monk.monster`, and `MONK_APP_URL=https://monk.monster`.
+- Keep Resend and Supabase service-role credentials out of all `VITE_*` variables and browser bundles. The browser may invoke the authenticated welcome-email function; the Edge Function validates the caller's verified session and uses the service key only server-side.
+- Do not assume that configuring Resend also configures Supabase Auth SMTP. Test signup confirmation, resend, password recovery, and the post-verification welcome email independently.
+
 - Keep email confirmations enabled for production.
 - Configure a verified custom SMTP sender for reliable verification and password-reset delivery.
 - Set a minimum password length of at least 12 characters and enable the project's leaked-password protection.
