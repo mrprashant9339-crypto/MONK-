@@ -280,42 +280,77 @@ async function fetchAssetsFallback(request, env, url, path) {
   });
 }
 
+const SECURITY_HEADERS = Object.freeze({
+  "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+  "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "DENY",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "X-Permitted-Cross-Domain-Policies": "none",
+  "Permissions-Policy": "camera=(), microphone=(), payment=(), geolocation=(self)",
+  // Start in report-only mode so third-party auth/CAPTCHA/analytics dependencies can be
+  // observed before enforcement. Do not remove required origins without browser testing.
+  "Content-Security-Policy-Report-Only": [
+    "default-src 'self'",
+    "base-uri 'self'",
+    "object-src 'none'",
+    "frame-ancestors 'none'",
+    "form-action 'self'",
+    "script-src 'self' https://challenges.cloudflare.com https://www.googletagmanager.com",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob: https:",
+    "font-src 'self' data: https:",
+    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com https://www.google-analytics.com https://region1.google-analytics.com https://www.googletagmanager.com",
+    "frame-src https://challenges.cloudflare.com",
+    "upgrade-insecure-requests"
+  ].join("; ")
+});
+
+function withSecurityHeaders(response) {
+  const headers = new Headers(response.headers);
+  for (const [name, value] of Object.entries(SECURITY_HEADERS)) headers.set(name, value);
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers
+  });
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const path = normalizedPath(url.pathname);
 
     if (url.hostname === "www.monk.monster") {
-      return Response.redirect(new URL(url.pathname + url.search, "https://monk.monster"), 308);
+      return withSecurityHeaders(Response.redirect(new URL(url.pathname + url.search, "https://monk.monster"), 308));
     }
 
     if (request.method !== "GET" && request.method !== "HEAD") {
-      return new Response("Method not allowed.", { status: 405, headers: { "allow": "GET, HEAD", "cache-control": "no-store" } });
+      return withSecurityHeaders(new Response("Method not allowed.", { status: 405, headers: { "allow": "GET, HEAD", "cache-control": "no-store" } }));
     }
 
     if (isApplicationRoute(path)) {
       try {
         const response = await fetchVercelOrigin(request, env, url, path);
-        if (response) return response;
+        if (response) return withSecurityHeaders(response);
       } catch {
         // The existing Cloudflare asset bundle remains the safe rollback path.
       }
-      return fetchAssetsFallback(request, env, url, path);
+      return withSecurityHeaders(await fetchAssetsFallback(request, env, url, path));
     }
 
     if (isStaticAssetPath(path)) {
       try {
         const response = await fetchVercelOrigin(request, env, url, path);
-        if (response && (!(response.headers.get("content-type") || "").includes("text/html") || ["/offline.html", "/404.html"].includes(path))) return response;
+        if (response && (!(response.headers.get("content-type") || "").includes("text/html") || ["/offline.html", "/404.html"].includes(path))) return withSecurityHeaders(response);
       } catch {
         // Try the already-deployed static asset bundle.
       }
       const asset = await env.ASSETS.fetch(request);
-      if (asset.status === 404 || ((asset.headers.get("content-type") || "").includes("text/html") && !["/offline.html", "/404.html"].includes(path))) return notFoundResponse(request.method);
-      return asset;
+      if (asset.status === 404 || ((asset.headers.get("content-type") || "").includes("text/html") && !["/offline.html", "/404.html"].includes(path))) return withSecurityHeaders(notFoundResponse(request.method));
+      return withSecurityHeaders(asset);
     }
 
-    return notFoundResponse(request.method);
+    return withSecurityHeaders(notFoundResponse(request.method));
   }
 };
 export { isApplicationRoute, isStaticAssetPath, PUBLIC_ROUTES, PAGE_METADATA };
