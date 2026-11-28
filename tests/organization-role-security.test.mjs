@@ -7,6 +7,7 @@ const read = path => readFile(new URL(path, import.meta.url), "utf8");
 test("organization role assignment prevents owner/admin escalation and vertical misuse", async () => {
   const migration = await read("../supabase/migrations/20261128021900_harden_organization_role_assignment.sql");
   const sqlTest = await read("../supabase/tests/organization_role_assignment_security.sql");
+  const behaviorTest = await read("../supabase/tests/organization_role_assignment_behavior.sql");
 
   assert.match(migration, /built_in_role = 'owner'/);
   assert.match(migration, /Owner assignment requires the dedicated ownership-transfer workflow/);
@@ -21,4 +22,9 @@ test("organization role assignment prevents owner/admin escalation and vertical 
   assert.match(sqlTest, /Assigning an administrator must be owner-only/i);
   assert.match(sqlTest, /existing administrator must be owner-only/i);
   assert.match(sqlTest, /Education-only built-in roles must be restricted/i);
+  assert.match(behaviorTest, /dynamic organization role-assignment behavior: PASS/i);
+  assert.match(behaviorTest, /admin assigned owner/i);
+  assert.match(behaviorTest, /admin promoted member to admin/i);
+  assert.match(behaviorTest, /owner could not assign admin role/i);
+  assert.match(behaviorTest, /rollback;/i);
 });
