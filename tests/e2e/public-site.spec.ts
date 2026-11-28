@@ -126,7 +126,7 @@ test("manifest and favicon are served by the production preview", async ({ reque
 });
 
 test("contact form submits to the server-side support intake and opens a noindex thank-you page", async ({ page }) => {
-  await page.route("https://yucwackrbekwaxiyuobt.supabase.co/functions/v1/support-ticket-intake", async route => {
+  await page.route("https://ysspnuldfiijagagwiqk.supabase.co/functions/v1/support-ticket-intake", async route => {
     await route.fulfill({
       status: 201,
       contentType: "application/json",
