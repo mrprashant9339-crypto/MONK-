@@ -43,9 +43,9 @@ Deno.serve(async (request) => {
   const secretKeysRaw = Deno.env.get("SUPABASE_SECRET_KEYS");
   const serviceKey = secretKeysRaw ? (JSON.parse(secretKeysRaw) as Record<string, string>).default : Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const resendKey = Deno.env.get("RESEND_API_KEY");
-  const fromAddress = Deno.env.get("MONK_EMAIL_FROM");
+  const fromAddress = "MONK <support@monk.monster>";
   const appUrl = (Deno.env.get("MONK_APP_URL") ?? "https://monk.monster").replace(/\/+$/, "");
-  const supportEmail = Deno.env.get("MONK_SUPPORT_EMAIL") ?? "admin@monk.monster";
+  const supportEmail = Deno.env.get("MONK_SUPPORT_EMAIL") ?? "support@monk.monster";
   if (!supabaseUrl || !anonKey || !serviceKey) return json(500, { error: "Supabase email function configuration is incomplete." });
   if (!resendKey || !fromAddress) return json(503, { error: "Welcome email delivery is not configured.", code: "EMAIL_NOT_CONFIGURED" });
 
