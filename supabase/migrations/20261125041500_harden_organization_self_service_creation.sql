@@ -13,7 +13,7 @@ create or replace function public.create_organization(
 returns public.organizations
 language plpgsql
 security definer
-set search_path = public, extensions, pg_temp
+set search_path = pg_catalog, public, extensions, pg_temp
 as $function$
 declare
   new_org public.organizations;
