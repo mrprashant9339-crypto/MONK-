@@ -23,8 +23,13 @@ begin
     join pg_namespace n on n.oid=p.pronamespace
     where n.nspname='public'
       and p.prosecdef
-      and p.proname <> 'rls_auto_enable'
-      and not coalesce(p.proconfig, array[]::text[]) @> array['search_path=pg_catalog, public, extensions, pg_temp']::text[]
+      and not (
+        coalesce(p.proconfig, array[]::text[]) @> array['search_path=pg_catalog, public, extensions, pg_temp']::text[]
+        or (
+          p.proname = 'education_audit_row'
+          and coalesce(p.proconfig, array[]::text[]) @> array['search_path=pg_catalog, public, pg_temp']::text[]
+        )
+      )
   ) then
     raise exception 'A SECURITY DEFINER function has an unexpected search_path';
   end if;
