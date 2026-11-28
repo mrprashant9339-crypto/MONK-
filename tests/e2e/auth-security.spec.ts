@@ -179,3 +179,82 @@ test("login and forgot-password requests both forward the current Turnstile toke
   expect(recoveryRequest?.body.email).toBe("monk-test@example.test");
   expect((recoveryRequest?.body.gotrue_meta_security as Record<string, unknown>)?.captcha_token).toMatch(/^e2e-turnstile-token-/);
 });
+
+
+test("password reset rejects weak/mismatched passwords and updates a compliant password with an active recovery session", async ({ page }) => {
+  const authRequests: Array<{ method: string; path: string; body: Record<string, unknown> }> = [];
+  const userId = "10000000-0000-4000-8000-000000000099";
+  const email = "monk-reset-regression@example.test";
+
+  await page.addInitScript(({ userId, email }) => {
+    const now = Math.floor(Date.now() / 1000);
+    localStorage.setItem("sb-yucwackrbekwaxiyuobt-auth-token", JSON.stringify({
+      access_token: "e2e-recovery-access-token",
+      token_type: "bearer",
+      expires_in: 3600,
+      expires_at: now + 3600,
+      refresh_token: "e2e-recovery-refresh-token",
+      user: {
+        id: userId,
+        aud: "authenticated",
+        role: "authenticated",
+        email,
+        email_confirmed_at: new Date().toISOString(),
+        app_metadata: { provider: "email", providers: ["email"] },
+        user_metadata: { full_name: "Reset Regression Tester" },
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+    }));
+  }, { userId, email });
+
+  await page.route("https://yucwackrbekwaxiyuobt.supabase.co/auth/v1/**", async route => {
+    const request = route.request();
+    const url = new URL(request.url());
+    const body = request.postDataJSON?.() as Record<string, unknown> | undefined;
+    authRequests.push({ method: request.method(), path: url.pathname, body: body ?? {} });
+
+    if (url.pathname === "/auth/v1/user" && request.method() === "PUT") {
+      const user = {
+        id: userId,
+        aud: "authenticated",
+        role: "authenticated",
+        email,
+        email_confirmed_at: new Date().toISOString(),
+        app_metadata: { provider: "email", providers: ["email"] },
+        user_metadata: { full_name: "Reset Regression Tester" },
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(user) });
+      return;
+    }
+
+    await route.fulfill({ status: 200, contentType: "application/json", body: "{}" });
+  });
+
+  await page.goto("/reset-password");
+
+  await expect(page.getByRole("heading", { name: "Set a new password." })).toBeVisible();
+  const passwordFields = page.locator('input[autocomplete="new-password"]');
+  await passwordFields.nth(0).fill("SecureReset2026");
+  await passwordFields.nth(1).fill("SecureReset2026");
+  await page.getByRole("button", { name: "Update password" }).click();
+
+  await expect(page.getByRole("alert")).toContainText("special character");
+  expect(authRequests.filter(request => request.path === "/auth/v1/user" && request.method === "PUT")).toHaveLength(0);
+
+  await passwordFields.nth(0).fill("SecureReset2026!");
+  await passwordFields.nth(1).fill("SecureReset2026?");
+  await page.getByRole("button", { name: "Update password" }).click();
+  await expect(page.getByRole("alert")).toContainText("do not match");
+  expect(authRequests.filter(request => request.path === "/auth/v1/user" && request.method === "PUT")).toHaveLength(0);
+
+  await passwordFields.nth(1).fill("SecureReset2026!");
+  await page.getByRole("button", { name: "Update password" }).click();
+
+  await expect(page.getByRole("status")).toContainText("Password updated. Your account is ready to use.");
+  const updateRequest = authRequests.find(request => request.path === "/auth/v1/user" && request.method === "PUT");
+  expect(updateRequest?.body.password).toBe("SecureReset2026!");
+  expect((await page.locator('input[autocomplete="new-password"]').count())).toBe(0);
+});
