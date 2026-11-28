@@ -20,7 +20,7 @@ This runbook covers the authentication fix in PR #40 and its staged acceptance p
 
 - PR #40 contains the CAPTCHA resend fix, shared password policy, expiry handling, unit/regression tests, and mocked Playwright coverage.
 - Latest CI run `46044071710` for commit `979e9579d831286e3de9ad14785cc6cb44f81a94` completed successfully (build, release/security smoke tests, Playwright E2E, Cloudflare Worker → Vercel Preview, and artifact upload).
-- A dedicated Cloudflare Turnstile widget named `MONK Auth Staging - November 2026` was created for the staging preview hostname.
+- A dedicated Cloudflare Turnstile widget named `MONK Auth Staging - November 2026` is restricted to the staging Preview hostname plus `localhost` and `127.0.0.1` for local testing.
 - The staging Turnstile site key is configured only on the Vercel Preview environment for this branch.
 - Latest staging Vercel Preview deployment `dpl_6ftsCCdpbHq8PJ5EyBYZYmWta1vG` is READY for commit `979e9579d831286e3de9ad14785cc6cb44f81a94`; the public Preview HTML and JS bundle return HTTP 200. The bundle contains staging Supabase and Turnstile config and excludes the production Turnstile site key.
 - Staging migration `20261125143000_welcome_email_delivery` is applied.
