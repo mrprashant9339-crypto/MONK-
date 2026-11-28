@@ -86,6 +86,29 @@ Status meanings:
 | 29 | Mass Assignment | Confirmed / remediation pending | Critical | Role and permission RPCs had privilege-delegation gaps reproduced in staging. PRs #43–#45 add explicit role/permission ceilings. Keep protected fields off client update allowlists and never authorize from `user_metadata`. |
 | 30 | Security Misconfiguration | Confirmed production hardening gap | High | Production Security Advisor reports leaked-password protection disabled, 31 SECURITY DEFINER warnings and three server-only RLS/no-policy INFO notices. The original Worker lacked baseline security headers on most response paths; PR #48 adds HSTS, nosniff, frame denial, referrer/permissions policies and CSP Report-Only. Actual public-route header verification, CSP enforcement and CAPTCHA/SMTP/OAuth dashboard configuration remain release gates. |
 
+
+## Evidence index — source paths and line ranges
+
+Line ranges refer to the audited `main` source unless explicitly marked as the PR #48 integration candidate.
+
+| Area | Evidence |
+|---|---|
+| Browser Supabase key and PKCE | `src/lib/supabase.ts:3-14` — publishable key boundary, persisted session, PKCE flow. |
+| OAuth code exchange / identity verification | `src/components/AuthExperience.tsx:22-25, 111-138` — one-time PKCE exchange and server-verified `auth.getUser()`. |
+| Auth metadata and user profile flow | `src/components/AuthExperience.tsx:138-152` — callback reads metadata and updates profile metadata; authorization must not trust these values. |
+| Auth CAPTCHA / password flows | `src/components/AuthExperience.tsx:213-228, 251-283, 406` — CAPTCHA token required in auth actions and form gating. |
+| Invitation Edge Function | `supabase/functions/send-education-invitation/index.ts:3-19, 33-68, 86-88` — CORS allowlist, request-size limit, bearer identity, server-side permission check and HTML escaping. |
+| Support intake | `supabase/functions/support-ticket-intake/index.ts:3-14, 52-82, 128-132` — CORS allowlist, body limit, Turnstile Siteverify and atomic rate-limit RPC. |
+| Business document UI validation | `src/components/BusinessDocuments.tsx:20-25, 74-76, 110-161, 178` — MIME/size allowlist, permission checks, private upload, signed download and delete. Client MIME validation is not a malware scan. |
+| Private Storage database controls (PR #48 candidate) | `supabase/migrations/20261125075129_business_private_document_storage.sql:69-129` — private bucket, 25 MB cap and object policies. |
+| Server-controlled Business workspace authorization (PR #48 candidate) | `supabase/migrations/20261125075911_remove_user_metadata_workspace_authorization.sql:19-51` — verified identity, legal consent and Business-only self-service creation; does not authorize from editable user metadata. |
+| SECURITY DEFINER / tenant tests | `supabase/tests/phase_3_security_definer_review.sql`, `supabase/tests/phase_3_tenant_isolation_live.sql`, plus the PR #48 rollback-only role/tenant tests. |
+| Original Worker response headers gap | `worker.js:160-162, 252-280, 288-318` — original 404 had nosniff, but normal proxied/static/error paths did not apply a common security-header policy. PR #48 adds a shared response-header wrapper and tests. |
+| Existing static response headers | `public/_headers:1-12` — cache directives only; no CSP/HSTS/referrer/frame policy. |
+| Dependency reproducibility on main | `.github/workflows/ci.yml:25,31,33` and `package.json:9` — `npm install` and the original limited release test command. PR #48 adds lockfile-based `npm ci` and combined security tests. |
+
+Database evidence is from read-only Supabase Security Advisor/catalog queries dated 28 November 2026; those findings are time-stamped observations, not source line references.
+
 ## Phase 2 — Verified live database observations
 
 Read-only checks on 28 November 2026:
