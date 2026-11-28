@@ -198,7 +198,9 @@ test("built public assets contain no insecure HTTP resource URLs", async () => {
   for (const file of files) {
     if (!/\.(?:html|css|js|mjs|json|svg)$/i.test(file)) continue;
     const source = await readFile(file, "utf8");
-    assert.doesNotMatch(source, /(?:src|href)\s*=\s*["']http:\/\/|url\(\s*["']?http:\/\//i, `insecure HTTP resource in ${file}`);
+    const insecureResourceAttribute = /(?:src|href)\s*=\s*["']http:\/\//i.test(source);
+    const insecureCssUrl = /\burl\(\s*["']?http:\/\//.test(source);
+    assert.equal(insecureResourceAttribute || insecureCssUrl, false, `insecure HTTP resource in ${file}`);
   }
 });
 
