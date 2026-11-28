@@ -16,7 +16,7 @@ test("soft-deleted organizations are excluded from tenant authorization helpers"
   assert.match(migration, /create or replace function public\.switch_organization\(target_org uuid\)/);
 
   assert.match(behavior, /Soft-deleted workspace must not count as a current membership/i);
-  assert.match(behavior, /switch_organization unexpectedly accepted/i);
+  assert.match(behavior, /unexpectedly accepted by switch_organization/i);
   assert.match(behavior, /RLS exposed/i);
   assert.match(behavior, /RLS allowed a write/i);
   assert.match(behavior, /Active workspace membership and owner permissions must remain available/i);
