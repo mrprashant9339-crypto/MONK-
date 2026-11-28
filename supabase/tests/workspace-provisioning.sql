@@ -43,6 +43,15 @@ begin
   end;
   if not blocked then raise exception 'FAIL: Student role self-created a Business workspace'; end if;
 
+  perform set_config('request.jwt.claims',jsonb_build_object('sub',u_student::text,'role','authenticated','aud','authenticated','user_metadata',jsonb_build_object('vertical','business','intended_role','admin'))::text,true);
+  perform set_config('request.jwt.claim.sub',u_student::text,true);
+  blocked := false;
+  begin
+    perform public.create_organization('MONK Admin Test Business','monk-admin-test-business','IN','Asia/Kolkata','INR','en-IN','Professional services','business');
+  exception when insufficient_privilege then blocked := true;
+  end;
+  if not blocked then raise exception 'FAIL: Business admin intent self-created an owner workspace'; end if;
+
   perform set_config('request.jwt.claims',jsonb_build_object('sub',u_owner::text,'role','authenticated','aud','authenticated','user_metadata',jsonb_build_object('vertical','business','intended_role','owner'))::text,true);
   perform set_config('request.jwt.claim.sub',u_owner::text,true);
   select * into created from public.create_organization('MONK Verified Test Business','monk-test-business','IN','Asia/Kolkata','INR','en-IN','Professional services','business');
