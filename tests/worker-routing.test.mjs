@@ -122,6 +122,41 @@ test("www host redirects to the canonical MONK domain", async () => {
 });
 
 
+test("Worker applies security headers to application, asset, redirect, error and 404 responses", async () => {
+  const assertSecurityHeaders = response => {
+    assert.match(response.headers.get("strict-transport-security") ?? "", /max-age=31536000; includeSubDomains/i);
+    assert.equal(response.headers.get("x-content-type-options"), "nosniff");
+    assert.equal(response.headers.get("x-frame-options"), "DENY");
+    assert.equal(response.headers.get("referrer-policy"), "strict-origin-when-cross-origin");
+    assert.match(response.headers.get("permissions-policy") ?? "", /camera=\(\)/);
+    const csp = response.headers.get("content-security-policy-report-only") ?? "";
+    assert.match(csp, /default-src 'self'/);
+    assert.match(csp, /frame-ancestors 'none'/);
+    assert.match(csp, /object-src 'none'/);
+  };
+
+  await withMockFetch(async () => new Response(appShell, { status: 200, headers: { "content-type": "text/html" } }), async () => {
+    const app = await worker.fetch(new Request("https://monk.monster/login"), mockEnv());
+    assertSecurityHeaders(app);
+  });
+
+  await withMockFetch(async () => new Response("asset", { status: 200, headers: { "content-type": "text/javascript" } }), async () => {
+    const asset = await worker.fetch(new Request("https://monk.monster/assets/app.js"), mockEnv());
+    assertSecurityHeaders(asset);
+  });
+
+  const redirect = await worker.fetch(new Request("https://www.monk.monster/"), mockEnv());
+  assertSecurityHeaders(redirect);
+
+  const method = await worker.fetch(new Request("https://monk.monster/private", { method: "POST" }), mockEnv());
+  assertSecurityHeaders(method);
+
+  await withMockFetch(async () => new Response("not found", { status: 404 }), async () => {
+    const missing = await worker.fetch(new Request("https://monk.monster/missing"), mockEnv());
+    assertSecurityHeaders(missing);
+  });
+});
+
 test("Vercel security checkpoint is never exposed to visitors", async () => {
   await withMockFetch(async () => new Response("<html><title>Vercel Security Checkpoint</title><p>Code 21</p></html>", { status: 200, headers: { "content-type": "text/html" } }), async () => {
     const env = mockEnv();

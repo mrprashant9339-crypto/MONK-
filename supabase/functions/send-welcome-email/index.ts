@@ -1,10 +1,27 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+function getConfiguredAppUrl(): URL | null {
+  const raw = Deno.env.get("MONK_APP_URL");
+  if (!raw) return null;
+
+  try {
+    const url = new URL(raw);
+    const isSecureOrigin = url.protocol === "https:";
+    const isLocalDevelopmentOrigin = url.protocol === "http:" &&
+      ["localhost", "127.0.0.1"].includes(url.hostname);
+    if (!isSecureOrigin && !isLocalDevelopmentOrigin) return null;
+    if (url.username || url.password || url.pathname !== "/" || url.search || url.hash) return null;
+    return url;
+  } catch {
+    return null;
+  }
+}
+
+const configuredAppUrl = getConfiguredAppUrl();
 const allowedOrigins = new Set([
-  "https://monk.monster",
-  "https://www.monk.monster",
   "http://localhost:5173",
   "http://127.0.0.1:5173",
+  ...(configuredAppUrl ? [configuredAppUrl.origin] : []),
 ]);
 
 function corsHeaders(origin: string | null) {
@@ -44,7 +61,10 @@ Deno.serve(async (request) => {
   const serviceKey = secretKeysRaw ? (JSON.parse(secretKeysRaw) as Record<string, string>).default : Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const resendKey = Deno.env.get("RESEND_API_KEY");
   const fromAddress = Deno.env.get("MONK_EMAIL_FROM");
-  const appUrl = (Deno.env.get("MONK_APP_URL") ?? "https://monk.monster").replace(/\/+$/, "");
+  if (!configuredAppUrl) {
+    return json(500, { error: "MONK_APP_URL is missing or invalid." });
+  }
+  const appUrl = configuredAppUrl.origin;
   const supportEmail = Deno.env.get("MONK_SUPPORT_EMAIL") ?? "admin@monk.monster";
   if (!supabaseUrl || !anonKey || !serviceKey) return json(500, { error: "Supabase email function configuration is incomplete." });
   if (!resendKey || !fromAddress) return json(503, { error: "Welcome email delivery is not configured.", code: "EMAIL_NOT_CONFIGURED" });
@@ -106,7 +126,11 @@ Deno.serve(async (request) => {
   try {
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
-      headers: { Authorization: "Bearer " + resendKey, "Content-Type": "application/json" },
+      headers: {
+        Authorization: "Bearer " + resendKey,
+        "Content-Type": "application/json",
+        "Idempotency-Key": `monk-welcome-${user.id}`,
+      },
       body: JSON.stringify({
         from: fromAddress,
         to: [user.email],
@@ -124,24 +148,39 @@ Deno.serve(async (request) => {
     });
     if (!response.ok) {
       const detail = (await response.text()).slice(0, 500);
-      await admin.from("email_delivery_events").update({
-        status: "failed", last_error: "Resend HTTP " + response.status + ": " + detail, updated_at: new Date().toISOString(),
+      const uncertain = response.status === 408 || response.status >= 500;
+      const nextStatus = uncertain ? "manual_review" : "failed";
+      const message = (uncertain ? "DELIVERY_UNCERTAIN: " : "") +
+        "Resend HTTP " + response.status + ": " + detail;
+      const { error: ledgerError } = await admin.from("email_delivery_events").update({
+        status: nextStatus, last_error: message, updated_at: new Date().toISOString(),
       }).eq("user_id", user.id).eq("event_type", "welcome").eq("status", "sending");
-      console.error("Resend rejected welcome email:", response.status, detail);
-      return json(502, { error: "The welcome email provider rejected delivery." });
+      if (ledgerError) console.error("Could not persist welcome email failure state:", ledgerError.message);
+      console.error("Resend rejected or could not confirm welcome email:", response.status, detail);
+      return json(502, {
+        error: uncertain
+          ? "The provider outcome is uncertain. Delivery requires reconciliation before another attempt."
+          : "The welcome email provider rejected delivery.",
+      });
     }
     const delivery = await response.json();
-    await admin.from("email_delivery_events").update({
+    const { error: ledgerError } = await admin.from("email_delivery_events").update({
       status: "sent", provider_message_id: delivery.id ?? null, last_error: null,
       sent_at: new Date().toISOString(), updated_at: new Date().toISOString(),
     }).eq("user_id", user.id).eq("event_type", "welcome").eq("status", "sending");
+    if (ledgerError) {
+      console.error("Resend accepted welcome email but ledger update failed:", ledgerError.message);
+      return json(502, { error: "Email was accepted by the provider, but delivery state needs reconciliation." });
+    }
     return json(200, { sent: true });
   } catch (error) {
-    await admin.from("email_delivery_events").update({
-      status: "failed", last_error: error instanceof Error ? error.message.slice(0, 500) : "Unknown provider error",
+    const detail = error instanceof Error ? error.message.slice(0, 500) : "Unknown provider error";
+    const { error: ledgerError } = await admin.from("email_delivery_events").update({
+      status: "manual_review", last_error: "DELIVERY_UNCERTAIN: " + detail,
       updated_at: new Date().toISOString(),
     }).eq("user_id", user.id).eq("event_type", "welcome").eq("status", "sending");
-    console.error("Welcome email delivery failed:", error instanceof Error ? error.message : "Unknown error");
-    return json(502, { error: "Welcome email delivery failed. It can be retried safely." });
+    if (ledgerError) console.error("Could not persist uncertain welcome email state:", ledgerError.message);
+    console.error("Welcome email delivery outcome is uncertain:", detail);
+    return json(502, { error: "Welcome email delivery outcome is uncertain. Reconcile provider events before retrying." });
   }
 });
