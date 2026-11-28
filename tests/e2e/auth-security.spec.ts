@@ -256,5 +256,6 @@ test("password reset rejects weak/mismatched passwords and updates a compliant p
   await expect(page.getByRole("status")).toContainText("Password updated. Your account is ready to use.");
   const updateRequest = authRequests.find(request => request.path === "/auth/v1/user" && request.method === "PUT");
   expect(updateRequest?.body.password).toBe("SecureReset2026!");
-  expect((await page.locator('input[autocomplete="new-password"]').count())).toBe(0);
+  await expect(passwordFields.nth(0)).toHaveValue("");
+  await expect(passwordFields.nth(1)).toHaveValue("");
 });
