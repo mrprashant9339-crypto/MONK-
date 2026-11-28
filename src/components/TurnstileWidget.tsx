@@ -24,7 +24,13 @@ type Props = {
   resetKey?: number;
 };
 
-const SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || "0x4AAAAAAGRN064WbzkNKlkA";
+// Local development uses the dedicated staging widget, whose hostname allowlist
+// includes localhost and 127.0.0.1. Hosted builds use their environment-specific key.
+const STAGING_SITE_KEY = "0x4AAAAAAGV936arziIBwyrJ";
+const PRODUCTION_SITE_KEY = "0x4AAAAAAGRN064WbzkNKlkA";
+const SITE_KEY = import.meta.env.DEV
+  ? STAGING_SITE_KEY
+  : (import.meta.env.VITE_TURNSTILE_SITE_KEY || PRODUCTION_SITE_KEY);
 const SCRIPT_ID = "monk-cloudflare-turnstile-script";
 const SCRIPT_URL = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
 

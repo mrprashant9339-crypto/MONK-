@@ -47,3 +47,15 @@ test("successful CAPTCHA completion clears only CAPTCHA errors, not authenticati
   assert.doesNotMatch(captchaErrorHandler, /setError\(/);
   assert.match(auth, /const \[captchaError, setCaptchaError\] = useState\(""\)/);
 });
+
+
+test("local development is pinned to staging Supabase and staging Turnstile", async () => {
+  const client = await read("../src/lib/supabase.ts");
+  const widget = await read("../src/components/TurnstileWidget.tsx");
+
+  assert.match(client, /import\.meta\.env\.DEV\\s*\\?\\s*STAGING_SUPABASE_URL/);
+  assert.match(client, /https:\\/\\/ysspnuldfiijagagwiqk\\.supabase\\.co/);
+  assert.match(client, /import\.meta\.env\.DEV\\s*\\?\\s*STAGING_PUBLISHABLE_KEY/);
+  assert.match(widget, /import\.meta\.env\.DEV\\s*\\?\\s*STAGING_SITE_KEY/);
+  assert.match(widget, /0x4AAAAAAGV936arziIBwyrJ/);
+});

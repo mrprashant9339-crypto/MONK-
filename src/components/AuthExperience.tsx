@@ -336,7 +336,7 @@ export default function AuthExperience() {
   function handleCaptchaError() {
     setCaptchaToken("");
     setCaptchaFailed(true);
-    setCaptchaError("Cloudflare security verification could not connect. Check your network or browser content blocker, then retry.");
+    setCaptchaError("Cloudflare security verification failed to load. Check the staging hostname allowlist, site key and network, then retry.");
   }
 
   function handleCaptchaExpired() {

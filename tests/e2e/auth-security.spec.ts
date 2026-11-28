@@ -33,7 +33,7 @@ test("signup enforces the full password policy and verification resend sends a T
     });
   });
 
-  await page.route("https://yucwackrbekwaxiyuobt.supabase.co/auth/v1/**", async route => {
+  await page.route("https://ysspnuldfiijagagwiqk.supabase.co/auth/v1/**", async route => {
     const request = route.request();
     const url = new URL(request.url());
     const body = request.postDataJSON?.() as Record<string, unknown> | undefined;
@@ -140,7 +140,7 @@ test("login and forgot-password requests both forward the current Turnstile toke
     });
   });
 
-  await page.route("https://yucwackrbekwaxiyuobt.supabase.co/auth/v1/**", async route => {
+  await page.route("https://ysspnuldfiijagagwiqk.supabase.co/auth/v1/**", async route => {
     const request = route.request();
     const url = new URL(request.url());
     const body = request.postDataJSON?.() as Record<string, unknown> | undefined;
@@ -188,7 +188,7 @@ test("password reset rejects weak/mismatched passwords and updates a compliant p
 
   await page.addInitScript(({ userId, email }) => {
     const now = Math.floor(Date.now() / 1000);
-    localStorage.setItem("sb-yucwackrbekwaxiyuobt-auth-token", JSON.stringify({
+    localStorage.setItem("sb-ysspnuldfiijagagwiqk-auth-token", JSON.stringify({
       access_token: "e2e-recovery-access-token",
       token_type: "bearer",
       expires_in: 3600,
@@ -208,7 +208,7 @@ test("password reset rejects weak/mismatched passwords and updates a compliant p
     }));
   }, { userId, email });
 
-  await page.route("https://yucwackrbekwaxiyuobt.supabase.co/auth/v1/**", async route => {
+  await page.route("https://ysspnuldfiijagagwiqk.supabase.co/auth/v1/**", async route => {
     const request = route.request();
     const url = new URL(request.url());
     const body = request.postDataJSON?.() as Record<string, unknown> | undefined;

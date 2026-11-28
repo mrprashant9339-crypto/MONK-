@@ -10,6 +10,12 @@ This runbook covers the authentication fix in PR #40 and its staged acceptance p
 - Never put SMTP passwords, Resend API keys, Turnstile secret keys, Supabase secret/service-role keys, or user passwords in Git, browser code, issue comments, or chat.
 - Browser E2E tests in CI mock Supabase and Turnstile. They are regression tests, not proof of real email delivery or provider-side CAPTCHA validation.
 
+## Local development isolation
+
+- Running `npm run dev` forces the browser client to the staging Supabase project `ysspnuldfiijagagwiqk` and the dedicated staging Turnstile widget. It does not read a production Supabase URL or production Turnstile key from `.env.local`.
+- The staging Turnstile widget allowlist includes only its staging Vercel Preview hostname, `localhost`, and `127.0.0.1`. The production Turnstile widget is not changed.
+- Keep all local account creation and CAPTCHA testing on staging. Do not run signup tests against `monk.monster`.
+
 ## Verified automated setup
 
 - PR #40 contains the CAPTCHA resend fix, shared password policy, expiry handling, unit/regression tests, and mocked Playwright coverage.
@@ -40,6 +46,7 @@ Complete these only in the staging Supabase project, never in production during 
 2. **Auth URL configuration**
    - Set the staging Site URL to the staging preview origin.
    - Add exact redirect URLs used by the app, including `/auth/callback` and `/reset-password` on the staging preview origin.
+   - For local development, also allow exactly `http://localhost:5173/auth/callback`, `http://localhost:5173/reset-password`, `http://127.0.0.1:5173/auth/callback`, and `http://127.0.0.1:5173/reset-password`. Keep these in staging only.
    - Keep production URLs and settings separate.
 
 3. **Auth SMTP**
