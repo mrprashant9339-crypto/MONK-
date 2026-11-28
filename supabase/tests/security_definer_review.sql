@@ -41,7 +41,15 @@ begin
     where n.nspname='public'
       and p.prosecdef
       and has_function_privilege('authenticated',p.oid,'EXECUTE')
-      and p.prosrc !~* 'auth\\.uid\\(\\)|current_organization_id|current_member_id|has_org_permission|has_org_role|is_org_member|can_read_'
+      and not (
+        position('auth.uid()' in lower(p.prosrc)) > 0
+        or position('current_organization_id' in lower(p.prosrc)) > 0
+        or position('current_member_id' in lower(p.prosrc)) > 0
+        or position('has_org_permission' in lower(p.prosrc)) > 0
+        or position('has_org_role' in lower(p.prosrc)) > 0
+        or position('is_org_member' in lower(p.prosrc)) > 0
+        or position('can_read_' in lower(p.prosrc)) > 0
+      )
   ) then
     raise exception 'An authenticated-callable SECURITY DEFINER function has no identity or tenant authorization guard';
   end if;
