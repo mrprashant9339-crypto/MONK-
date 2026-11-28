@@ -11,6 +11,81 @@ type IntendedRole = "student" | "parent" | "teacher" | "hod" | "principal" | "in
 
 const TERMS_VERSION = "2026-11-22";
 const PRIVACY_VERSION = "2026-11-22";
+const OAUTH_CONTEXT_KEY = "monk:oauth-consent";
+const OAUTH_CONTEXT_TTL_MS = 10 * 60 * 1000;
+
+type OAuthConsentContext = {
+  terms: string;
+  privacy: string;
+  vertical: Vertical;
+  role: IntendedRole;
+  institutionId: string | null;
+  fullName: string;
+  phone: string;
+  flow: "signup" | "login";
+  createdAt: number;
+};
+
+const VALID_INTENDED_ROLES = new Set<IntendedRole>([
+  "student", "parent", "teacher", "hod", "principal", "institution",
+  "owner", "admin", "manager", "sales", "contributor", "auditor",
+  "client", "vendor", "staff"
+]);
+const EDUCATION_ROLES = new Set<IntendedRole>([
+  "student", "parent", "teacher", "hod", "principal", "institution"
+]);
+
+function isIntendedRole(value: unknown): value is IntendedRole {
+  return typeof value === "string" && VALID_INTENDED_ROLES.has(value as IntendedRole);
+}
+
+function roleMatchesVertical(role: IntendedRole, vertical: Vertical) {
+  return vertical === "education" ? EDUCATION_ROLES.has(role) : !EDUCATION_ROLES.has(role);
+}
+
+function readOAuthConsentContext(): OAuthConsentContext | null {
+  try {
+    const raw = sessionStorage.getItem(OAUTH_CONTEXT_KEY);
+    if (!raw) return null;
+    const value = JSON.parse(raw) as Partial<OAuthConsentContext>;
+    const now = Date.now();
+    if (
+      value.terms !== TERMS_VERSION ||
+      value.privacy !== PRIVACY_VERSION ||
+      (value.vertical !== "education" && value.vertical !== "business") ||
+      !isIntendedRole(value.role) ||
+      !roleMatchesVertical(value.role, value.vertical) ||
+      (value.flow !== "signup" && value.flow !== "login") ||
+      typeof value.createdAt !== "number" ||
+      now - value.createdAt > OAUTH_CONTEXT_TTL_MS ||
+      value.createdAt > now + 30_000 ||
+      typeof value.fullName !== "string" ||
+      typeof value.phone !== "string" ||
+      (value.institutionId !== null && typeof value.institutionId !== "string")
+    ) return null;
+
+    return {
+      terms: value.terms,
+      privacy: value.privacy,
+      vertical: value.vertical,
+      role: value.role,
+      institutionId: value.institutionId ?? null,
+      fullName: value.fullName.trim().slice(0, 100),
+      phone: value.phone.trim().slice(0, 20),
+      flow: value.flow,
+      createdAt: value.createdAt
+    };
+  } catch {
+    return null;
+  }
+}
+
+function clearOAuthConsentContext() {
+  try {
+    sessionStorage.removeItem(OAUTH_CONTEXT_KEY);
+    localStorage.removeItem(OAUTH_CONTEXT_KEY);
+  } catch { /* Storage may be disabled. */ }
+}
 
 // React StrictMode replays mount effects in development. Keep one PKCE exchange
 // promise per authorization code so the one-time code can never be exchanged twice.
@@ -24,6 +99,12 @@ function exchangeAuthCodeOnce(code: string) {
   const promise = supabase.auth.exchangeCodeForSession(code);
   pendingAuthCodeExchange = { code, promise };
   return promise;
+}
+
+const PASSWORD_POLICY_MESSAGE = "Use at least 12 characters with uppercase, lowercase and a number.";
+
+function isStrongPassword(value: string) {
+  return value.length >= 12 && /[a-z]/.test(value) && /[A-Z]/.test(value) && /[0-9]/.test(value);
 }
 
 function safeVertical(value: string | null): Vertical {
@@ -106,11 +187,19 @@ export default function AuthExperience() {
 
     void (async () => {
       const callbackPath = location.pathname;
-      const code = new URLSearchParams(window.location.search).get("code");
+      const callbackParams = new URLSearchParams(window.location.search);
+      const callbackError = callbackParams.get("error_description") || callbackParams.get("error");
+      if (callbackPath === "/auth/callback" && callbackError) {
+        clearOAuthConsentContext();
+        setError("Google sign-in was cancelled or could not be completed. Return to MONK and try again.");
+        return;
+      }
+      const code = callbackParams.get("code");
       if (code && (callbackPath === "/auth/callback" || callbackPath === "/reset-password")) {
         const { data: exchangeData, error: exchangeError } = await exchangeAuthCodeOnce(code);
         if (!alive) return;
         if (exchangeError) {
+          clearOAuthConsentContext();
           setError("This secure sign-in link is invalid, expired, or already used. Return to MONK and request a new link.");
           return;
         }
@@ -122,8 +211,19 @@ export default function AuthExperience() {
         return;
       }
 
-      const { data: sessionData } = await supabase.auth.getSession();
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        if (alive && callbackPath === "/auth/callback") {
+          clearOAuthConsentContext();
+          setError("MONK could not restore this sign-in session. Return to sign in and try again.");
+        }
+        return;
+      }
       if (alive && sessionData.session && callbackPath === "/auth/callback") setCallbackSession(true);
+      else if (alive && callbackPath === "/auth/callback") {
+        clearOAuthConsentContext();
+        setError("This sign-in link did not create a session. Return to MONK and request a new link.");
+      }
     })();
 
     return () => { alive = false; data.subscription.unsubscribe(); };
@@ -134,38 +234,43 @@ export default function AuthExperience() {
     let alive = true;
     void (async () => {
       try {
-        const raw = localStorage.getItem("monk:oauth-consent");
         const { data: currentUserData, error: currentUserError } = await supabase.auth.getUser();
         if (currentUserError) throw currentUserError;
         const currentMetadata = currentUserData.user?.user_metadata ?? {};
-        const consent: { terms: string; privacy: string; vertical?: Vertical; role?: IntendedRole; institutionId?: string | null; fullName?: string; phone?: string; flow?: string } | null = raw
-          ? JSON.parse(raw) as { terms: string; privacy: string; vertical: Vertical; role: IntendedRole; institutionId?: string | null; fullName?: string; phone?: string; flow?: string }
-          : typeof currentMetadata.terms_version === "string" && typeof currentMetadata.privacy_version === "string"
-            ? { terms: currentMetadata.terms_version, privacy: currentMetadata.privacy_version }
-            : null;
+        const oauthConsent = readOAuthConsentContext();
+        const emailSignupCallback = params.get("flow") === "signup";
+        const consent: { terms: string; privacy: string; vertical?: Vertical; role?: IntendedRole; institutionId?: string | null; fullName?: string; phone?: string; flow?: string } | null =
+          oauthConsent ?? (emailSignupCallback &&
+            typeof currentMetadata.terms_version === "string" &&
+            typeof currentMetadata.privacy_version === "string"
+              ? { terms: currentMetadata.terms_version, privacy: currentMetadata.privacy_version }
+              : null);
         if (!consent) {
           throw new Error("Your Google account was not linked to a completed MONK profile. Return to MONK, choose Campus or Business, complete your profile details and accept the current Terms and Privacy Policy, then try Google sign-in again.");
         }
-        if (consent) {
-          if (raw && consent.vertical && consent.role) {
-            const existingRole = currentMetadata.intended_role;
-            const { error: metadataError } = await supabase.auth.updateUser({ data: {
-              vertical: consent.vertical,
-              intended_role: typeof existingRole === "string" ? existingRole : consent.role,
-              institution_id: typeof currentMetadata.institution_id === "string" ? currentMetadata.institution_id : consent.institutionId ?? null,
-              full_name: typeof consent.fullName === "string" && consent.fullName.trim() ? consent.fullName.trim() : typeof currentMetadata.full_name === "string" && currentMetadata.full_name.trim() ? currentMetadata.full_name : "",
-              phone: typeof currentMetadata.phone === "string" && currentMetadata.phone.trim() ? currentMetadata.phone : consent.phone ?? null,
-              terms_version: consent.terms, privacy_version: consent.privacy
-            }});
-            if (metadataError) throw metadataError;
-          }
-          const { error: consentError } = await supabase.rpc("record_legal_consent", {
-            p_terms_version: consent.terms, p_privacy_version: consent.privacy
-          });
-          if (consentError) throw consentError;
-          if (raw) localStorage.removeItem("monk:oauth-consent");
+        if (oauthConsent) {
+          const existingRole = currentMetadata.intended_role;
+          const resolvedRole = isIntendedRole(existingRole) && roleMatchesVertical(existingRole, oauthConsent.vertical)
+            ? existingRole
+            : oauthConsent.role;
+          const { error: metadataError } = await supabase.auth.updateUser({ data: {
+            vertical: oauthConsent.vertical,
+            intended_role: resolvedRole,
+            institution_id: typeof currentMetadata.institution_id === "string" ? currentMetadata.institution_id : oauthConsent.institutionId,
+            full_name: oauthConsent.fullName || (typeof currentMetadata.full_name === "string" ? currentMetadata.full_name.trim() : ""),
+            phone: typeof currentMetadata.phone === "string" && currentMetadata.phone.trim() ? currentMetadata.phone : oauthConsent.phone || null,
+            terms_version: oauthConsent.terms,
+            privacy_version: oauthConsent.privacy
+          }});
+          if (metadataError) throw metadataError;
         }
-        const shouldSendWelcome = params.get("flow") === "signup" || consent.flow === "signup";
+
+        const { error: consentError } = await supabase.rpc("record_legal_consent", {
+          p_terms_version: consent.terms, p_privacy_version: consent.privacy
+        });
+        if (consentError) throw consentError;
+        if (oauthConsent) clearOAuthConsentContext();
+        const shouldSendWelcome = params.get("flow") === "signup" || oauthConsent?.flow === "signup";
         const resolvedFullName = typeof consent.fullName === "string" && consent.fullName.trim()
           ? consent.fullName.trim()
           : typeof currentMetadata.full_name === "string" && currentMetadata.full_name.trim()
@@ -187,12 +292,13 @@ export default function AuthExperience() {
           navigate(destination, { replace: true });
         }
       } catch (caught) {
+        clearOAuthConsentContext();
         if (alive) setError(caught instanceof Error ? caught.message : "Google account setup could not be completed.");
         await supabase.auth.signOut();
       }
     })();
     return () => { alive = false; };
-  }, [callbackSession, location.pathname, navigate]);
+  }, [callbackSession, location.pathname, location.search, navigate]);
 
   const roles = vertical === "education"
     ? [{ value: "student", label: "Student" }, { value: "parent", label: "Parent / Guardian" }, { value: "teacher", label: "Teacher / Faculty" }, { value: "hod", label: "Head of Department (HOD)" }, { value: "principal", label: "Principal" }, { value: "institution", label: "College / Institution administrator" }]
@@ -223,7 +329,7 @@ export default function AuthExperience() {
         return;
       }
       if (mode === "reset") {
-        if (password.length < 12) throw new Error("Use at least 12 characters for your new password.");
+        if (!isStrongPassword(password)) throw new Error(PASSWORD_POLICY_MESSAGE);
         if (password !== confirmPassword) throw new Error("The new passwords do not match.");
         const { error: updateError } = await supabase.auth.updateUser({ password });
         if (updateError) throw updateError;
@@ -235,9 +341,7 @@ export default function AuthExperience() {
       if (mode === "signup") {
         if (fullName.trim().length < 2) throw new Error("Enter your full name.");
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) throw new Error("Enter a valid email address.");
-        if (password.length < 12 || !/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
-          throw new Error("Use at least 12 characters with uppercase, lowercase and a number.");
-        }
+        if (!isStrongPassword(password)) throw new Error(PASSWORD_POLICY_MESSAGE);
         if (password !== confirmPassword) throw new Error("The passwords do not match.");
         if (vertical === "education" && institutionOptions.length > 0 && !institutionId) {
           throw new Error("Select your college or institution to continue.");
@@ -261,6 +365,8 @@ export default function AuthExperience() {
           }
         });
         if (signupError) throw signupError;
+        setPassword("");
+        setConfirmPassword("");
         if (data.session) {
           const { error: consentError } = await supabase.rpc("record_legal_consent", {
             p_terms_version: TERMS_VERSION, p_privacy_version: PRIVACY_VERSION
@@ -285,7 +391,17 @@ export default function AuthExperience() {
       if (loginError) throw loginError;
       navigate("/", { replace: true });
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Authentication failed. Please try again.");
+      const rawMessage = caught instanceof Error ? caught.message : "Authentication failed. Please try again.";
+      const normalizedMessage = rawMessage.toLowerCase();
+      if (mode === "login" && /invalid login credentials|invalid_credentials|email not confirmed|user not found/.test(normalizedMessage)) {
+        setError("Email or password is incorrect. Check your details and verify your email address if needed.");
+      } else if (mode === "signup" && /already registered|already exists|email.*registered/.test(normalizedMessage)) {
+        setError("We could not create this account. Sign in or use password recovery if you may already have a MONK account.");
+      } else if (/too many requests|rate limit|over_email_send_rate_limit/.test(normalizedMessage)) {
+        setError("Too many attempts. Wait a little before trying again.");
+      } else {
+        setError(rawMessage);
+      }
     } finally {
       setCaptchaToken("");
       setCaptchaResetKey(value => value + 1);
@@ -300,11 +416,23 @@ export default function AuthExperience() {
       setError("Enter your full name before continuing with Google so MONK can complete your profile.");
       return;
     }
+    if (mode === "signup" && vertical === "education" && institutionOptions.length > 0 && !institutionId) {
+      setError("Select your college or institution before continuing with Google.");
+      return;
+    }
     setBusy(true); setError("");
     try {
-      if (mode === "signup" || mode === "login") {
-        try { localStorage.setItem("monk:oauth-consent", JSON.stringify({ terms: TERMS_VERSION, privacy: PRIVACY_VERSION, vertical, role, institutionId: institutionId || null, fullName: fullName.trim(), phone: phone.trim(), flow: mode === "signup" ? "signup" : "login" })); } catch {}
-      }
+      sessionStorage.setItem(OAUTH_CONTEXT_KEY, JSON.stringify({
+        terms: TERMS_VERSION,
+        privacy: PRIVACY_VERSION,
+        vertical,
+        role,
+        institutionId: institutionId || null,
+        fullName: fullName.trim(),
+        phone: phone.trim(),
+        flow: mode === "signup" ? "signup" : "login",
+        createdAt: Date.now()
+      }));
       const inviteToken = new URLSearchParams(window.location.hash.replace(/^#/, "")).get("invite");
       const callbackUrl = new URL(window.location.origin + "/auth/callback");
       callbackUrl.searchParams.set("vertical", vertical);
@@ -318,6 +446,7 @@ export default function AuthExperience() {
       });
       if (oauthError) throw oauthError;
     } catch (caught) {
+      clearOAuthConsentContext();
       setBusy(false);
       setError(caught instanceof Error ? caught.message : "Google sign-in could not be started.");
     }
@@ -327,7 +456,7 @@ export default function AuthExperience() {
     if (!supabase || !email.trim() || resendCooldown > 0) return;
     setBusy(true); setError(""); setMessage("");
     try {
-      const { error: resendError } = await supabase.auth.resend({ type: "signup", email: email.trim().toLowerCase(), options: { emailRedirectTo: (() => { const url = new URL(window.location.origin + "/auth/callback"); url.searchParams.set("vertical", vertical); const invite = new URLSearchParams(window.location.hash.replace(/^#/, "")).get("invite"); if (invite) url.searchParams.set("invite", invite); return url.toString(); })() } });
+      const { error: resendError } = await supabase.auth.resend({ type: "signup", email: email.trim().toLowerCase(), options: { emailRedirectTo: (() => { const url = new URL(window.location.origin + "/auth/callback"); url.searchParams.set("vertical", vertical); url.searchParams.set("flow", "signup"); const invite = new URLSearchParams(window.location.hash.replace(/^#/, "")).get("invite"); if (invite) url.searchParams.set("invite", invite); return url.toString(); })() } });
       if (resendError) throw resendError;
       setMessage("If verification is still pending, a new confirmation email has been sent.");
       setResendCooldown(60);
@@ -371,9 +500,6 @@ export default function AuthExperience() {
           </div>
         ) : (
           <>
-            {(mode === "login" || mode === "signup") && <button className="authx-google" type="button" onClick={() => void googleSignIn()} disabled={busy}><span className="authx-google-mark">G</span> Continue with Google <ArrowRight size={16}/></button>}
-            {mode === "login" && <label className="authx-consent authx-google-consent"><input type="checkbox" checked={accepted} onChange={e => setAccepted(e.target.checked)}/><span>By continuing with Google, I agree to the <a href="/terms" target="_blank" rel="noreferrer">Terms of Service</a> and acknowledge the <a href="/privacy" target="_blank" rel="noreferrer">Privacy Policy</a>.</span></label>}
-            {(mode === "login" || mode === "signup") && <div className="authx-divider"><span>or continue with email</span></div>}
             <form className="authx-form" onSubmit={submit}>
               {isSignup && <>
                 <label>Full name<input autoComplete="name" value={fullName} onChange={e => setFullName(e.target.value)} maxLength={100} required placeholder="Your full name"/></label>
@@ -405,6 +531,13 @@ export default function AuthExperience() {
               {message && <p className="authx-success" role="status"><CheckCircle2 size={16}/>{message}</p>}
               <button className="authx-submit" type="submit" disabled={busy || (mode !== "reset" && !captchaToken) || (isSignup && !accepted)}>{busy ? <><LoaderCircle className="authx-spin" size={17}/> Please wait…</> : mode === "signup" ? "Create secure account" : mode === "forgot" ? "Send reset link" : mode === "reset" ? "Update password" : "Sign in"} <ArrowRight size={17}/></button>
             </form>
+            {(mode === "login" || mode === "signup") && <>
+              <div className="authx-divider"><span>or continue with Google</span></div>
+              <div className="authx-social-actions">
+                {mode === "login" && <label className="authx-consent authx-google-consent"><input type="checkbox" checked={accepted} onChange={e => setAccepted(e.target.checked)}/><span>By continuing with Google, I agree to the <a href="/terms" target="_blank" rel="noreferrer">Terms of Service</a> and acknowledge the <a href="/privacy" target="_blank" rel="noreferrer">Privacy Policy</a>.</span></label>}
+                <button className="authx-google" type="button" onClick={() => void googleSignIn()} disabled={busy}><span className="authx-google-mark">G</span> Continue with Google <ArrowRight size={16}/></button>
+              </div>
+            </>}
             {(mode === "login" || mode === "signup") && <p className="authx-switch">{mode === "signup" ? "Already registered?" : "New to MONK?"} <button type="button" onClick={() => changeMode(isSignup ? "login" : "signup")}>{isSignup ? "Sign in" : "Create account"}</button></p>}
           </>
         )}

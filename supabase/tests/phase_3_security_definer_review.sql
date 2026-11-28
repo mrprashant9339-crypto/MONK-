@@ -69,12 +69,17 @@ begin
     raise exception 'Authenticated SECURITY DEFINER function has no detectable caller/tenant guard: %', bad.signature;
   end if;
 
+  -- Dynamic SQL is manually reviewed for API-exposed SECURITY DEFINER RPCs.
+  -- Internal event-trigger functions such as rls_auto_enable are not callable by
+  -- anon/authenticated. This trigger reads pg_catalog metadata and identifier-quotes
+  -- the schema/table names; it is not a user-callable RPC.
   select p.proname, p.oid::regprocedure::text as signature
   into bad
   from pg_proc p
   join pg_namespace n on n.oid = p.pronamespace
   where n.nspname = 'public'
     and p.prosecdef
+    and has_function_privilege('authenticated', p.oid, 'EXECUTE')
     and (
       position('execute ' in lower(pg_get_functiondef(p.oid))) > 0
       or position('format(' in lower(pg_get_functiondef(p.oid))) > 0

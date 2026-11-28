@@ -19,3 +19,160 @@
 .authx-page{position:relative;isolation:isolate;overflow:hidden}.authx-page:before,.authx-page:after{content:"";position:absolute;z-index:-1;border-radius:50%;pointer-events:none;filter:blur(2px)}.authx-page:before{width:340px;height:340px;right:10%;top:-150px;background:radial-gradient(circle,rgba(225,113,164,.16),transparent 70%);animation:authx-orbit 14s ease-in-out infinite alternate}.authx-page:after{width:300px;height:300px;left:4%;bottom:-180px;background:radial-gradient(circle,rgba(196,158,111,.13),transparent 70%);animation:authx-orbit 18s ease-in-out infinite alternate-reverse}.authx-card{animation:authx-card-in .65s cubic-bezier(.2,.8,.2,1) both;transform-origin:center}.authx-aside{animation:authx-aside-in .8s .12s cubic-bezier(.2,.8,.2,1) both}.authx-context,.authx-google,.authx-submit,.authx-secondary,.authx-form input,.authx-form select{transition:border-color .2s ease,box-shadow .2s ease,transform .2s ease,background-color .2s ease}.authx-google:hover,.authx-secondary:hover{border-color:#d8a1ba;transform:translateY(-1px);box-shadow:0 8px 22px rgba(77,43,62,.07)}.authx-submit{transition:transform .2s ease,box-shadow .2s ease,background-color .2s ease}.authx-submit:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 12px 24px rgba(33,28,34,.18)}.authx-role-field{border:0;padding:0;margin:0;min-width:0}.authx-role-field legend{padding:0 0 9px;color:#3b333c;font-size:11px;font-weight:750}.authx-role-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.authx-role-option{position:relative;min-height:58px;display:flex;align-items:center;gap:9px;text-align:left;padding:10px;border:1px solid #e9e2e7;border-radius:12px;background:#fff;color:#413842;cursor:pointer;transition:border-color .18s ease,background .18s ease,transform .18s ease,box-shadow .18s ease}.authx-role-option:hover{border-color:#d8a1ba;transform:translateY(-1px)}.authx-role-option.is-selected{border-color:#c65e91;background:#fff7fa;box-shadow:0 0 0 2px rgba(198,94,145,.10)}.authx-role-number{flex:0 0 25px;height:25px;display:grid;place-items:center;border-radius:8px;background:#f5f0f3;color:#9b7487;font-size:9px;font-weight:800}.authx-role-label{flex:1;font-size:10px;font-weight:700;line-height:1.35}.authx-role-check{display:grid;place-items:center;color:#bd4e85;opacity:0;transform:scale(.7);transition:opacity .18s ease,transform .18s ease}.authx-role-option.is-selected .authx-role-check{opacity:1;transform:scale(1)}.authx-role-option:focus-visible,.authx-google:focus-visible,.authx-submit:focus-visible,.authx-link:focus-visible{outline:3px solid rgba(198,94,145,.35);outline-offset:3px}@keyframes authx-card-in{from{opacity:0;transform:translateY(18px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}@keyframes authx-aside-in{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:translateX(0)}}@keyframes authx-orbit{from{transform:translate3d(-10px,0,0) scale(.94)}to{transform:translate3d(16px,18px,0) scale(1.06)}}@media(max-width:480px){.authx-role-grid{grid-template-columns:1fr}.authx-role-option{min-height:52px}.authx-card{border-radius:20px}}@media(prefers-reduced-motion:reduce){.authx-card,.authx-aside,.authx-page:before,.authx-page:after{animation:none}.authx-google,.authx-submit,.authx-secondary,.authx-role-option{transition:none}}
 
 .authx-vertical-switch{display:block;margin:-7px 0 18px;color:#8b5874;font-size:11px;font-weight:700;text-decoration:none}.authx-vertical-switch:hover{text-decoration:underline}.authx-form input[type="search"],.authx-form select{width:100%;min-height:42px;margin-top:7px;padding:10px 12px;border:1px solid #e9e2e7;border-radius:10px;background:#fff;color:#413842;font:inherit}.authx-form input[type="search"]:focus,.authx-form select:focus{outline:3px solid rgba(198,94,145,.15);border-color:#c65e91}
+
+
+/* MONK Auth v2 — responsive split-screen experience */
+.authx-page{
+  width:100%;
+  min-height:100svh;
+  grid-template-columns:minmax(420px, .94fr) minmax(360px, 1.06fr);
+  gap:clamp(28px,5vw,76px);
+  align-items:center;
+  justify-content:center;
+  padding:clamp(24px,4.5vw,72px);
+  background:
+    radial-gradient(ellipse at 8% 10%,rgba(226,116,164,.14),transparent 34%),
+    radial-gradient(ellipse at 88% 88%,rgba(198,166,110,.13),transparent 35%),
+    #f7f5f3;
+}
+.authx-card{
+  position:relative;
+  z-index:1;
+  max-width:520px;
+  justify-self:end;
+  border:1px solid rgba(232,224,229,.92);
+  border-radius:28px;
+  padding:clamp(26px,3.2vw,44px);
+  box-shadow:0 28px 90px rgba(37,25,34,.10),0 2px 8px rgba(37,25,34,.035);
+  backdrop-filter:blur(16px);
+}
+.authx-brand{font-size:23px;letter-spacing:-1.1px}
+.authx-brand img{width:38px;height:38px}
+.authx-context{margin:24px 0 27px}
+.authx-heading h1{font-size:clamp(34px,3.2vw,45px);letter-spacing:-2px}
+.authx-form{gap:15px}
+.authx-form input:not([type=checkbox]),.authx-form select,.authx-pending input{height:49px;border-radius:12px}
+.authx-google,.authx-submit,.authx-secondary{min-height:51px;border-radius:13px}
+.authx-submit{background:#211c22;box-shadow:0 7px 18px rgba(33,28,34,.10)}
+.authx-aside{
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  justify-self:start;
+  width:100%;
+  max-width:610px;
+  min-height:610px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  padding:clamp(36px,5vw,68px);
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:32px;
+  color:#f5f0e8;
+  background:
+    radial-gradient(circle at 82% 18%,rgba(211,178,122,.20),transparent 30%),
+    radial-gradient(circle at 12% 90%,rgba(188,86,133,.18),transparent 36%),
+    linear-gradient(145deg,#29232b 0%,#171419 58%,#211b20 100%);
+  box-shadow:0 30px 90px rgba(28,21,28,.18);
+}
+.authx-aside:before{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  width:420px;height:420px;
+  right:-155px;top:-155px;
+  border:1px solid rgba(230,199,151,.18);
+  border-radius:50%;
+  box-shadow:0 0 0 34px rgba(230,199,151,.035),0 0 0 72px rgba(230,199,151,.025);
+}
+.authx-aside:after{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  width:260px;height:260px;
+  right:12%;bottom:-160px;
+  border-radius:50%;
+  background:rgba(201,116,157,.12);
+  filter:blur(35px);
+}
+.authx-aside-mark{
+  width:72px;height:72px;
+  border:1px solid rgba(230,199,151,.42);
+  border-radius:23px;
+  background:linear-gradient(145deg,#3b303a,#211c23);
+  color:#e8c996;
+  font-family:'Playfair Display',serif;
+  font-size:39px;
+  box-shadow:0 15px 38px rgba(0,0,0,.22),inset 0 1px rgba(255,255,255,.08);
+}
+.authx-aside-kicker{margin:42px 0 16px;color:#e2bd82;letter-spacing:2px}
+.authx-aside h2{
+  max-width:480px;
+  color:#faf6ef;
+  font-size:clamp(36px,4.4vw,58px);
+  letter-spacing:-2.5px;
+  line-height:1.02;
+}
+.authx-aside>p:not(.authx-aside-kicker){
+  max-width:440px;
+  color:#c4bbc3;
+  font-size:14px;
+  line-height:1.85;
+}
+.authx-assurances{gap:15px;margin-top:34px;color:#e9e0e7}
+.authx-assurances span{gap:12px}
+.authx-assurances svg{color:#e3bd82}
+.authx-footer{margin-top:28px}
+.authx-alert,.authx-success{border-radius:12px}
+.authx-form input:focus-visible,.authx-form select:focus-visible,.authx-password button:focus-visible,.authx-role-option:focus-visible{
+  outline:3px solid rgba(198,94,145,.22);
+  outline-offset:2px;
+}
+.authx-form input[type=checkbox]{width:16px;height:16px;accent-color:#b84f80}
+.authx-role-option{min-height:62px}
+.authx-role-option.is-selected{background:linear-gradient(135deg,#fff7fa,#fff)}
+@media(max-width:1100px) and (min-width:851px){
+  .authx-page{grid-template-columns:minmax(390px,1fr) minmax(320px,.9fr);gap:26px;padding:24px}
+  .authx-card{padding:27px}
+  .authx-aside{min-height:560px;padding:36px}
+}
+@media(max-width:850px){
+  .authx-page{grid-template-columns:minmax(0,1fr);gap:18px;padding:18px;align-content:center}
+  .authx-card{justify-self:center;max-width:620px}
+  .authx-aside{
+    display:flex;
+    justify-self:center;
+    max-width:620px;
+    min-height:0;
+    padding:25px 27px;
+    border-radius:22px;
+  }
+  .authx-aside-mark{width:48px;height:48px;border-radius:15px;font-size:27px}
+  .authx-aside-kicker{margin:19px 0 8px}
+  .authx-aside h2{font-size:clamp(25px,5vw,34px);letter-spacing:-1.2px}
+  .authx-aside>p:not(.authx-aside-kicker){font-size:12px;line-height:1.65;margin:10px 0}
+  .authx-assurances{grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:15px;font-size:10px}
+  .authx-assurances span{align-items:flex-start;line-height:1.4}
+  .authx-assurances svg{flex:none;width:14px;height:14px}
+}
+@media(max-width:520px){
+  .authx-page{padding:12px;gap:12px}
+  .authx-card{padding:22px 18px;border-radius:21px}
+  .authx-context{margin:18px 0 21px;padding:11px}
+  .authx-heading h1{font-size:34px}
+  .authx-aside{padding:20px;border-radius:19px}
+  .authx-assurances{grid-template-columns:1fr;gap:8px}
+  .authx-footer{gap:5px;font-size:8px}
+}
+@media(prefers-reduced-motion:reduce){
+  .authx-page:before,.authx-page:after,.authx-card,.authx-aside{animation:none!important}
+  .authx-google,.authx-submit,.authx-secondary,.authx-role-option{transition:none!important}
+}
+
+
+/* Social sign-in follows the completed form and its consent controls. */
+.authx-social-actions{display:grid;gap:12px;margin-top:2px}
+.authx-google-consent{margin:0}
+@media(max-width:520px){
+  .authx-social-actions{gap:10px}
+}

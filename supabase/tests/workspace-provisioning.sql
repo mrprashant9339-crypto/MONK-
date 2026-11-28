@@ -25,6 +25,22 @@ begin
   insert into auth.users(id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at,is_sso_user,is_anonymous)
   values (u_institution,'authenticated','authenticated','monk-provision-institution@invalid.example','',now(),'{}','{"accepted_legal":true,"terms_version":"2026-11-22","privacy_version":"2026-11-22","vertical":"education","intended_role":"institution","full_name":"MONK Test Institution"}',now(),now(),false,false);
 
+  -- Seed immutable legal acceptance for each synthetic user before testing workspace guards.
+  perform set_config('request.jwt.claims',jsonb_build_object('sub',u_owner::text,'role','authenticated')::text,true);
+  perform set_config('request.jwt.claim.sub',u_owner::text,true);
+  insert into public.legal_consents(user_id,terms_version,privacy_version)
+  values (u_owner,'2026-11-22','2026-11-22') on conflict (user_id,terms_version,privacy_version) do nothing;
+
+  perform set_config('request.jwt.claims',jsonb_build_object('sub',u_student::text,'role','authenticated')::text,true);
+  perform set_config('request.jwt.claim.sub',u_student::text,true);
+  insert into public.legal_consents(user_id,terms_version,privacy_version)
+  values (u_student,'2026-11-22','2026-11-22') on conflict (user_id,terms_version,privacy_version) do nothing;
+
+  perform set_config('request.jwt.claims',jsonb_build_object('sub',u_institution::text,'role','authenticated')::text,true);
+  perform set_config('request.jwt.claim.sub',u_institution::text,true);
+  insert into public.legal_consents(user_id,terms_version,privacy_version)
+  values (u_institution,'2026-11-22','2026-11-22') on conflict (user_id,terms_version,privacy_version) do nothing;
+
   perform set_config('request.jwt.claims',jsonb_build_object('sub',u_institution::text,'role','authenticated','aud','authenticated','user_metadata',jsonb_build_object('vertical','education','intended_role','institution'))::text,true);
   perform set_config('request.jwt.claim.sub',u_institution::text,true);
   blocked := false;
@@ -42,6 +58,15 @@ begin
   exception when insufficient_privilege then blocked := true;
   end;
   if not blocked then raise exception 'FAIL: Student role self-created a Business workspace'; end if;
+
+  perform set_config('request.jwt.claims',jsonb_build_object('sub',u_student::text,'role','authenticated','aud','authenticated','user_metadata',jsonb_build_object('vertical','business','intended_role','admin'))::text,true);
+  perform set_config('request.jwt.claim.sub',u_student::text,true);
+  blocked := false;
+  begin
+    perform public.create_organization('MONK Admin Test Business','monk-admin-test-business','IN','Asia/Kolkata','INR','en-IN','Professional services','business');
+  exception when insufficient_privilege then blocked := true;
+  end;
+  if not blocked then raise exception 'FAIL: Business admin intent self-created an owner workspace'; end if;
 
   perform set_config('request.jwt.claims',jsonb_build_object('sub',u_owner::text,'role','authenticated','aud','authenticated','user_metadata',jsonb_build_object('vertical','business','intended_role','owner'))::text,true);
   perform set_config('request.jwt.claim.sub',u_owner::text,true);

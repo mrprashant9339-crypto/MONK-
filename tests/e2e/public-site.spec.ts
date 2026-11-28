@@ -285,6 +285,14 @@ test("login, password recovery and password reset routes load the shared auth ex
   await expect(page.locator('.authx-form input[placeholder="Enter password again"]')).toBeVisible();
 });
 
+test("password reset enforces the same strong-password rules as signup", async ({ page }) => {
+  await page.goto("/reset-password");
+  await page.locator('.authx-form input[placeholder="At least 12 characters"]').fill("alllowercase123");
+  await page.locator('.authx-form input[placeholder="Enter password again"]').fill("alllowercase123");
+  await page.getByRole("button", { name: /update password/i }).click();
+  await expect(page.getByRole("alert")).toContainText(/12 characters with uppercase, lowercase and a number/i);
+});
+
 test("Campus and Business signup expose accessible role cards without granting authority", async ({ page }) => {
   await page.goto("/login?mode=signup&vertical=education");
   await expect(page.getByText("MONK Campus")).toBeVisible();
@@ -311,6 +319,36 @@ test("Campus signup exposes institution selection and blocks incomplete Google p
   await page.getByRole("button", { name: /Continue with Google/i }).click();
   await expect(page.getByRole("alert")).toContainText(/Enter your full name before continuing with Google/i);
   await expect(page).toHaveURL(/\/login\?mode=signup&vertical=education/);
+});
+
+test("cancelled OAuth callback returns a clear recoverable error", async ({ page }) => {
+  await page.goto("/auth/callback?error=access_denied");
+  await expect(page.getByRole("alert")).toContainText(/Google sign-in was cancelled or could not be completed/i);
+  await expect(page.getByRole("button", { name: /Return to sign in/i })).toBeVisible();
+});
+
+test("split-screen authentication panel remains visible and fits desktop, tablet and mobile", async ({ page }) => {
+  for (const [width, height] of [[1440, 900], [768, 1024], [390, 844], [360, 800]]) {
+    await page.setViewportSize({ width, height });
+    await page.goto("/login?vertical=business");
+    await expect(page.locator(".authx-card")).toBeVisible();
+    await expect(page.locator(".authx-aside")).toBeVisible();
+    const dimensions = await page.evaluate(() => ({
+      viewport: document.documentElement.clientWidth,
+      document: document.documentElement.scrollWidth
+    }));
+    expect(dimensions.document, `authentication overflow at ${width}px`).toBeLessThanOrEqual(dimensions.viewport + 2);
+  }
+});
+
+test("Google sign-in controls appear after the required auth form and legal acknowledgement", async ({ page }) => {
+  await page.goto("/login?mode=signup&vertical=education");
+  const order = await page.locator(".authx-form").evaluate(form => {
+    const google = document.querySelector(".authx-google");
+    return Boolean(google && (form.compareDocumentPosition(google) & Node.DOCUMENT_POSITION_FOLLOWING));
+  });
+  expect(order).toBe(true);
+  await expect(page.getByRole("button", { name: /Continue with Google/i })).toBeVisible();
 });
 
 test("India-wide directory renders source-aware filters and an honest empty state", async ({ page }) => {
