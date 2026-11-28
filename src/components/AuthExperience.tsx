@@ -101,6 +101,12 @@ function exchangeAuthCodeOnce(code: string) {
   return promise;
 }
 
+const PASSWORD_POLICY_MESSAGE = "Use at least 12 characters with uppercase, lowercase and a number.";
+
+function isStrongPassword(value: string) {
+  return value.length >= 12 && /[a-z]/.test(value) && /[A-Z]/.test(value) && /[0-9]/.test(value);
+}
+
 function safeVertical(value: string | null): Vertical {
   return value === "education" ? "education" : "business";
 }
@@ -323,7 +329,7 @@ export default function AuthExperience() {
         return;
       }
       if (mode === "reset") {
-        if (password.length < 12) throw new Error("Use at least 12 characters for your new password.");
+        if (!isStrongPassword(password)) throw new Error(PASSWORD_POLICY_MESSAGE);
         if (password !== confirmPassword) throw new Error("The new passwords do not match.");
         const { error: updateError } = await supabase.auth.updateUser({ password });
         if (updateError) throw updateError;
@@ -335,9 +341,7 @@ export default function AuthExperience() {
       if (mode === "signup") {
         if (fullName.trim().length < 2) throw new Error("Enter your full name.");
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) throw new Error("Enter a valid email address.");
-        if (password.length < 12 || !/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
-          throw new Error("Use at least 12 characters with uppercase, lowercase and a number.");
-        }
+        if (!isStrongPassword(password)) throw new Error(PASSWORD_POLICY_MESSAGE);
         if (password !== confirmPassword) throw new Error("The passwords do not match.");
         if (vertical === "education" && institutionOptions.length > 0 && !institutionId) {
           throw new Error("Select your college or institution to continue.");
@@ -391,6 +395,8 @@ export default function AuthExperience() {
       const normalizedMessage = rawMessage.toLowerCase();
       if (mode === "login" && /invalid login credentials|invalid_credentials|email not confirmed|user not found/.test(normalizedMessage)) {
         setError("Email or password is incorrect. Check your details and verify your email address if needed.");
+      } else if (mode === "signup" && /already registered|already exists|email.*registered/.test(normalizedMessage)) {
+        setError("We could not create this account. Sign in or use password recovery if you may already have a MONK account.");
       } else if (/too many requests|rate limit|over_email_send_rate_limit/.test(normalizedMessage)) {
         setError("Too many attempts. Wait a little before trying again.");
       } else {
