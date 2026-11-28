@@ -81,7 +81,10 @@ function readOAuthConsentContext(): OAuthConsentContext | null {
 }
 
 function clearOAuthConsentContext() {
-  try { sessionStorage.removeItem(OAUTH_CONTEXT_KEY); } catch { /* Storage may be disabled. */ }
+  try {
+    sessionStorage.removeItem(OAUTH_CONTEXT_KEY);
+    localStorage.removeItem(OAUTH_CONTEXT_KEY);
+  } catch { /* Storage may be disabled. */ }
 }
 
 // React StrictMode replays mount effects in development. Keep one PKCE exchange
@@ -225,7 +228,6 @@ export default function AuthExperience() {
     let alive = true;
     void (async () => {
       try {
-        const raw = localStorage.getItem("monk:oauth-consent");
         const { data: currentUserData, error: currentUserError } = await supabase.auth.getUser();
         if (currentUserError) throw currentUserError;
         const currentMetadata = currentUserData.user?.user_metadata ?? {};
