@@ -217,8 +217,13 @@ test("authentication callback exchanges PKCE codes once and preserves onboarding
   assert.match(client, /detectSessionInUrl:\s*false/);
   assert.match(auth, /exchangeAuthCodeOnce\(code\)/);
   assert.match(auth, /pendingAuthCodeExchange\?\.code === code/);
-  assert.match(auth, /localStorage\.setItem\("monk:oauth-consent"/);
-  assert.match(auth, /localStorage\.getItem\("monk:oauth-consent"/);
+  assert.match(auth, /sessionStorage\.setItem\(OAUTH_CONTEXT_KEY/);
+  assert.match(auth, /sessionStorage\.getItem\(OAUTH_CONTEXT_KEY/);
+  assert.match(auth, /OAUTH_CONTEXT_TTL_MS/);
+  assert.match(auth, /readOAuthConsentContext\(\)/);
+  assert.match(auth, /error_description/);
+  assert.match(auth, /url\.searchParams\.set\("flow", "signup"\)/);
+  assert.doesNotMatch(auth, /localStorage\.(?:getItem|setItem)\(["']monk:oauth-consent/);
   assert.match(auth, /institutionOptions\.map/);
   assert.match(auth, /monk_directory_institutions/);
   assert.match(auth, /Switch to MONK Campus/);
