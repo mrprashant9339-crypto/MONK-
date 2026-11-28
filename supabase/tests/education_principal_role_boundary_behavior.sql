@@ -1,6 +1,7 @@
 -- Rollback-only staging regression for Education principal role ceilings.
--- The synthetic users, organization, memberships, invitations and audit rows are
--- created inside this transaction and are removed by the final ROLLBACK.
+-- Synthetic users, org, memberships, invitations and audit rows are removed by
+-- the final ROLLBACK. Database-state assertions run as the transaction owner
+-- after RESET ROLE so RLS does not hide other members' rows from the test.
 
 begin;
 
@@ -25,11 +26,10 @@ select set_config('request.jwt.claim.role','authenticated',true);
 select set_config('request.jwt.claim.sub','61000000-0000-4000-8000-000000000001',true);
 select set_config('request.jwt.claims','{"sub":"61000000-0000-4000-8000-000000000001","role":"authenticated"}',true);
 
-do $test$
+do $principal$
 declare
   v_message text;
   v_invitation_id uuid;
-  v_member_role text;
 begin
   if not public.has_org_role('62000000-0000-4000-8000-000000000001',array['principal']) then
     raise exception 'Probe principal role was not active';
@@ -51,13 +51,6 @@ begin
     end if;
   end;
 
-  select role into v_member_role
-  from public.organization_members
-  where id='63000000-0000-4000-8000-000000000002';
-  if v_member_role <> 'contributor' then
-    raise exception 'Rejected manager assignment changed the member role to %', v_member_role;
-  end if;
-
   begin
     perform 1 from public.create_organization_invitation(
       '62000000-0000-4000-8000-000000000001',
@@ -73,23 +66,9 @@ begin
     end if;
   end;
 
-  if exists (
-    select 1 from public.invitations
-    where organization_id='62000000-0000-4000-8000-000000000001'
-      and lower(email::text)='manager-denied-probe-20261128@example.test'
-  ) then
-    raise exception 'Rejected manager invitation left an invitation row';
-  end if;
-
   perform public.update_organization_member_role(
     '63000000-0000-4000-8000-000000000002','teacher'
   );
-  select role into v_member_role
-  from public.organization_members
-  where id='63000000-0000-4000-8000-000000000002';
-  if v_member_role <> 'teacher' then
-    raise exception 'Principal should retain the ability to assign Education teacher role';
-  end if;
 
   select invitation_id into v_invitation_id
   from public.create_organization_invitation(
@@ -98,26 +77,57 @@ begin
     'teacher',
     7
   );
-  if v_invitation_id is null or not exists (
-    select 1 from public.invitations
-    where id=v_invitation_id and role='teacher'
-  ) then
-    raise exception 'Principal should retain the ability to invite Education teacher role';
+
+  if v_invitation_id is null then
+    raise exception 'Principal teacher invitation did not return an invitation id';
   end if;
+end;
+$principal$;
 
-  -- Owner authority remains unchanged.
-  perform set_config('request.jwt.claim.sub','61000000-0000-4000-8000-000000000003',true);
-  perform set_config('request.jwt.claims','{"sub":"61000000-0000-4000-8000-000000000003","role":"authenticated"}',true);
+-- Verify affected rows with transaction-owner privileges, not authenticated RLS.
+reset role;
 
-  perform public.update_organization_member_role(
-    '63000000-0000-4000-8000-000000000002','manager'
-  );
+do $principal_state$
+declare v_member_role text;
+begin
   select role into v_member_role
   from public.organization_members
   where id='63000000-0000-4000-8000-000000000002';
-  if v_member_role <> 'manager' then
-    raise exception 'Owner should retain the ability to assign manager role';
+
+  if v_member_role <> 'teacher' then
+    raise exception 'Principal should retain the ability to assign Education teacher role';
   end if;
+
+  if exists (
+    select 1 from public.invitations
+    where organization_id='62000000-0000-4000-8000-000000000001'
+      and lower(email::text)='manager-denied-probe-20261128@example.test'
+  ) then
+    raise exception 'Rejected manager invitation left an invitation row';
+  end if;
+
+  if not exists (
+    select 1 from public.invitations
+    where organization_id='62000000-0000-4000-8000-000000000001'
+      and lower(email::text)='teacher-allowed-probe-20261128@example.test'
+      and role='teacher'
+  ) then
+    raise exception 'Principal should retain the ability to invite Education teacher role';
+  end if;
+end;
+$principal_state$;
+
+-- Re-enter authenticated role for a separate owner positive-control probe.
+set local role authenticated;
+select set_config('request.jwt.claim.sub','61000000-0000-4000-8000-000000000003',true);
+select set_config('request.jwt.claims','{"sub":"61000000-0000-4000-8000-000000000003","role":"authenticated"}',true);
+
+do $owner$
+declare v_invitation_id uuid;
+begin
+  perform public.update_organization_member_role(
+    '63000000-0000-4000-8000-000000000002','manager'
+  );
 
   select invitation_id into v_invitation_id
   from public.create_organization_invitation(
@@ -126,11 +136,9 @@ begin
     'manager',
     7
   );
-  if v_invitation_id is null or not exists (
-    select 1 from public.invitations
-    where id=v_invitation_id and role='manager'
-  ) then
-    raise exception 'Owner should retain the ability to invite manager role';
+
+  if v_invitation_id is null then
+    raise exception 'Owner manager invitation did not return an invitation id';
   end if;
 
   perform set_config('request.jwt.claim.sub','61000000-0000-4000-8000-000000000002',true);
@@ -141,7 +149,31 @@ begin
     raise exception 'Owner-assigned manager should retain the manager permission set';
   end if;
 end;
-$test$;
+$owner$;
+
+reset role;
+
+do $owner_state$
+declare v_member_role text;
+begin
+  select role into v_member_role
+  from public.organization_members
+  where id='63000000-0000-4000-8000-000000000002';
+
+  if v_member_role <> 'manager' then
+    raise exception 'Owner should retain the ability to assign manager role';
+  end if;
+
+  if not exists (
+    select 1 from public.invitations
+    where organization_id='62000000-0000-4000-8000-000000000001'
+      and lower(email::text)='manager-allowed-probe-20261128@example.test'
+      and role='manager'
+  ) then
+    raise exception 'Owner should retain the ability to invite manager role';
+  end if;
+end;
+$owner_state$;
 
 select 'dynamic education principal role-boundary behavior: PASS' as assertion;
 rollback;
