@@ -12,7 +12,7 @@ test("record_audit is internal-only and verifies authenticated actor membership"
   assert.match(migration, /grant execute on function public\.record_audit\([\s\S]*?to service_role/i);
   assert.match(migration, /auth\.uid\(\) is not null and not public\.is_org_member\(target_org\)/i);
   assert.match(migration, /create or replace function public\.education_audit_row\(\)[\s\S]*?security definer/i);
-  assert.match(migration, /revoke all on function public\.education_audit_row\(\)\\s+from public, anon, authenticated, service_role/i);
+  assert.match(migration, /revoke all on function public\.education_audit_row\(\)\s+from public, anon, authenticated, service_role/i);
   assert.match(migration, /set search_path = pg_catalog, public, pg_temp/i);
 
   assert.match(sqlTest, /authenticated must not execute record_audit directly/i);
